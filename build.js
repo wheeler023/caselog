@@ -23,7 +23,7 @@ function takePairing() { var m = location.hash.match(/pair=([a-f0-9]{48,})/); if
 takePairing();
 window.addEventListener('hashchange', function () { if (takePairing()) location.reload(); });
 function apiKey() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
-var QUIPS = ['Loading a dope-ass app…', 'Decompressing your schedule…', 'Fusing the data…', 'Checking neuromonitoring signals…', 'Placing screws in the spreadsheet…', 'Confirming level on fluoro…'];
+var QUIPS = ['Loading a dope-ass app…', 'Decompressing your schedule…', 'Fusing the data…', 'Checking neuromonitoring signals…', 'Placing screws in the spreadsheet…', 'Confirming level on fluoro…', 'Running motors…'];
 function quip() { return QUIPS[Math.floor(Math.random() * QUIPS.length)]; }
 document.getElementById('splashMsg').textContent = quip();
 function splash(html) { document.getElementById('splashMsg').innerHTML = html; document.getElementById('splash').style.display = 'flex'; }
