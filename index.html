@@ -149,6 +149,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 #list .empty + .quote{margin-top:6px}
 #list > .empty{margin-left:-34px}#list > .quote{margin-left:-12px}
 .fact{margin:16px 0 8px -34px;padding:14px 16px;border-radius:14px;background:#0C1019;border:1px solid #1E2A3C}
+.fact.top{margin:0 0 14px -34px;position:relative;z-index:2}
 .fact .fh{font-size:12px;font-weight:700;color:#D3B98C;margin-bottom:6px}.fact .ft{font-size:15px;line-height:1.45;color:#CAD1E6}.fact .fs{font-size:12px;color:#828A9A;margin-top:6px}
 .implrow{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid #2A2F38;padding:10px 0;color:inherit;font:inherit}
 .implrow .ih{font-weight:700;font-size:14px;margin-bottom:3px}.implrow .il{font-size:13.5px;color:#CAD1E6;line-height:1.45}.implrow .il.dim{color:#828A9A}
@@ -604,6 +605,7 @@ function render() {
   if (!cases.length) { list.appendChild(el('div', 'empty', smode ? (searchActive() ? 'No cases match that.' : 'Type a name or procedure, or tap a keyword or a year.') : rmode ? 'All caught up. Every past case has a rating.' : 'No cases on this day.'));
     if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); }
     return; }
+  if (!rmode && !smode) { var fe0 = factEl(day); if (fe0) { fe0.className += ' top'; list.appendChild(fe0); } }   // surgery days: the fact sits above the cases
   var lastDate = '';
   cases.forEach(function (c, i) {
     if (rmode && c.dateLabel !== lastDate) { lastDate = c.dateLabel; list.appendChild(el('div', 'dhd', c.dateLabel)); }
