@@ -1,5 +1,5 @@
 {
- "about": "Lines shown under the day in the Case Log app. c = when: or (days with cases), clinic (weekdays with no cases), off (weekends), empty (any day with no cases), any (every day). Added to monthly.",
+ "about": "Lines shown under the day in the Case Log app. quotes: c = when (or = days with cases, clinic = weekdays with no cases, off = weekends, empty = any day with no cases, any = every day). facts: one-line spine facts shown under the quote on days with no cases; src = short citation. Added to monthly.",
  "quotes": [
   {
    "t": "No cases today. Even the discs get a day off.",
@@ -152,6 +152,68 @@
   {
    "t": "Excellent purchase on every screw. Check the AP anyway.",
    "c": "or"
+  }
+ ],
+ "facts": [
+  {
+   "t": "About two-thirds of lumbar disc herniations regress without surgery, and sequestered fragments resorb most often.",
+   "src": "Chiu et al., Clin Rehabil 2015"
+  },
+  {
+   "t": "Adjacent-segment disease after cervical fusion appears at about 2.9% per year, roughly a quarter of patients by 10 years.",
+   "src": "Hilibrand et al., JBJS 1999"
+  },
+  {
+   "t": "Disc bulges show up on MRI in 30% of pain-free 20-year-olds and 84% of pain-free 80-year-olds.",
+   "src": "Brinjikji et al., AJNR 2015"
+  },
+  {
+   "t": "About a third of people with no back pain have a substantial abnormality on lumbar MRI.",
+   "src": "Boden et al., JBJS 1990"
+  },
+  {
+   "t": "C5 palsy follows cervical decompression in roughly 1 in 20 cases, and most recover.",
+   "src": "Sakaura et al., Spine 2003"
+  },
+  {
+   "t": "Decompression within 48 hours of cauda equina syndrome is linked to better bladder and motor outcomes.",
+   "src": "Ahn et al., Spine 2000"
+  },
+  {
+   "t": "In SPORT, patients treated surgically for lumbar disc herniation improved more than nonoperative patients in the as-treated analysis.",
+   "src": "Weinstein et al., JAMA 2006"
+  },
+  {
+   "t": "In SPORT’s stenosis cohort, surgery gave greater improvement in pain and function at 2 years in the as-treated analysis.",
+   "src": "Weinstein et al., NEJM 2008"
+  },
+  {
+   "t": "A pelvic incidence to lumbar lordosis mismatch under 10 degrees is a core adult deformity target.",
+   "src": "Schwab et al., Spine 2012"
+  },
+  {
+   "t": "In adults the spinal cord usually ends at the L1-L2 level.",
+   "src": ""
+  },
+  {
+   "t": "The vertebral artery enters the transverse foramen at C6 in about 90% of people.",
+   "src": ""
+  },
+  {
+   "t": "There are 8 cervical nerve roots but only 7 cervical vertebrae; C8 exits below C7.",
+   "src": ""
+  },
+  {
+   "t": "Odontoid fractures are the most common cervical spine fracture in patients over 70.",
+   "src": ""
+  },
+  {
+   "t": "Vertebral compression fractures are the most common osteoporotic fracture.",
+   "src": ""
+  },
+  {
+   "t": "OPLL affects roughly 2% to 4% of adults in Japan, far more than in Western populations.",
+   "src": ""
   }
  ]
 }
