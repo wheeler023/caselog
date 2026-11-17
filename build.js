@@ -12,7 +12,7 @@ const head = `<meta name="viewport" content="width=device-width, initial-scale=1
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">`;
 if (!h.includes('<base target="_top">')) throw new Error('head marker missing');
 h = h.replace('<base target="_top">', '<base target="_top">' + head);
-const shim = `<div id="splash"><img src="icon-192.png" alt=""><div id="splashMsg">Opening your case log…</div></div>
+const shim = `<div id="splash"><img src="icon-192.png" alt=""><div id="splashMsg"></div></div>
 <style>#splash{position:fixed;inset:0;z-index:9999;background:#161718;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#CAD1E6;font:15px/1.45 -apple-system,Roboto,sans-serif;text-align:center;padding:24px}
 #splash img{width:96px;height:96px;border-radius:50%}#splash a,#splash button{color:#fff;font:inherit;font-weight:700;border:1.5px solid #fff;border-radius:10px;padding:10px 16px;background:transparent;text-decoration:none;margin-top:6px}</style>
 <script>
@@ -23,6 +23,9 @@ function takePairing() { var m = location.hash.match(/pair=([a-f0-9]{48,})/); if
 takePairing();
 window.addEventListener('hashchange', function () { if (takePairing()) location.reload(); });
 function apiKey() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+var QUIPS = ['Loading a dope-ass app…', 'Decompressing your schedule…', 'Fusing the data…', 'Checking neuromonitoring signals…', 'Placing screws in the spreadsheet…', 'Confirming level on fluoro…'];
+function quip() { return QUIPS[Math.floor(Math.random() * QUIPS.length)]; }
+document.getElementById('splashMsg').textContent = quip();
 function splash(html) { document.getElementById('splashMsg').innerHTML = html; document.getElementById('splash').style.display = 'flex'; }
 function needPairing() {
   try { localStorage.removeItem(KEY); localStorage.removeItem(SAVED); } catch (e) {}
@@ -79,7 +82,7 @@ function freshen(f) {   // drop the fresh opening data into the screens already 
 function boot() {
   if (!apiKey()) return needPairing();
   var saved = loadSaved();
-  if (saved) start(saved); else splash('Opening your case log…');
+  if (saved) start(saved); else splash(quip());
   callApi('init', []).then(function (init) {
     init.icon = 'icon-192.png'; save(init);
     if (window.__STARTED) freshen(init); else start(init);
