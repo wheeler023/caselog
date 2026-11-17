@@ -1,43 +1,925 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0B1033">
-<meta name="color-scheme" content="dark">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="robots" content="noindex, nofollow">
-<title>Case Log</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!doctype html><html><head><base target="_top"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1033"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="robots" content="noindex, nofollow"><title>Case Log</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta charset="utf-8"><meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
-  html, body { margin: 0; height: 100%; background: #161718; overflow: hidden; }
-  iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #161718; }
-  #wait { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-          color: #CAD1E6; font: 15px/1.4 -apple-system, Roboto, "Segoe UI", sans-serif; transition: opacity .3s; }
-  #wait img { width: 96px; height: 96px; border-radius: 50%; }
-  #wait.gone { opacity: 0; pointer-events: none; }
-  #help { display: none; text-align: center; max-width: 280px; }
-  #help a { color: #FFFFFF; font-weight: 700; display: inline-block; margin-top: 10px; padding: 10px 16px; border: 1.5px solid #FFFFFF; border-radius: 10px; text-decoration: none; }
-</style>
-</head>
-<body>
-<div id="wait"><img src="icon-192.png" alt=""><div>Opening your case log…</div>
-  <div id="help">Still loading? Google may need you to sign in first.<br><a id="direct" target="_blank" rel="noopener">Sign in to Google</a></div>
+:root{color-scheme:dark;--navy:#1F2A44;--accent:#2563EB;--light:#503023;--off:#161718;--ink:#1F2937;--muted:#6B7280;--line:#1E1F22}
+*{box-sizing:border-box}html,body{margin:0;background:#161718;color:#CAD1E6;font:16px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.hd{background:#1F2A44;color:#FFFFFF;padding:calc(14px + env(safe-area-inset-top)) 16px 12px;position:sticky;top:0;z-index:5}
+.hd .who{font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.hd .day{font-size:21px;font-weight:700;margin:2px 0 10px}
+.nav{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+.nav button,.nav input{background:rgba(14,14,14,.14);color:#FFFFFF;border:0;border-radius:10px;height:38px;font-size:15px;padding:0 12px}
+.nav input{flex:1;min-width:0;color-scheme:dark}
+.nav .t{font-weight:700}
+.list{padding:12px 12px calc(84px + env(safe-area-inset-bottom))}
+.card{background:#0E0E0E;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.06);display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.card:active{background:#151820}
+.tm{min-width:62px;font-weight:700;color:#5876F4;font-size:15px}
+.nm{font-weight:700;font-size:17px}
+.sub{color:#828A9A;font-size:14px;margin-top:2px}
+.proc{font-size:14px;margin-top:6px}
+.tags{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;border-radius:999px;padding:2px 8px;background:#161718;color:#828A9A}
+.tag.n{background:#071610;color:#3F9373}.tag.x{background:#1C1414;color:#EE614F}
+.empty{text-align:center;color:#828A9A;padding:48px 16px}
+.sheet{position:fixed;inset:0;background:#161718;z-index:10;transform:translateY(100%);transition:transform .22s ease;display:flex;flex-direction:column}
+.sheet.on{transform:none}
+.sh{background:#1F2A44;color:#FFFFFF;padding:calc(12px + env(safe-area-inset-top)) 12px 12px;display:flex;align-items:center;gap:10px}
+.sh button{background:rgba(14,14,14,.14);color:#FFFFFF;border:0;border-radius:10px;height:38px;padding:0 12px;font-size:15px}
+.sh .ttl{flex:1;min-width:0}.sh .ttl b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sh .ttl span{font-size:13px;opacity:.8}
+.body{flex:1;overflow:auto;padding:12px 12px calc(24px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.box{background:#0E0E0E;border-radius:14px;padding:6px 14px;margin-bottom:12px}
+.row{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid #1F2328}.row:last-child{border:0}
+.row .k{width:96px;flex:none;color:#828A9A;font-size:14px}.row .v{flex:1;min-width:0;word-wrap:break-word}
+.row a{color:#5876F4;text-decoration:none;font-weight:600}
+.notes{background:#0E0E0E;border-radius:14px;padding:14px}
+.notes label{font-weight:700;display:block}
+.hint{color:#828A9A;font-size:13px;margin:2px 0 8px}
+textarea{width:100%;min-height:42vh;border:1px solid #1F2328;border-radius:10px;padding:12px;font-size:17px;line-height:1.45;font-family:inherit;resize:vertical;background:#111111}
+textarea:focus{outline:2px solid #2563EB;border-color:transparent}
+.acts{display:flex;gap:8px;margin-top:10px}
+.acts button{flex:1;height:46px;border-radius:12px;border:0;font-size:16px;font-weight:700}
+.b1{background:#2563EB;color:#FFFFFF}.b1:disabled{background:#4C525B}.b2{background:#161718;color:#CAD1E6}
+.st{font-size:13px;color:#828A9A;margin-top:8px;min-height:18px}
+.conf{display:none;background:#151202;border:1px solid #3E2700;border-radius:10px;padding:10px;margin-top:10px;font-size:14px}
+.conf pre{white-space:pre-wrap;font:inherit;background:#0E0E0E;border-radius:8px;padding:8px;max-height:30vh;overflow:auto}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111827;color:#FFFFFF;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;z-index:20;pointer-events:none}
+.toast.on{opacity:.95}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 4px}
+.thumbs .th{position:relative;display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#1C1C1C;color:#FFFFFF;font-size:13px;text-decoration:none}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs .ph{display:flex;align-items:center;justify-content:center;height:100%}
+.thumbs .busy{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#FFFFFF;font-size:12px;text-align:center;padding:3px}
+.thumbs .rm{position:absolute;top:4px;right:4px;min-width:30px;height:30px;padding:0 8px;border-radius:15px;border:0;background:rgba(0,0,0,.6);color:#FFFFFF;font-size:15px}
+.thumbs .rm.sure{background:#B91C1C;font-size:12px;font-weight:700}
+.addimg{width:100%;height:48px;margin-top:8px;border-radius:12px;border:0;background:#1F2A44;color:#FFFFFF;font-size:16px;font-weight:700}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0E0E0E;border-top:1px solid #1F2328;padding-bottom:env(safe-area-inset-bottom);z-index:6}
+.tabs button{flex:1;height:58px;border:0;background:none;font-size:12px;font-weight:700;color:#828A9A;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.tabs button.on{color:#5876F4}.tabs svg{width:22px;height:22px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{height:34px;border-radius:999px;border:1px solid rgba(14,14,14,.35);background:transparent;color:#FFFFFF;padding:0 12px;font-size:14px}
+.chip.on{background:#0E0E0E;color:#BEC6E4;font-weight:700;border-color:#0E0E0E}
+.pnav{display:flex;align-items:center;gap:6px;margin:4px 0 10px}
+.pnav .day{flex:1;margin:0}
+.pnav button{width:38px;height:38px;border-radius:10px;border:0;background:rgba(14,14,14,.12);color:#FFFFFF;font-size:22px;flex:none}
+.chips.mos{flex-wrap:nowrap;overflow-x:auto;margin-top:8px;padding-bottom:2px;scrollbar-width:none}
+.chips.mos::-webkit-scrollbar{display:none}
+.chips.mos .chip{flex:none;height:32px;padding:0 11px}
+.chip.fut{opacity:.6}
+.tg{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px;opacity:.9}.tg input{width:18px;height:18px}
+.sp{padding:12px 12px calc(84px + env(safe-area-inset-bottom))}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.tile{background:#0E0E0E;border-radius:14px;padding:12px 14px}.tile .n{font-size:28px;font-weight:700;color:#BEC6E4;line-height:1.1;font-variant-numeric:tabular-nums}.tile .l{font-size:13px;color:#828A9A;margin-top:2px}
+.card2{background:#0E0E0E;border-radius:14px;padding:14px;margin-bottom:12px}.card2 h3{margin:0 0 4px;font-size:15px}.card2 .note{margin-bottom:10px}
+.note{font-size:13px;color:#828A9A}
+.cols{display:flex;align-items:flex-end;gap:4px;height:150px;border-bottom:1px solid #1F2328}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;cursor:pointer}
+.col .bar{width:100%;max-width:22px;background:transparent;box-shadow:inset 0 0 0 200px #2F8CFF;border-radius:4px 4px 0 0}
+.col .bar.sch{background:transparent;box-shadow:inset 0 0 0 200px #F5A524;margin-bottom:2px}
+.col .v{font-size:11px;color:#CAD1E6;margin-bottom:2px;font-variant-numeric:tabular-nums}
+.col.sel .v{font-weight:700}.col.sel{background:rgba(79,123,217,.12);border-radius:6px}.pair{display:flex;align-items:flex-end;gap:1px;width:100%;height:100%;justify-content:center}.bw{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}.col .bar.prv{background:transparent;box-shadow:inset 0 0 0 200px #9AA1AE}.col .v.pv{color:#828A9A;font-size:10px}.bw .v{font-size:10px}.cols.c3{gap:18px;padding:0 6px}.cols.c3 .pair{gap:6px}.cols.c3 .bar{max-width:44px}.cols.c3 .v{font-size:14px;font-weight:700}.cols.c3 .v.pv{font-size:13px;font-weight:600}.xl.c3{gap:18px;padding:0 6px}.xl.c3 span{font-size:13px}
+.xl{display:flex;gap:4px;margin-top:4px}.xl span{flex:1;min-width:0;text-align:center;font-size:10px;color:#828A9A}
+.lg{display:flex;gap:14px;font-size:12px;color:#828A9A;margin-top:8px}.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.hb{display:grid;grid-template-columns:minmax(96px,40%) 1fr auto;align-items:center;gap:8px;padding:5px 0;font-size:14px}
+.hb .k{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hb .track{height:14px}.hb .fill{height:100%;background:#4F7BD9;border-radius:0 4px 4px 0}
+.hb .c{text-align:right;font-variant-numeric:tabular-nums}
+.out{background:#0E0E0E;border-radius:14px;padding:14px;margin-bottom:12px}
+.out label{font-weight:700;display:block}
+.rate{display:flex;gap:6px;margin-top:8px}
+.rate button{flex:1;height:52px;border-radius:12px;border:1px solid #1F2328;background:#0E0E0E;font-size:20px;font-weight:700;color:#CAD1E6}
+.rate button.on{background:#2563EB;border-color:#2563EB;color:#FFFFFF}
+.rlbl{font-size:14px;color:#828A9A;margin-top:8px;min-height:18px}
+.cx{display:block;margin:16px 0 0 auto;padding:6px 2px;border:0;background:none;color:#828A9A;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.cx.sure{color:#EE614F;font-weight:700;text-decoration:none;border:1px solid #68292C;border-radius:10px;padding:8px 12px}
+.cx.on{color:#FFFFFF;background:#B91C1C;font-weight:700;text-decoration:none;border-radius:10px;padding:8px 12px}
+.lh{display:flex;align-items:center;gap:8px}
+.info{width:30px;height:30px;padding:3px;border:0;background:none;color:#5785C4;border-radius:50%;flex:none}
+.info svg{width:22px;height:22px;display:block}
+.info.on{background:#503023}
+.legend{display:none;margin:8px 0 4px;background:#161718;border-radius:10px;padding:8px 12px}
+.legend.on{display:block}
+.lrow{display:flex;gap:12px;padding:5px 0;font-size:14px;line-height:1.35}
+.lrow b{font-family:var(--serif);width:14px;flex:none;color:#BEC6E4}
+.tag.d{background:#201814;color:#D78569}.tag.w{background:#151202;color:#D47F50}
+/* ---- Wheeler brand theme: navy + terracotta, seal header, cases on a spine ---- */
+:root{--accent-ink:#2B6CB0;--ink:#1A2233;--muted:#5B6475;--line:#1F2328;--serif:"Source Serif 4",Georgia,"Times New Roman",serif;--sans:"Public Sans",-apple-system,Roboto,"Segoe UI",Arial,sans-serif}
+html,body{font-family:var(--sans);line-height:1.4}
+.hd{border-bottom:3px solid #2563EB;padding-bottom:14px}
+.hd .who{display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0;opacity:1;font-family:var(--serif);font-weight:600;font-size:15px;line-height:1.15}
+.hd .who img{width:36px;height:36px;border-radius:50%;background:#0E0E0E;padding:2px;flex:none}
+.hd .who small{display:block;font-family:var(--sans);font-weight:400;font-size:12px;opacity:.72;margin-top:1px}
+.hd .day{font-family:var(--serif);font-weight:700;font-size:28px;line-height:1.15;letter-spacing:-.01em;margin:12px 0}
+.nav button,.nav input{background:rgba(14,14,14,.12)}
+.nav .t.now{display:none}   /* the Today button only shows once you've moved off today */
+.list{position:relative;padding-left:46px}
+.list::before{content:"";position:absolute;left:25px;top:22px;bottom:calc(100px + env(safe-area-inset-bottom));width:2px;border-radius:1px;background:#2D323B}
+.list:has(.empty)::before{display:none}
+.card{position:relative;border:1px solid #1F2328;box-shadow:none;border-radius:12px;padding:14px 14px 12px}
+.card::before{content:"";position:absolute;left:-29px;top:18px;width:14px;height:10px;border-radius:4px;background:#161718;border:2px solid #1F2A44}
+.card.s-done::before{background:#1F2A44}
+.card.s-rate::before{background:#2563EB;border-color:#2B6CB0}
+.card.s-off::before{background:#1D1F24;border-color:#434B56}
+.card.s-off .nm,.card.s-off .proc,.card.s-off .tm{color:#828A9A}
+.card:active{background:#141518}
+.tm{font-family:var(--serif);font-weight:700;font-size:17px;color:#5785C4;min-width:66px;font-variant-numeric:lining-nums tabular-nums}
+.nm{font-family:var(--serif);font-weight:600;font-size:19px;line-height:1.2}
+.sub{font-size:13.5px}
+.proc{font-size:14.5px}
+.tag{background:#17191D;color:#949DB3;font-weight:500}
+.tag.w{background:#131D25;color:#83A0D9}.tag.d{background:#1A1D23;color:#BEC6E4}
+.row a{color:#5785C4}
+.rate button.on{box-shadow:0 0 0 2px var(--accent)}
+.empty{font-family:var(--serif);font-size:18px}
+.sh{border-bottom:3px solid #2563EB}
+.sh .ttl b{font-family:var(--serif);font-weight:700;font-size:20px}
+.box,.out,.notes,.tile,.card2{border:1px solid #1F2328;border-radius:12px;box-shadow:none}
+.out label,.notes label,.card2 h3{font-family:var(--serif);font-weight:700;font-size:17px}
+.rate button{border-radius:10px;font-family:var(--serif)}
+.rate button.on{background:#1F2A44;border-color:#1F2A44}
+.b1{background:#1F2A44}
+.addimg{background:#0E0E0E;color:#BEC6E4;border:1.5px solid #1F2A44}
+.tile .n{font-family:var(--serif);font-size:30px;font-variant-numeric:lining-nums tabular-nums}
+.tabs button.on{color:#5785C4;box-shadow:inset 0 3px 0 var(--accent)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #2B6CB0;outline-offset:2px}
+textarea:focus{outline:2px solid #2B6CB0}
+.veil{background:#0E0E0E;border:1px solid #1F2328;border-radius:12px;padding:28px 18px;text-align:center}
+.veil .vt{font-family:var(--serif);font-weight:700;font-size:20px;margin-bottom:4px}
+.tile.tap{border:1px solid #2563EB;text-align:left;font:inherit;cursor:pointer;width:100%}
+.tile.tap .l{color:#5785C4;font-weight:600}
+.dhd{font-family:var(--serif);font-weight:700;font-size:15px;color:#BEC6E4;margin:16px 4px 6px}
+.dhd:first-child{margin-top:4px}
+.nav .srch{width:42px;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
+.nav .srch svg{width:20px;height:20px}
+.wk{display:flex;gap:2px;margin-top:10px;align-items:stretch}
+.wk button{background:none;border:0;color:#FFFFFF;font:inherit;padding:0}
+.wa{width:26px;font-size:20px;opacity:.8;flex:none}
+.wd{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 0 4px!important;border-radius:10px}
+.wd .wl{font-size:11px;opacity:.7}
+.wd .wn{font-size:16px;font-weight:700}
+.wd .wc{font-size:11px;min-height:15px;min-width:18px;border-radius:8px;line-height:15px;text-align:center}
+.wd .wc:not(:empty){background:#2563EB;color:#BEC6E4;font-weight:700;padding:0 5px}
+.wd.td .wn{text-decoration:underline;text-underline-offset:3px}
+.wd.on{background:rgba(14,14,14,.18)}
+.sbox{background:#1F2A44;padding:0 16px 12px}
+.skeys{margin-top:10px}.skeys .chip{height:30px;padding:0 10px;font-size:13px}.sbox .chip{border-color:rgba(255,255,255,.22)}.sbox .chip.on{background:#2563EB;border-color:#2563EB;color:#fff}
+.sbox input{width:100%;height:42px;border-radius:10px;border:0;padding:0 12px;font:inherit;font-size:16px}
+.cxs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.cxc{border:1px solid #1F2328;background:#0E0E0E;border-radius:18px;padding:8px 12px;font:inherit;font-size:14px;color:#CAD1E6}
+.cxc.on{background:#1C1414;border-color:#B91C1C;color:#EE614F;font-weight:700}
+.tag.x{background:#1C1414;color:#EE614F}
+.oplink{display:block;text-align:center;text-decoration:none;line-height:44px}
+.getapp{margin:12px 12px 0;padding:10px 12px 10px 14px;border:1.5px solid #2F8CFF;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;color:#FFFFFF}
+.getapp button{border:1.5px solid #FFFFFF;background:transparent;color:#FFFFFF;font:inherit;font-weight:700;border-radius:10px;padding:8px 12px;white-space:nowrap}
+.todo{margin:12px 12px 0;padding:12px 14px;background:#B91C1C;border-radius:12px;font-size:14px;color:#FFFFFF;display:flex;gap:4px 10px;align-items:center;flex-wrap:wrap;cursor:pointer}
+.todo b{background:#0E0E0E;color:#EE614F;border-radius:6px;padding:2px 8px;font-size:13px;letter-spacing:.02em}
+.todo .tx{flex:1 1 180px;line-height:1.35}
+.todo .go{font-weight:700;white-space:nowrap}
+.mhd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mhd .day{flex:1 1 auto;margin:0;font-size:26px}
+.mhd .nav button{height:36px;padding:0 11px;background:transparent;border:1.5px solid rgba(255,255,255,.4);color:#FFFFFF}
+.nav .t{margin-right:auto}
+.calc{margin:12px 12px 0;background:#0E0E0E;border:1px solid #1F2328;border-radius:14px;padding:8px 6px 6px}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cw{text-align:center;font-size:11px;font-weight:700;color:#828A9A;padding:2px 0 4px}
+.cd{border:0;background:none;font:inherit;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 0 4px;border-radius:10px;min-height:52px;color:#CAD1E6}
+.cd .cn{width:28px;height:28px;line-height:28px;border-radius:50%;font-size:14px;text-align:center}
+.cd .cc{min-width:20px;height:16px;line-height:16px;border-radius:8px;font-size:11px;font-weight:700;text-align:center;padding:0 5px}
+.cd .cc:not(:empty){background:#2563EB;color:#FFFFFF}
+.cd .cc.red:not(:empty){background:#B91C1C;color:#FFFFFF}
+.cd.out{opacity:.38}
+.cd.td{background:#15263F;box-shadow:inset 0 0 0 1.5px #2F8CFF}   /* today's whole square, kept dark so phone dark modes leave it alone */
+.cd.td .cn{color:#FFFFFF;font-weight:800}
+.cd.on .cn{background:#1F2A44;color:#FFFFFF;box-shadow:none;font-weight:700}
+.cd:active{background:#161718}
+.dhd2{display:flex;justify-content:space-between;align-items:baseline;margin:16px 16px 0;font-family:var(--serif);font-weight:700;font-size:18px;color:#BEC6E4}
+.dhd2 #dayCnt{font-family:inherit;font-size:13px;font-weight:600;color:#828A9A}
+.rate.locked button,.cxc:disabled{opacity:.35;cursor:not-allowed}
+.tag.vd{background:var(--navy);color:#fff;font-weight:700;letter-spacing:.01em}
+.tag.vd.mdt{background:#1D4ED8;background-image:linear-gradient(#1D4ED8,#1D4ED8)}
+.tag.vd.nuv{background:#1E1206;color:#FF9A1F;border:1.5px solid #FF9A1F;padding:1px 8px}   /* orange carried by text and outline: phone browsers that force their own dark mode repaint backgrounds but leave these alone */@media (prefers-reduced-motion:reduce){.sheet,.toast{transition:none}}</style></head><body>
+<div id="vCases"><div class="hd"><div class="who" id="who"></div>
+<div class="mhd"><div class="day" id="monLbl">Loading…</div>
+<div class="nav"><button class="t" onclick="go(INIT.today)" aria-label="Back to today">Today</button><button onclick="stepCal(-1)" aria-label="Previous month">‹</button><button onclick="stepCal(1)" aria-label="Next month">›</button><button class="srch" onclick="openSearch()" aria-label="Search cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></div></div>
+<input type="date" id="pick" style="display:none"></div>
+<div class="todo" id="todo" style="display:none" onclick="openRating()"></div>
+<div class="getapp" id="getApp" style="display:none"><span>Install the full-screen phone app</span><button onclick="pairPhone(this)">Set up phone app</button></div>
+<div class="calc" id="cal"></div>
+<div class="dhd2"><span id="dayLbl">Loading…</span><span id="dayCnt"></span></div>
+<div class="list" id="list"></div></div>
+<div id="vStats" style="display:none">
+ <div class="hd"><div class="who" id="who2"></div>
+  <div class="pnav"><button onclick="stepMonth(-1)" aria-label="Previous month">‹</button><div class="day" id="perLbl">Surgical volume</div><button onclick="stepMonth(1)" aria-label="Next month">›</button></div>
+  <div class="chips yrs" id="yrs"></div>
+  <div class="chips mos" id="mos"></div>
+  <label class="tg"><input type="checkbox" id="inclU" onchange="inclUnrated=this.checked;renderStats()"> Include past cases I haven't rated</label></div>
+ <div class="sp" id="sBody"></div>
 </div>
+<div id="vFin" style="display:none">
+ <div class="hd"><div class="who" id="who3"></div><div class="day">Finances</div>
+  <div class="chips" id="fchips"><button class="chip" data-p="month" onclick="setFPer('month')">Month</button><button class="chip" data-p="ytd" onclick="setFPer('ytd')">YTD</button><button class="chip on" data-p="12m" onclick="setFPer('12m')">12 mo</button><button class="chip" data-p="all" onclick="setFPer('all')">All time</button></div></div>
+ <div class="sp" id="fBody"></div>
+</div>
+<nav class="tabs"><button id="tCases" class="on" onclick="setTab('cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Cases</button><button id="tStats" onclick="setTab('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>Metrics</button><button id="tFin" onclick="setTab('fin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Finance</button></nav>
+
+<div class="sheet" id="rsheet">
+ <div class="sh"><button onclick="closeRating()">‹ Back</button><div class="ttl"><b id="rTitle">Needs rating</b><span id="rCount"></span></div></div>
+ <div class="sbox" id="sbox"><input type="search" id="q" placeholder="Name, procedure, level, CPT, note…" autocomplete="off" oninput="searchSoon()" enterkeyhint="search"><div class="chips mos" id="sYrs"></div><div class="chips mos" id="sMos"></div><div class="chips skeys" id="sKeys"></div></div>
+ <div class="body"><div class="list" id="rList"></div></div>
+</div>
+<div class="sheet" id="sheet">
+ <div class="sh"><button onclick="closeCase()">‹ Back</button><div class="ttl"><b id="cName"></b><span id="cSub"></span></div></div>
+ <div class="body">
+  <div class="out" id="outCard">
+   <div class="lh"><label>How did it go?</label><button class="info" id="infoBtn" onclick="toggleLegend()" aria-label="What each rating means" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor"/></svg></button></div>
+   <div class="legend" id="legend"></div>
+   <div class="hint">Rating a case marks it performed. Tap your rating again to clear it.</div>
+   <div class="rate" id="rate"></div>
+   <div class="rlbl" id="rlbl"></div>
+   <button class="cx" id="cxBtn" onclick="cancelTap()">Surgery was cancelled</button>
+  </div>
+  <div class="out">
+   <label>Complications</label>
+   <div class="hint">Tap any that happened. Leave blank if none.</div>
+   <div class="cxs" id="cxs"></div>
+  </div>
+  <div class="notes">
+   <label for="notes">Notes</label>
+   <div class="hint">Tap in the box, then tap 🎤 on your keyboard to dictate. Saves to the Notes column of your case log.</div>
+   <textarea id="notes" oninput="dirty()" placeholder="Dictate or type notes…"></textarea>
+   <div class="acts"><button class="b2" onclick="stamp()">+ Time stamp</button><button class="b1" id="saveBtn" onclick="save(false)">Save</button></div>
+   <div class="st" id="st"></div>
+   <div class="conf" id="conf"><b>These notes were changed at a computer since you opened this case.</b> Here is what's in the case log now:<pre id="confTxt"></pre>
+    <div class="acts"><button class="b2" onclick="useSheet()">Use case log version</button><button class="b1" onclick="save(true)">Save mine</button></div></div>
+  </div>
+  <div class="out">
+   <label>Op note</label>
+   <div id="opnote"></div>
+  </div>
+  <div class="out">
+   <label>Images</label>
+   <div class="hint">Fluoro shots or other photos for this case. Take one or pick from your phone; they're saved to this case's folder in your Drive.</div>
+   <div class="thumbs" id="thumbs"></div>
+   <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="addImages(this.files)">
+   <button class="addimg" onclick="document.getElementById('imgIn').click()">📷 Add images</button>
+  </div>
+  <div class="out">
+   <label>Finances</label>
+   <div id="money"></div>
+  </div>
+  <div class="out">
+   <label>Case details</label>
+   <div class="box" id="cInfo"></div>
+  </div>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<div id="splash"><img src="icon-192.png" alt=""><div id="splashMsg">Opening your case log…</div></div>
+<style>#splash{position:fixed;inset:0;z-index:9999;background:#161718;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#CAD1E6;font:15px/1.45 -apple-system,Roboto,sans-serif;text-align:center;padding:24px}
+#splash img{width:96px;height:96px;border-radius:50%}#splash a,#splash button{color:#fff;font:inherit;font-weight:700;border:1.5px solid #fff;border-radius:10px;padding:10px 16px;background:transparent;text-decoration:none;margin-top:6px}</style>
 <script>
-  // The case log app (Google Apps Script). It runs inside this full-screen frame so the phone shows no address bar.
-  var APP = 'https://script.google.com/a/macros/michaelwheelermd.com/s/AKfycbz__2inKJkKl6SlAhsBih4MSkzMCsJrLQAC71UQn_PRQCnEPco7Q_4PGseae0DdCPLz-A/exec';
-  document.getElementById('direct').href = APP;
-  var f = document.createElement('iframe');
-  f.src = APP; f.title = 'Case log'; f.allow = 'clipboard-write';
-  f.onload = function () { document.getElementById('wait').className = 'gone'; };
-  document.body.appendChild(f);
-  setTimeout(function () { document.getElementById('help').style.display = 'block'; }, 9000);
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+// Phone-app plumbing: every call the screens make to Google goes to the case-log script over HTTPS with this phone's key.
+window.__PHONE = true;
+var API = "https://script.google.com/macros/s/AKfycbzmkD3HDNNwVmU2Y65Ig618WhI2_-UAnJNEG6piZt7DKtZrDsxiblrXNuN9rdrUkPh5rQ/exec", GOOGLE_APP = "https://script.google.com/a/macros/michaelwheelermd.com/s/AKfycbz__2inKJkKl6SlAhsBih4MSkzMCsJrLQAC71UQn_PRQCnEPco7Q_4PGseae0DdCPLz-A/exec", KEY = 'caselog_key';
+function takePairing() { var m = location.hash.match(/pair=([a-f0-9]{48,})/); if (!m) return false; try { localStorage.setItem(KEY, m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return true; }
+takePairing();
+window.addEventListener('hashchange', function () { if (takePairing()) location.reload(); });
+function apiKey() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+function splash(html) { document.getElementById('splashMsg').innerHTML = html; document.getElementById('splash').style.display = 'flex'; }
+function needPairing() {
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  splash('This phone isn’t set up yet.<br>Open your Case Log in Google and tap <b>Set up phone app</b>.<br><a href="' + GOOGLE_APP + '">Open Case Log in Google</a>');
+}
+function callApi(fn, args) {
+  return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ k: apiKey(), fn: fn, args: args }) })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j.error === 'not paired') { needPairing(); throw new Error('This phone isn’t set up.'); } if (j.error) throw new Error(j.error); return j.ok; });
+}
+function runner(ok, fail) {
+  return new Proxy({}, { get: function (_, name) {
+    if (name === 'withSuccessHandler') return function (f) { return runner(f, fail); };
+    if (name === 'withFailureHandler') return function (f) { return runner(ok, f); };
+    return function () { var a = [].slice.call(arguments); callApi(name, a).then(function (r) { if (ok) ok(r); }, function (e) { if (fail) fail(e); else console.warn(e); }); };
+  } });
+}
+window.google = { script: { get run() { return runner(); } } };
+function boot() {
+  if (!apiKey()) return needPairing();
+  splash('Opening your case log…');
+  callApi('init', []).then(function (init) {
+    init.icon = 'icon-192.png'; window.__INIT = init;
+    (0, eval)(document.getElementById('appjs').textContent);
+    document.getElementById('splash').style.display = 'none';
+  }).catch(function (e) {
+    if (apiKey()) splash('Couldn’t reach your case log (' + e.message + ').<br><button onclick="boot()">Try again</button>');
+  });
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
-</body>
-</html>
+<script type="text/plain" id="appjs">
+var INIT = window.__INIT;
+var day = INIT.today, cases = [], cur = null, base = '', isDirty = false, saving = false;
+var $ = function (id) { return document.getElementById(id); };
+(function () { var r = document.documentElement.style, b = INIT.brand || {}; if (b.navy) r.setProperty('--navy', b.navy); if (b.accent) r.setProperty('--accent', b.accent); if (b.off) r.setProperty('--off', b.off); if (b.light) r.setProperty('--light', b.light); })();
+function brandRow(id, sub) {
+  var w = $(id); w.innerHTML = '';
+  if (INIT.icon) { var im = document.createElement('img'); im.src = INIT.icon; im.alt = ''; im.onerror = function () { im.remove(); }; w.appendChild(im); }
+  var t = el('div', null, 'Michael R. Wheeler, MD'); t.appendChild(el('small', null, sub)); w.appendChild(t);
+}
+brandRow('who', 'Surgical cases');
+
+function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function toast(t) { var e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(function () { e.classList.remove('on'); }, 2200); }
+function parse(iso) { var p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function label(isoDay) {
+  var d = parse(isoDay), t = parse(INIT.today), diff = Math.round((d - t) / 864e5);
+  var s = d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  return diff === 1 ? 'Tomorrow, ' + s : diff === -1 ? 'Yesterday, ' + s : s;
+}
+function shift(n) { var d = parse(day); d.setDate(d.getDate() + n); go(iso(d)); }
+function loadTodo() { google.script.run.withSuccessHandler(drawTodo).wdTodo(); }
+function drawTodo(t) {
+  {
+    var b = $('todo'), parts = [];
+    if (t.rate.length) parts.push(t.rate.length + ' to rate');
+    if (t.note.length) parts.push(t.note.length + ' op note' + (t.note.length > 1 ? 's' : '') + ' missing');
+    if (t.inbox) parts.push(t.inbox + ' op note' + (t.inbox > 1 ? 's' : '') + ' need a case');
+    if (!parts.length) { b.style.display = 'none'; return; }
+    b.innerHTML = ''; b.appendChild(el('b', null, 'Complete'));
+    b.appendChild(el('span', 'tx', parts.join(', ') + ' from earlier days.' + (t.note.length || t.inbox ? ' For op notes, tell Claude which case.' : '')));
+    if (t.rate.length) b.appendChild(el('span', 'go', 'Rate ›'));
+    b.setAttribute('role', 'alert'); b.style.display = '';
+  }
+}
+function storeMonth(r) { var m = {}; r.days.forEach(function (x) { m[x.d] = x; }); weekCache[r.start] = m; }
+var weekCache = {}, viewMon = '';
+function firstOf(isoDay) { return isoDay.slice(0, 8) + '01'; }
+function gridStart(mIso) { var d = parse(mIso); d.setDate(d.getDate() - d.getDay()); return iso(d); }   // Sunday on or before the 1st
+function stepCal(n) { var d = parse(viewMon || firstOf(day)); d.setMonth(d.getMonth() + n); viewMon = iso(d); drawWeek(day); }
+function drawWeek(isoDay) {   // month calendar (kept the old name so every caller still works)
+  if (!viewMon) viewMon = firstOf(isoDay);
+  var mIso = viewMon, st = gridStart(mIso), w = weekCache[st], box = $('cal'), mm = +mIso.slice(5, 7);
+  $('monLbl').textContent = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][mm - 1] + ' ' + mIso.slice(0, 4);
+  box.innerHTML = '';
+  var g = el('div', 'cg');
+  ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(function (x) { g.appendChild(el('div', 'cw', x)); });
+  for (var i = 0; i < 42; i++) {
+    var d = parse(st); d.setDate(d.getDate() + i); var k = iso(d), x = w ? w[k] : null;
+    if (i === 35 && d.getMonth() + 1 !== mm) break;   // 5-week months: drop the empty 6th row
+    var cls = 'cd' + (d.getMonth() + 1 !== mm ? ' out' : '') + (k === isoDay ? ' on' : '') + (k === INIT.today ? ' td' : '');
+    var b = el('button', cls); b.appendChild(el('span', 'cn', String(d.getDate())));
+    var c = el('span', 'cc' + (x && x.u ? ' red' : ''), x && x.n ? String(x.n) : ''); b.appendChild(c);
+    b.setAttribute('aria-label', label(k) + (x && x.n ? ', ' + x.n + ' case' + (x.n === 1 ? '' : 's') : '') + (x && x.u ? ', ' + x.u + ' to rate' : ''));
+    (function (k) { b.onclick = function () { go(k); }; })(k);
+    g.appendChild(b);
+  }
+  box.appendChild(g);
+  if (!w) google.script.run.withSuccessHandler(function (r) {
+    storeMonth(r);
+    if (gridStart(viewMon) === r.start) drawWeek(day);
+  }).wdMonth(st);
+}
+(function () {   // swipe the calendar left/right to change months
+  var x0 = null, cal = document.getElementById('cal');
+  cal.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  cal.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) stepCal(dx < 0 ? 1 : -1); }, { passive: true });
+})();
+var dayCache = {}, refreshed = false;
+if (INIT.first) dayCache[INIT.first.day] = INIT.first.cases;
+if (INIT.month) storeMonth(INIT.month);
+if (INIT.todo) drawTodo(INIT.todo); else setTimeout(loadTodo, 400);
+if (!window.__PHONE && INIT.phoneApp) $('getApp').style.display = '';   // only in the Google page, never in the phone app
+function pairPhone(b) {
+  b.disabled = true; b.textContent = 'One moment…';
+  google.script.run.withSuccessHandler(function (link) { window.open(link, '_top'); })
+    .withFailureHandler(function (e) { b.disabled = false; b.textContent = 'Set up phone app'; toast('Could not set up: ' + e.message); }).wdPair();
+}
+setTimeout(function () { if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) stats = r; }).wdStats(); }, 2500);   // Metrics/Finance open instantly
+function refreshAll(d) {   // once per open: the server syncs only if the 10-minute run fell behind
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r) return;
+    dayCache = {}; weekCache = {};
+    if (r.month) storeMonth(r.month);
+    drawWeek(day);
+    if (r.todo) drawTodo(r.todo);
+    if (r.first) show(r.first);
+  }).wdRefresh(d);
+}
+function dayCount() { var n = (cases || []).filter(function (c) { return !/Cancelled|Postponed/.test(c.status); }).length; $('dayCnt').textContent = n ? n + ' case' + (n === 1 ? '' : 's') : ''; }
+function show(r) { dayCache[r.day] = r.cases; if (r.day !== day) return; if (rmode) { dayCases = r.cases; return; } cases = r.cases; if (!$('sheet').classList.contains('on')) render(); }
+function go(isoDay) {
+  day = isoDay; $('pick').value = isoDay; $('dayLbl').textContent = label(isoDay); viewMon = firstOf(isoDay);
+  var tb = document.querySelector('.nav .t'); if (tb) tb.classList.toggle('now', isoDay === INIT.today);
+  drawWeek(isoDay);
+  var list = $('list');
+  if (dayCache[isoDay]) { cases = dayCache[isoDay]; render(); }
+  else { list.innerHTML = ''; list.appendChild(el('div', 'empty', 'Loading…')); }
+  if (!refreshed && INIT.first && isoDay === INIT.first.day) { refreshed = true; refreshAll(isoDay); return; }   // first screen came with the page
+  google.script.run.withSuccessHandler(function (r) {
+    show(r);
+    if (!refreshed) { refreshed = true; refreshAll(r.day); }
+  }).withFailureHandler(function (e) { if (dayCache[isoDay]) return; list.innerHTML = ''; list.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); })
+    .wdDay(isoDay);
+}
+var rmode = false, smode = false, dayCases = [];
+function render() {
+  var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
+  if (!rmode) dayCount();
+  if (rmode && !smode) { $('rCount').textContent = cases.filter(function (c) { return c.status === 'Needs confirmation'; }).length + ' to rate'; }
+  if (rmode && smode) { $('rCount').textContent = searchActive() ? cases.length + (cases.length === 150 ? '+ ' : ' ') + 'found' : ''; }
+  if (!cases.length) { list.appendChild(el('div', 'empty', smode ? (searchActive() ? 'No cases match that.' : 'Type a name or procedure, or tap a keyword or a year.') : rmode ? 'All caught up. Every past case has a rating.' : 'No cases on this day.')); return; }
+  var lastDate = '';
+  cases.forEach(function (c, i) {
+    if (rmode && c.dateLabel !== lastDate) { lastDate = c.dateLabel; list.appendChild(el('div', 'dhd', c.dateLabel)); }
+    var sc = c.status === 'Performed' ? ' s-done' : c.status === 'Needs confirmation' ? ' s-rate' : /Cancelled|Postponed|Removed/.test(c.status) ? ' s-off' : '';
+    var card = el('div', 'card' + sc); card.onclick = function () { openCase(i); };
+    card.appendChild(el('div', 'tm', c.start || '—'));
+    var m = el('div'); m.style.flex = '1'; m.style.minWidth = '0';
+    m.appendChild(el('div', 'nm', c.patient || 'Patient'));
+    var sub = [c.age, c.sex].filter(Boolean).join(', '); if (sub) m.appendChild(el('div', 'sub', sub));
+    if (c.procedure) m.appendChild(el('div', 'proc', c.procedure + (c.side ? ', ' + c.side.toLowerCase() : '')));
+    var tags = el('div', 'tags');
+    if (c.duration) tags.appendChild(el('span', 'tag', c.duration));
+    if (/Cancelled|Postponed|Removed/.test(c.status)) tags.appendChild(el('span', 'tag x', c.status));
+    if (c.status === 'Needs confirmation') tags.appendChild(el('span', 'tag w', 'Needs rating'));
+    if (c.difficulty) tags.appendChild(el('span', 'tag d', 'Difficulty ' + c.difficulty));
+    if (c.levels) tags.appendChild(el('span', 'tag', c.levels));
+    if (c.images) tags.appendChild(el('span', 'tag', '📷 ' + c.images));
+    if (c.notes) tags.appendChild(el('span', 'tag n', '📝 Notes'));
+    if (c.cx) tags.appendChild(el('span', 'tag x', c.cx));
+    if (c.vendor) c.vendor.split(/s*,s*/).forEach(function (v) { tags.appendChild(el('span', 'tag vd' + (v === 'Medtronic' ? ' mdt' : v === 'NuVasive' ? ' nuv' : ''), v)); });
+    if (c.opnoteUrl) tags.appendChild(el('span', 'tag', '📄 Op note'));
+    if (tags.childNodes.length) m.appendChild(tags);
+    card.appendChild(m); list.appendChild(card);
+  });
+}
+function addRow(box, k, v, href) {
+  if (!v) return;
+  var r = el('div', 'row'); r.appendChild(el('div', 'k', k));
+  var val = el('div', 'v');
+  if (href) { var a = el('a', null, v); a.href = href; a.target = '_blank'; a.rel = 'noopener'; val.appendChild(a); } else val.textContent = v;
+  r.appendChild(val); box.appendChild(r);
+}
+function phoneRow(box, txt) {
+  if (!txt) return;
+  var r = el('div', 'row'); r.appendChild(el('div', 'k', 'Phone')); var v = el('div', 'v');
+  txt.split(/ *· */).forEach(function (part, i) {
+    if (i) v.appendChild(document.createElement('br'));
+    var d = part.replace(/[^0-9]/g, '').replace(/^1(?=[0-9]{10}$)/, '');
+    if (d.length === 10) { var a = el('a', null, part); a.href = 'tel:' + d; v.appendChild(a); } else v.appendChild(document.createTextNode(part));
+  });
+  r.appendChild(v); box.appendChild(r);
+}
+function openCase(i) {
+  cur = cases[i]; base = cur.notes || ''; isDirty = false;
+  $('cName').textContent = cur.patient || 'Patient';
+  $('cSub').textContent = [cur.start, cur.age, cur.sex].filter(Boolean).join(', ');
+  var b = $('cInfo'); b.innerHTML = '';
+  addRow(b, 'DOB', cur.dob); addRow(b, 'Age', cur.age); addRow(b, 'Sex', cur.sex); phoneRow(b, cur.phone);
+  addRow(b, 'Insurance', cur.insurance); addRow(b, 'Procedure', cur.procedure); addRow(b, 'Case type', cur.caseType);
+  addRow(b, 'Levels', cur.levels); addRow(b, 'CPT', cur.cpt);
+  addRow(b, 'Side', cur.side); addRow(b, 'Diagnosis', cur.dx); addRow(b, 'Start', cur.start); addRow(b, 'Duration', cur.duration);
+  addRow(b, 'Assistant', cur.assistant); addRow(b, 'Anesthesia', cur.anesthesia); addRow(b, 'Stay', cur.stay);
+  addRow(b, 'Position', cur.position); addRow(b, 'Facility', cur.facility); addRow(b, 'Status', cur.status);
+  renderOutcome(); loadImages(); renderMoney(null);
+  if (cur.vendor) addRow(b, 'Vendor', cur.vendor);
+  if (cur.order) addRow(b, 'Order', 'Open surgery order', cur.order);
+  var on = $('opnote'); on.innerHTML = '';
+  if (cur.opnoteUrl) { var a = el('a', 'addimg oplink', 'Open op note'); a.href = cur.opnoteUrl; a.target = '_blank'; a.rel = 'noopener'; on.appendChild(a); }
+  else on.appendChild(el('div', 'hint', 'Files itself here after Claude writes it.'));
+  $('notes').value = base; $('st').textContent = ''; $('conf').style.display = 'none'; $('saveBtn').disabled = false;
+  $('sheet').classList.add('on');
+}
+function renderMoney(m) {
+  var box = $('money'); box.innerHTML = '';
+  if (!m) {
+    var bt = el('button', 'addimg', 'Show finances'), c = cur;
+    bt.onclick = function () {
+      bt.disabled = true; bt.textContent = 'Loading…';
+      google.script.run.withSuccessHandler(function (r) { if (cur === c) renderMoney(r); })
+        .withFailureHandler(function (e) { bt.disabled = false; bt.textContent = 'Show finances'; box.appendChild(el('div', 'hint', 'Could not load: ' + e.message)); }).wdCaseMoney(c.id);
+    };
+    box.appendChild(bt); return;
+  }
+  var b = el('div', 'box'); box.appendChild(b);
+  var tot = (m.fee || 0) + (m.neuro || 0) + (m.pa || 0);
+  addRow(b, 'Expected case value', tot ? money(tot) : 'No estimate');
+  addRow(b, 'Expected pro fee', m.fee ? money(m.fee) : 'No estimate' + (m.group ? ' (' + m.group + ')' : ''));
+  if (m.group) addRow(b, 'Payer group', m.group);
+  if (m.expected) addRow(b, 'Billed CPTs', m.expected);
+  addRow(b, 'Expected PA/IDR', m.commercial ? money(m.pa) : 'Not counted (not commercial)');
+  addRow(b, 'Neuro', m.commercial ? money(m.neuro) + ' over 12 months' : 'Not counted (not commercial)');
+  var pa = m.payments.reduce(function (s, p) { return s + p.a; }, 0);
+  addRow(b, 'PA collected (SUSA)', m.payments.length ? money(pa) : 'None yet');
+  m.payments.forEach(function (p) { addRow(b, p.d || 'Payment', money(p.a) + (p.k ? ', ' + p.k : '')); });
+  var hd = el('button', 'addimg', 'Hide finances'); hd.onclick = function () { renderMoney(null); }; box.appendChild(hd);
+}
+var imgs = [];
+function loadImages() {
+  imgs = []; renderThumbs(); var c = cur;
+  google.script.run.withSuccessHandler(function (l) { if (cur !== c) return; imgs = (l || []).map(function (id) { return { id: id }; }); c.images = imgs.length; renderThumbs(); })
+    .withFailureHandler(function () {}).wdImages(c.id);
+}
+function renderThumbs() {
+  var box = $('thumbs'); box.innerHTML = '';
+  imgs.forEach(function (im, i) {
+    var a = el('a', 'th');
+    if (im.id) { a.href = 'https://drive.google.com/file/d/' + im.id + '/view'; a.target = '_blank'; a.rel = 'noopener'; }
+    var img = document.createElement('img');
+    img.src = im.local || ('https://drive.google.com/thumbnail?id=' + im.id + '&sz=w400');
+    img.alt = 'Image ' + (i + 1);
+    img.onerror = function () { img.remove(); var ph = el('div', 'ph', 'Image ' + (i + 1)); a.insertBefore(ph, a.firstChild); };
+    a.appendChild(img);
+    if (im.busy) a.appendChild(el('span', 'busy', 'Uploading…'));
+    if (im.failed) a.appendChild(el('span', 'busy', 'Not saved'));
+    if (im.id && !im.busy) {
+      var rm = el('button', 'rm', '×');
+      rm.onclick = function (ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        if (rm.className !== 'rm sure') { rm.className = 'rm sure'; rm.textContent = 'Remove?'; setTimeout(function () { if (rm.isConnected) { rm.className = 'rm'; rm.textContent = '×'; } }, 3000); return; }
+        removeImage(im);
+      };
+      a.appendChild(rm);
+    }
+    box.appendChild(a);
+  });
+}
+function shrink(file, cb) {
+  var r = new FileReader();
+  r.onload = function () {
+    var im = new Image();
+    im.onload = function () {
+      var M = 2000, s = Math.min(1, M / Math.max(im.width, im.height)), cv = document.createElement('canvas');
+      cv.width = Math.round(im.width * s); cv.height = Math.round(im.height * s);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+      cb(cv.toDataURL('image/jpeg', 0.85));
+    };
+    im.onerror = function () { cb(null); };
+    im.src = r.result;
+  };
+  r.onerror = function () { cb(null); };
+  r.readAsDataURL(file);
+}
+function addImages(files) {
+  var c = cur, list = Array.prototype.slice.call(files || []);
+  $('imgIn').value = '';
+  var next = function () {
+    if (!list.length) { render(); return; }
+    shrink(list.shift(), function (data) {
+      if (!data) { toast('Could not read that photo'); next(); return; }
+      var item = { local: data, busy: true };
+      if (cur === c) { imgs.push(item); renderThumbs(); }
+      google.script.run.withSuccessHandler(function (r) { item.id = r.id; item.busy = false; c.images = r.n; if (cur === c) renderThumbs(); toast('Image saved'); next(); })
+        .withFailureHandler(function (e) { item.busy = false; item.failed = true; if (cur === c) renderThumbs(); toast('Not saved: ' + e.message); next(); })
+        .wdAddImage(c.id, data);
+    });
+  };
+  next();
+}
+function removeImage(im) {
+  var c = cur;
+  google.script.run.withSuccessHandler(function (left) { c.images = left.length; if (cur === c) { imgs = imgs.filter(function (x) { return x !== im; }); renderThumbs(); } toast('Image removed'); render(); })
+    .withFailureHandler(function (e) { toast('Not removed: ' + e.message); }).wdRemoveImage(c.id, im.id);
+}
+function isFuture(c) { var d = c.date || day; return d > INIT.today; }
+function renderOutcome() {
+  $('outCard').style.display = cur.canRate === false ? 'none' : '';
+  var box = $('rate'); box.innerHTML = '';
+  var fut = isFuture(cur) && !cur.difficulty;
+  box.className = fut ? 'rate locked' : 'rate';
+  [1, 2, 3, 4, 5].forEach(function (n) {
+    var bt = el('button', String(cur.difficulty) === String(n) ? 'on' : '', String(n));
+    if (fut) { bt.disabled = true; bt.setAttribute('aria-disabled', 'true'); }
+    else bt.onclick = function () { setOutcome(String(cur.difficulty) === String(n) ? 'clear' : n); };
+    box.appendChild(bt);
+  });
+  var L = INIT.labels || {};
+  $('rlbl').textContent = fut ? 'Rating opens on the day of surgery.' : cur.difficulty ? L[cur.difficulty] || '' : 'Not rated yet';
+  var cx = $('cxBtn'), off = cur.status === 'Cancelled';
+  clearTimeout(cxTimer); cx.className = off ? 'cx on' : 'cx'; cx.textContent = off ? 'Cancelled. Tap to undo' : 'Surgery was cancelled';
+  renderCx();
+  var lg = $('legend'); lg.innerHTML = '';
+  [1, 2, 3, 4, 5].forEach(function (n) { var r = el('div', 'lrow'); r.appendChild(el('b', null, String(n))); r.appendChild(el('span', null, L[n] || '')); lg.appendChild(r); });
+}
+function renderCx() {
+  var box = $('cxs'); box.innerHTML = '';
+  var have = (cur.cx || '').split(/s*,s*/).filter(Boolean);
+  (INIT.cx || []).forEach(function (name) {
+    var on = have.indexOf(name) >= 0, bt = el('button', on ? 'cxc on' : 'cxc', name);
+    if (isFuture(cur) && !on) { bt.disabled = true; box.appendChild(bt); return; }
+    bt.setAttribute('aria-pressed', on ? 'true' : 'false');
+    bt.onclick = function () {
+      var next = on ? have.filter(function (x) { return x !== name; }) : have.concat([name]), c = cur;
+      c.cx = next.join(', '); renderCx();
+      google.script.run.withSuccessHandler(function (v) { c.cx = v; if (cur === c) renderCx(); toast(v ? 'Saved' : 'Cleared'); render(); })
+        .withFailureHandler(function (e) { toast('Not saved: ' + e.message); }).wdComplications(c.id, next);
+    };
+    box.appendChild(bt);
+  });
+}
+var cxTimer = null;
+function cancelTap() {
+  if (!cur) return;
+  var cx = $('cxBtn');
+  if (cur.status === 'Cancelled') { setOutcome('clear'); return; }
+  if (cx.className !== 'cx sure') {   // first tap only arms it
+    cx.className = 'cx sure'; cx.textContent = 'Tap again to mark cancelled';
+    cxTimer = setTimeout(function () { if (cx.className === 'cx sure') { cx.className = 'cx'; cx.textContent = 'Surgery was cancelled'; } }, 3000);
+    return;
+  }
+  clearTimeout(cxTimer); setOutcome('cancelled');
+}
+function toggleLegend() {
+  var lg = $('legend'), on = !lg.classList.contains('on');
+  lg.classList.toggle('on', on); $('infoBtn').setAttribute('aria-expanded', on ? 'true' : 'false'); $('infoBtn').classList.toggle('on', on);
+}
+function setOutcome(o) {
+  if (!cur) return;
+  var c = cur;
+  google.script.run.withSuccessHandler(function (r) {
+    c.status = r.status; c.difficulty = r.difficulty;
+    if (cur === c) { renderOutcome(); openRowsStatus(); }
+    toast(r.status === 'Performed' ? 'Rated ' + r.difficulty : r.status === 'Cancelled' ? 'Marked cancelled' : 'Cleared');
+    render();
+  }).withFailureHandler(function (e) { toast('Not saved: ' + e.message); }).wdOutcome(c.id, o);
+}
+function openRowsStatus() {
+  var rows = $('cInfo').querySelectorAll('.row');
+  for (var i = 0; i < rows.length; i++) if (rows[i].firstChild.textContent === 'Status') rows[i].lastChild.textContent = cur.status;
+}
+function dirty() { isDirty = true; $('st').textContent = 'Not saved yet'; }
+function stamp() {
+  var t = $('notes'), now = new Date();
+  var s = (now.getMonth() + 1) + '/' + now.getDate() + ' ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' — ';
+  var NL = String.fromCharCode(10), pre = t.value && t.value.slice(-1) !== NL ? NL : '';
+  t.value += pre + s; t.focus(); t.setSelectionRange(t.value.length, t.value.length); dirty();
+}
+function save(force, after) {
+  if (!cur || saving) return;
+  var text = $('notes').value, c = cur; saving = true; $('saveBtn').disabled = true; $('st').textContent = 'Saving…';
+  google.script.run.withSuccessHandler(function (r) {
+    saving = false; $('saveBtn').disabled = false;
+    if (r.conflict) { $('confTxt').textContent = r.current; $('conf').style.display = 'block'; $('st').textContent = 'Not saved — see below'; return; }
+    c.notes = text; base = text; if (cur === c) { isDirty = false; $('st').textContent = 'Saved ' + r.saved; $('conf').style.display = 'none'; }
+    toast('Notes saved'); render(); if (after) after();
+  }).withFailureHandler(function (e) { saving = false; $('saveBtn').disabled = false; $('st').textContent = 'Not saved: ' + e.message; })
+    .wdSave(c.id, text, base, !!force);
+}
+function useSheet() { var t = $('confTxt').textContent; $('notes').value = t; base = t; cur.notes = t; isDirty = false; $('conf').style.display = 'none'; $('st').textContent = 'Showing the case log version'; render(); }
+function closeCase() {
+  if (isDirty && !saving) { save(false, function () { $('sheet').classList.remove('on'); afterClose(); }); return; }
+  if (!saving) { $('sheet').classList.remove('on'); afterClose(); }
+}
+function afterClose() { if (rmode && smode) { render(); return; } if (rmode) { cases = cases.filter(function (c) { return c.status === 'Needs confirmation'; }); render(); } }
+function openRating() {
+  smode = false; $('rTitle').textContent = 'Needs rating'; $('sbox').style.display = 'none';
+  dayCases = cases; rmode = true; cases = []; $('rList').innerHTML = ''; $('rList').appendChild(el('div', 'empty', 'Loading…')); $('rCount').textContent = '';
+  $('rsheet').classList.add('on');
+  google.script.run.withSuccessHandler(function (l) { if (!rmode) return; cases = l || []; render(); })
+    .withFailureHandler(function (e) { $('rList').innerHTML = ''; $('rList').appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdNeedsRating();
+}
+var sTimer = null, sSeq = 0;
+var SKEYS = ['Dural tear', 'Any complication', 'New neuro deficit', 'Hardware complication', 'Neuromonitoring alert', 'ACDF', 'ALIF', 'Lateral', 'TLIF', 'Posterior fusion', 'Disc replacement', 'Microdiscectomy', 'Laminotomy', 'Foraminotomy', 'Revision', 'Cervical', 'Lumbar', 'Hard (4–5)', 'NuVasive', 'Medtronic'];
+var sKeys = {}, sY = 0, sM = 0;
+function openSearch() {
+  smode = true; rmode = true; dayCases = cases; cases = []; sKeys = {}; sY = 0; sM = 0;
+  $('rTitle').textContent = 'Search'; $('sbox').style.display = ''; $('q').value = ''; $('rCount').textContent = '';
+  drawSearchChips(); render(); $('rsheet').classList.add('on');
+}
+function drawSearchChips() {
+  var ty = +INIT.today.slice(0, 4), ys = $('sYrs'); ys.innerHTML = '';
+  var a = el('button', sY ? 'chip' : 'chip on', 'All time'); a.onclick = function () { sY = 0; sM = 0; drawSearchChips(); runSearch(); }; ys.appendChild(a);
+  for (var y = ty; y >= ty - 3; y--) (function (y) { var b = el('button', y === sY ? 'chip on' : 'chip', String(y)); b.onclick = function () { sY = y; sM = 0; drawSearchChips(); runSearch(); }; ys.appendChild(b); })(y);
+  var ms = $('sMos'); ms.innerHTML = ''; ms.style.display = sY ? '' : 'none';
+  if (sY) {
+    var w = el('button', sM ? 'chip' : 'chip on', 'Full year'); w.onclick = function () { sM = 0; drawSearchChips(); runSearch(); }; ms.appendChild(w);
+    MON.forEach(function (n, i) { var b = el('button', sM === i + 1 ? 'chip on' : 'chip', n); b.onclick = function () { sM = i + 1; drawSearchChips(); runSearch(); }; ms.appendChild(b); });
+    var on = ms.querySelector('.chip.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
+  var ks = $('sKeys'); ks.innerHTML = '';
+  SKEYS.forEach(function (k) { var b = el('button', sKeys[k] ? 'chip on' : 'chip', k); b.onclick = function () { if (sKeys[k]) delete sKeys[k]; else sKeys[k] = 1; drawSearchChips(); runSearch(); }; ks.appendChild(b); });
+}
+function searchActive() { return !!($('q').value.trim() || sY || Object.keys(sKeys).length); }
+function searchSoon() { clearTimeout(sTimer); sTimer = setTimeout(runSearch, 350); }
+function runSearch() {
+  var q = $('q').value.trim(), my = ++sSeq;
+  if (!searchActive()) { cases = []; render(); return; }
+  $('rCount').textContent = 'Searching…';
+  google.script.run.withSuccessHandler(function (l) { if (my !== sSeq || !smode) return; cases = l || []; render(); })
+    .withFailureHandler(function (e) { $('rCount').textContent = 'Could not search: ' + e.message; }).wdSearch(q, { keys: Object.keys(sKeys), y: sY, m: sM });
+}
+function closeRating() {
+  weekCache = {}; loadTodo();
+  if (smode) { smode = false; rmode = false; cases = dayCases; $('rsheet').classList.remove('on'); $('q').blur(); go(day); return; }
+  rmode = false; cases = dayCases; $('rsheet').classList.remove('on'); stats = null; dayCache = {};
+  if ($('vStats').style.display !== 'none') loadStats();
+}
+var stats = null, per = 'sel', inclUnrated = false, selY = 0, selM = 0;   // selY 0 = all time; selM 0 = whole year
+var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+brandRow('who2', 'Metrics');
+brandRow('who3', 'Finance');
+function setTab(t) {
+  $('vCases').style.display = t === 'cases' ? '' : 'none';
+  $('vStats').style.display = t === 'stats' ? '' : 'none';
+  $('vFin').style.display = t === 'fin' ? '' : 'none';
+  $('tCases').className = t === 'cases' ? 'on' : ''; $('tStats').className = t === 'stats' ? 'on' : ''; $('tFin').className = t === 'fin' ? 'on' : '';
+  window.scrollTo(0, 0);
+  if (t !== 'fin') hideMoney();
+  if (t === 'stats') { per = 'sel'; selY = +INIT.today.slice(0, 4); selM = +INIT.today.slice(5, 7); loadStats(); } else if (t === 'fin') { renderFin(); } else go(day);
+}
+// ---- Finance tab: amounts are not drawn until you tap Show amounts; leaving the tab hides them again ----
+var finShown = false, finPer = '12m', inPerFin = function () { return true; };
+function hideMoney() { finShown = false; $('fBody').innerHTML = ''; }
+function setFPer(p) {
+  finPer = p; var ch = $('fchips').children;
+  for (var i = 0; i < ch.length; i++) ch[i].className = ch[i].getAttribute('data-p') === p ? 'chip on' : 'chip';
+  renderFin();
+}
+function renderFin() {
+  var b = $('fBody'); b.innerHTML = '';
+  if (!finShown) {
+    var w = el('div', 'veil');
+    w.appendChild(el('div', 'vt', 'Amounts are hidden'));
+    w.appendChild(el('div', 'note', 'They hide again when you leave this tab.'));
+    var bt = el('button', 'addimg', 'Show amounts'); bt.onclick = function () { finShown = true; renderFin(); };
+    w.appendChild(bt); b.appendChild(w); return;
+  }
+  if (!stats) {
+    b.appendChild(el('div', 'empty', 'Loading…'));
+    google.script.run.withSuccessHandler(function (r) { stats = r; if (finShown) renderFin(); })
+      .withFailureHandler(function (e) { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdStats();
+    return;
+  }
+  cardTarget = 'fBody';
+  var savedPer = per; per = finPer;
+  var sel = stats.cases.filter(function (c) { return counted(c) && inPer(c); });
+  var pay = (stats.pay || []).filter(function (p) { return inPer({ d: p.d }); });
+  inPerFin = function (d) { per = finPer; var r = inPer({ d: d }); per = savedPer; return r; };
+  per = savedPer;
+  var fee = sel.reduce(function (s, c) { return s + c.f; }, 0), feeN = sel.filter(function (c) { return c.f > 0; }).length;
+  var pa = pay.reduce(function (s, p) { return s + p.a; }, 0), awards = pay.filter(function (p) { return /Award|Additional/.test(p.k); });
+  var nv = (stats.neuro && stats.neuro.value) || 0, pv = (stats.neuro && stats.neuro.pa) || 0, ncm = sel.filter(function (c) { return c.cm; }).length;
+  var total = fee + ncm * (nv + pv);
+  var tiles = el('div', 'tiles'); b.appendChild(tiles);
+  tile(tiles, money(total), 'Expected total');
+  tile(tiles, sel.length ? money(total / sel.length) : '–', 'Per case');
+  tile(tiles, money(fee), 'Expected pro fees');
+  tile(tiles, money(ncm * pv), 'Expected PA/IDR');
+  tile(tiles, money(ncm * nv), 'Expected neuromonitoring');
+  tile(tiles, String(ncm) + ' of ' + sel.length, 'Commercial cases');
+  var fs = {}; sel.forEach(function (c) { if (c.f > 0) fs[c.t] = (fs[c.t] || 0) + c.f; });
+  hbars(card('Expected pro fees by case type', 'Estimates from your 2024–2026 collections. Medicare, self-pay and WC/auto are not estimated.'),
+    Object.keys(fs).map(function (k) { return { k: k, v: fs[k] }; }).sort(function (a, b) { return b.v - a.v; }), 'No estimates in this period yet.', money);
+  var fp = {}; sel.forEach(function (c) { if (c.f > 0) fp[c.ins] = (fp[c.ins] || 0) + c.f; });
+  hbars(card('Expected pro fees by payer'), Object.keys(fp).map(function (k) { return { k: k, v: fp[k] }; }).sort(function (a, b) { return b.v - a.v; }), 'No estimates in this period yet.', money);
+  hbars(card('Expected value by case type', 'Pro fee plus ' + money(pv) + ' PA/IDR and ' + money(nv) + ' neuromonitoring per commercial case. Change those two values on the Neuromonitoring tab of your case log.'),
+    (function () { var o = {}; sel.forEach(function (c) { o[c.t] = (o[c.t] || 0) + c.f + (c.cm ? nv + pv : 0); }); return Object.keys(o).map(function (k) { return { k: k, v: o[k] }; }).sort(function (a, b) { return b.v - a.v; }); })(), 'No cases in this period yet.', money);
+}
+function loadStats() {
+  var b = $('sBody');
+  if (stats) { drawPicker(); renderStats(); }   // fetched in the background when the app opened: draw now, refresh quietly
+  else { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Loading…')); }
+  google.script.run.withSuccessHandler(function (r) {
+    stats = r; if (!selY && per === 'sel' && !loadStats.done) { selY = +r.today.slice(0, 4); selM = +r.today.slice(5, 7); }
+    loadStats.done = true; drawPicker(); renderStats();
+  }).withFailureHandler(function (e) { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdStats();
+}
+function setSel(y, m) { selY = y; selM = y ? m : 0; per = 'sel'; drawPicker(); renderStats(); }
+function stepMonth(d) {
+  if (!selY) { var t = stats.today; setSel(+t.slice(0, 4), +t.slice(5, 7)); return; }
+  if (!selM) { setSel(selY + d, 0); return; }
+  var m = selM + d, y = selY; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+  setSel(y, m);
+}
+function drawPicker() {
+  if (!stats) return;
+  var t = stats.today, ty = +t.slice(0, 4), lo = ty, hi = ty;
+  stats.cases.forEach(function (c) { var y = +c.d.slice(0, 4); if (y < lo) lo = y; if (y > hi) hi = y; });
+  if (!selY && selY !== 0) selY = ty;
+  var ys = $('yrs'); ys.innerHTML = '';
+  for (var y = lo; y <= hi; y++) (function (y) { var b = el('button', y === selY ? 'chip on' : 'chip', String(y)); b.onclick = function () { setSel(y, selY === y ? selM : 0); }; ys.appendChild(b); })(y);
+  var a = el('button', selY ? 'chip' : 'chip on', 'All time'); a.onclick = function () { setSel(0, 0); }; ys.appendChild(a);
+  var ms = $('mos'); ms.innerHTML = ''; ms.style.display = selY ? '' : 'none';
+  if (selY) {
+    var w = el('button', selM ? 'chip' : 'chip on', 'Full year'); w.onclick = function () { setSel(selY, 0); }; ms.appendChild(w);
+    MON.forEach(function (n, i) {
+      var fut = selY > ty || (selY === ty && i + 1 > +t.slice(5, 7));
+      var b = el('button', (selM === i + 1 ? 'chip on' : 'chip') + (fut ? ' fut' : ''), n);
+      b.onclick = function () { setSel(selY, i + 1); }; ms.appendChild(b);
+    });
+    var on = ms.querySelector('.chip.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
+  $('perLbl').textContent = !selY ? 'All time' : selM ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][selM - 1] + ' ' + selY : selY + ' full year';
+}
+function monthKey(isoDay, off) {
+  var y = +isoDay.slice(0, 4), m = +isoDay.slice(5, 7) - 1 + off;
+  y += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
+  return y + '-' + ('0' + (m + 1)).slice(-2);
+}
+function counted(c) { return c.s === 'Performed' || (inclUnrated && c.s === 'Needs confirmation'); }
+function inPer(c) {
+  var t = stats.today;
+  if (per === 'sel') { if (!selY) return true; if (+c.d.slice(0, 4) !== selY) return false; return !selM || +c.d.slice(5, 7) === selM; }
+  if (per === 'month') return c.d.slice(0, 7) === t.slice(0, 7);
+  if (per === 'ytd') return c.d.slice(0, 4) === t.slice(0, 4) && c.d <= t;
+  if (per === '12m') return c.d >= monthKey(t, -11) + '-01' && c.d <= t;
+  return true;
+}
+function tally(list, keyFn) {
+  var o = {};
+  list.forEach(function (c) { var ks = keyFn(c); (Array.isArray(ks) ? ks : [ks]).forEach(function (k) { if (k === '' || k == null) return; o[k] = (o[k] || 0) + 1; }); });
+  return Object.keys(o).map(function (k) { return { k: k, v: o[k] }; }).sort(function (a, b) { return b.v - a.v || (a.k < b.k ? -1 : 1); });
+}
+var cardTarget = 'sBody';
+function card(title, note) {
+  var c = el('div', 'card2'); c.appendChild(el('h3', null, title));
+  c.appendChild(el('div', 'note', note || '')); $(cardTarget).appendChild(c); return c;
+}
+function money(v) { return '$' + Math.round(v).toLocaleString('en-US'); }
+function hbars(box, rows, emptyMsg, fmt) {
+  var max = Math.max.apply(null, [0].concat(rows.map(function (r) { return r.v; })));
+  if (!rows.length || !max) { box.appendChild(el('div', 'note', emptyMsg || 'Nothing in this period yet.')); return; }
+  rows.forEach(function (r) {
+    var row = el('div', 'hb'); row.appendChild(el('div', 'k', r.k));
+    var tr = el('div', 'track'), f = el('div', 'fill'); f.style.width = (r.v ? Math.max(2, r.v / max * 100) : 0) + '%';
+    tr.appendChild(f); row.appendChild(tr); row.appendChild(el('div', 'c', fmt ? fmt(r.v) : String(r.v))); box.appendChild(row);
+  });
+}
+function tile(box, n, l, onTap) {
+  var t = el(onTap ? 'button' : 'div', onTap ? 'tile tap' : 'tile'); t.appendChild(el('div', 'n', n)); t.appendChild(el('div', 'l', l + (onTap ? ' ›' : '')));
+  if (onTap) t.onclick = onTap; box.appendChild(t);
+}
+function renderStats() {
+  cardTarget = 'sBody';
+  var b = $('sBody'); b.innerHTML = ''; if (!stats) return;
+  var all = stats.cases, t = stats.today;
+  var sel = all.filter(function (c) { return counted(c) && inPer(c); });
+  var lv = sel.reduce(function (s, c) { return s + c.n; }, 0), withLv = sel.filter(function (c) { return c.n > 0; }).length;
+  var rated = sel.filter(function (c) { return c.df > 0; });
+  var tiles = el('div', 'tiles'); b.appendChild(tiles);
+  tile(tiles, String(sel.length), 'Cases completed');
+  tile(tiles, String(lv), 'Levels');
+  tile(tiles, withLv ? (lv / withLv).toFixed(1) : '–', 'Levels per case');
+  tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Avg difficulty (1–5)');
+  var schLbl = per === 'sel' && selY ? (selM ? (selY + '-' + ('0' + selM).slice(-2) === t.slice(0, 7) ? 'Scheduled this month' : 'Scheduled in ' + MON[selM - 1]) : 'Scheduled in ' + selY) : 'Scheduled (all upcoming)';
+  tile(tiles, String(all.filter(function (c) { return c.s === 'Scheduled' && c.d >= t && inPer(c); }).length), schLbl);
+  tile(tiles, String(all.filter(function (c) { return c.s === 'Needs confirmation'; }).length), 'Awaiting your rating', openRating);
+  if (!sel.length) b.appendChild(el('div', 'note', inclUnrated ? 'No cases in this period yet.' : 'No rated cases in this period yet. Rate cases on the Cases tab, or turn on "Include past cases I haven’t rated".'));
+
+  var cy = selY || +t.slice(0, 4), py = cy - 1;
+  var center = per === 'sel' && selY && selM ? selY + '-' + ('0' + selM).slice(-2) : t.slice(0, 7);
+  var keys = [monthKey(center + '-01', -1), center, monthKey(center + '-01', 1)];   // three months: before, this one, after
+  var data = keys.map(function (mk) {
+    var pk = (+mk.slice(0, 4) - 1) + mk.slice(4);
+    var inM = all.filter(function (c) { return c.d.slice(0, 7) === mk; }), done = inM.filter(counted);
+    return { mk: mk, done: done.length, sch: inM.filter(function (c) { return c.s === 'Scheduled'; }).length, prev: all.filter(function (c) { return c.d.slice(0, 7) === pk && counted(c); }).length };
+  });
+  var thruM = cy === +t.slice(0, 4) ? +t.slice(5, 7) : 12;   // year to date vs the same months last year
+  var ytd = 0, pytd = 0;
+  all.forEach(function (c) { if (!counted(c)) return; var y = +c.d.slice(0, 4), m = +c.d.slice(5, 7); if (m > thruM) return; if (y === cy) ytd++; else if (y === py) pytd++; });
+  var diff = pytd ? Math.round(100 * (ytd - pytd) / pytd) : null;
+  var span = thruM === 12 ? 'Full year' : 'Jan–' + MON[thruM - 1];
+  var mc = card('Cases by month', 'This year next to last year. ' + cy + ' ' + span + ': ' + ytd + ' vs ' + pytd + (diff === null ? '' : ' (' + (diff >= 0 ? '+' : '') + diff + '%)') + '.');
+  var max = Math.max(1, Math.max.apply(null, data.map(function (d) { return Math.max(d.done + d.sch, d.prev); })));
+  var cols = el('div', 'cols c3'), xl = el('div', 'xl c3'), info = el('div', 'note'); info.style.margin = '8px 0 0'; info.textContent = ' ';
+  data.forEach(function (d) {
+    var col = el('div', 'col'), tot = d.done + d.sch, pair = el('div', 'pair');
+    var pw = el('div', 'bw'); pw.appendChild(el('div', 'v pv', String(d.prev)));
+    if (d.prev) { var pb = el('div', 'bar prv'); pb.style.height = (d.prev / max * 112) + 'px'; pw.appendChild(pb); }
+    var cw = el('div', 'bw'); cw.appendChild(el('div', 'v', String(tot)));
+    if (d.sch) { var sb = el('div', 'bar sch'); sb.style.height = (d.sch / max * 112) + 'px'; cw.appendChild(sb); }
+    if (d.done) { var x = el('div', 'bar'); x.style.height = (d.done / max * 112) + 'px'; if (d.sch) x.style.borderRadius = '0'; cw.appendChild(x); }
+    pair.appendChild(pw); pair.appendChild(cw); col.appendChild(pair);
+    if (d.mk === center) col.className = 'col sel';
+    col.setAttribute('aria-label', MON[+d.mk.slice(5) - 1] + ': ' + tot + ' this year, ' + d.prev + ' last year');
+    col.onclick = function () { setSel(+d.mk.slice(0, 4), +d.mk.slice(5)); };
+    cols.appendChild(col);
+    xl.appendChild(el('span', null, MON[+d.mk.slice(5) - 1] + (d.mk.slice(0, 4) !== center.slice(0, 4) ? ' ' + d.mk.slice(2, 4) : '')));
+  });
+  var cd = data[1], ct = cd.done + cd.sch;
+  info.textContent = MON[+center.slice(5) - 1] + ': ' + ct + ' this year' + (cd.sch ? ' (' + cd.sch + ' still scheduled)' : '') + ' vs ' + cd.prev + ' last year' + (cd.prev ? ' (' + (ct >= cd.prev ? '+' : '') + Math.round(100 * (ct - cd.prev) / cd.prev) + '%)' : '') + '.';
+  mc.appendChild(cols); mc.appendChild(xl);
+  var lg = el('div', 'lg');
+  [['#9AA1AE', 'Last year'], ['#2F8CFF', 'This year'], ['#F5A524', 'Scheduled']].forEach(function (p) { var s = el('span'), w = el('span', 'sw'); w.style.boxShadow = 'inset 0 0 0 10px ' + p[0]; s.appendChild(w); s.appendChild(document.createTextNode(p[1])); lg.appendChild(s); });
+  mc.appendChild(lg); mc.appendChild(info);
+
+  hbars(card('By case type'), tally(sel, function (c) { return c.t; }));
+  var LV = ['1 level', '2 levels', '3 levels', '4+ levels', 'Not stated'];
+  hbars(card('Levels per case'), tally(sel, function (c) { return c.n ? (c.n >= 4 ? LV[3] : LV[c.n - 1]) : LV[4]; }).sort(function (a, b) { return LV.indexOf(a.k) - LV.indexOf(b.k); }));
+  hbars(card('By payer', 'Share of cases in this period.'), tally(sel, function (c) { return c.ins; }), null,
+    function (v) { return v + ' (' + Math.round(100 * v / Math.max(1, sel.length)) + '%)'; });
+  hbars(card('CPT mix', 'Expected CPTs; each code counted once per case. Top 15.'), tally(sel, function (c) { return c.cpt; }).slice(0, 15));
+  var L = INIT.labels || {};
+  var withX = rated.filter(function (c) { return c.x; }), xs = {};
+  withX.forEach(function (c) { c.x.split(/s*,s*/).forEach(function (k) { if (k) xs[k] = (xs[k] || 0) + 1; }); });
+  hbars(card('Complications', rated.length ? withX.length + ' of ' + rated.length + ' rated cases (' + Math.round(100 * withX.length / rated.length) + '%) had one or more.' : 'Rated cases only.'),
+    (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0 }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
+  hbars(card('Difficulty', 'Rated cases only.'), [1, 2, 3, 4, 5].map(function (n) { return { k: n + ' · ' + (L[n] || ''), v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
+}
+go(day);
+</script><script>boot();</script></body></html>
