@@ -26,7 +26,20 @@ function apiKey() { try { return localStorage.getItem(KEY) || ''; } catch (e) { 
 function splash(html) { document.getElementById('splashMsg').innerHTML = html; document.getElementById('splash').style.display = 'flex'; }
 function needPairing() {
   try { localStorage.removeItem(KEY); } catch (e) {}
-  splash('This phone isn’t set up yet.<br>Open your Case Log in Google and tap <b>Set up phone app</b>.<br><a href="' + GOOGLE_APP + '">Open Case Log in Google</a>');
+  splash('This phone isn’t set up yet.<br>Paste the setup link you were sent:' +
+    '<input id="pairIn" placeholder="https://wheeler023.github.io/caselog/#pair=…" style="width:100%;max-width:340px;margin-top:6px;padding:10px;border-radius:10px;border:1.5px solid #555C6B;background:transparent;color:#fff;font:13px monospace">' +
+    '<div><button onclick="pastePair()">Paste</button> <button onclick="usePair()">Use link</button></div>' +
+    '<div style="font-size:13px;color:#828A9A;margin-top:8px">Dr. Wheeler: open your Case Log in Google and tap <b>Set up phone app</b>.</div>');
+}
+function usePair() {
+  var v = (document.getElementById('pairIn').value || '').trim(), m = v.match(/pair=([a-f0-9]{48,})/);
+  if (!m) { document.getElementById('pairIn').style.borderColor = '#EE614F'; return; }
+  try { localStorage.setItem(KEY, m[1]); } catch (e) {}
+  boot();
+}
+function pastePair() {
+  if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (t) { document.getElementById('pairIn').value = t; usePair(); }, function () { document.getElementById('pairIn').focus(); });
+  else document.getElementById('pairIn').focus();
 }
 function callApi(fn, args) {
   return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ k: apiKey(), fn: fn, args: args }) })
