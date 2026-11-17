@@ -9,7 +9,7 @@ const head = `<meta name="viewport" content="width=device-width, initial-scale=1
 <meta name="theme-color" content="#0B1033"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="robots" content="noindex, nofollow"><title>Case Log</title>
-<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">`;
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">`;
 if (!h.includes('<base target="_top">')) throw new Error('head marker missing');
 h = h.replace('<base target="_top">', '<base target="_top">' + head);
 const shim = `<div id="splash"><img src="icon-192.png" alt=""><div id="splashMsg"></div></div>
