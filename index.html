@@ -604,7 +604,7 @@ function factEl(isoDay) {   // a spine fact under the quote on days with no case
   var f = FACTS[h % FACTS.length], box = el('a', 'fact');
   box.href = factLink(f); box.target = '_blank'; box.rel = 'noopener';
   box.appendChild(el('div', 'fh', 'Spine fact')); box.appendChild(el('div', 'ft', f[0]));
-  box.appendChild(el('div', 'fs', (f[1] ? f[1] + '  ' : '') + 'Read more ›'));
+  if (f[1]) box.appendChild(el('div', 'fs', f[1]));
   return box;
 }
 function quoteEl(isoDay, hasCases) { var q = quoteFor(isoDay, hasCases); return q ? el('div', 'quote', q) : null; }
