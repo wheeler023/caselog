@@ -13,7 +13,7 @@ const head = `<meta name="viewport" content="width=device-width, initial-scale=1
 if (!h.includes('<base target="_top">')) throw new Error('head marker missing');
 h = h.replace('<base target="_top">', '<base target="_top">' + head);
 const shim = `<div id="splash"><img src="icon-192.png" alt=""><div id="splashMsg"></div></div>
-<style>#splash{position:fixed;inset:0;z-index:9999;background:#161718;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#CAD1E6;font:15px/1.45 -apple-system,Roboto,sans-serif;text-align:center;padding:24px}
+<style>#splash{position:fixed;inset:0;z-index:9999;background:#121722;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#CAD1E6;font:15px/1.45 -apple-system,Roboto,sans-serif;text-align:center;padding:24px}
 #splash img{width:96px;height:96px;border-radius:50%}#splash a,#splash button{color:#fff;font:inherit;font-weight:700;border:1.5px solid #fff;border-radius:10px;padding:10px 16px;background:transparent;text-decoration:none;margin-top:6px}</style>
 <script>
 // Phone-app plumbing: every call the screens make to Google goes to the case-log script over HTTPS with this phone's key.
