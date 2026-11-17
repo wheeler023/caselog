@@ -173,6 +173,7 @@ textarea:focus{outline:2px solid #2B6CB0}
 .tag.x{background:#1C1414;color:#EE614F}
 .oplink{display:block;text-align:center;text-decoration:none;line-height:44px}
 .getapp{margin:12px 12px 0;padding:10px 12px 10px 14px;border:1.5px solid #2F8CFF;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;color:#FFFFFF}
+.getapp{flex-wrap:wrap}.garow{display:flex;gap:6px;width:100%}.garow input{flex:1;min-width:0;background:transparent;border:1.5px solid #555C6B;border-radius:8px;color:#FFFFFF;font:12px monospace;padding:6px}
 .getapp button{border:1.5px solid #FFFFFF;background:transparent;color:#FFFFFF;font:inherit;font-weight:700;border-radius:10px;padding:8px 12px;white-space:nowrap}
 .todo{margin:12px 12px 0;padding:12px 14px;background:#B91C1C;border-radius:12px;font-size:14px;color:#FFFFFF;display:flex;gap:4px 10px;align-items:center;flex-wrap:wrap;cursor:pointer}
 .todo b{background:#0E0E0E;color:#EE614F;border-radius:6px;padding:2px 8px;font-size:13px;letter-spacing:.02em}
@@ -396,10 +397,20 @@ if (INIT.todo) drawTodo(INIT.todo); else setTimeout(loadTodo, 400);
 if (!window.__PHONE && INIT.phoneApp) $('getApp').style.display = '';   // only in the Google page, never in the phone app
 function pairPhone(b) {
   b.disabled = true; b.textContent = 'One moment…';
-  google.script.run.withSuccessHandler(function (link) { window.open(link, '_top'); })
+  google.script.run.withSuccessHandler(function (link) {   // show the link so it can go to any browser (Chrome installs it as a true app)
+      var g = $('getApp'); g.innerHTML = '';
+      g.appendChild(el('span', null, 'Copy this link, open Chrome, paste it in the address bar:'));
+      var row = el('div', 'garow'), inp = el('input'); inp.value = link; inp.readOnly = true; inp.onclick = function () { inp.select(); };
+      var cp = el('button', null, 'Copy'); cp.onclick = function () {
+        inp.select(); var done = function () { cp.textContent = 'Copied'; };
+        if (navigator.clipboard) navigator.clipboard.writeText(link).then(done, function () { document.execCommand('copy'); done(); }); else { document.execCommand('copy'); done(); }
+      };
+      var op = el('button', null, 'Open here'); op.onclick = function () { window.open(link, '_top'); };
+      row.appendChild(inp); row.appendChild(cp); row.appendChild(op); g.appendChild(row);
+    })
     .withFailureHandler(function (e) { b.disabled = false; b.textContent = 'Set up phone app'; toast('Could not set up: ' + e.message); }).wdPair();
 }
-setTimeout(function () { if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) stats = r; }).wdStats(); }, 2500);   // Metrics/Finance open instantly
+setTimeout(function () { if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) stats = r; }).wdStats(); }, 600);   // Metrics/Finance open instantly
 function refreshAll(d) {   // once per open: the server syncs only if the 10-minute run fell behind
   google.script.run.withSuccessHandler(function (r) {
     if (!r) return;
