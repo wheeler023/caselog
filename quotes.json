@@ -1,0 +1,157 @@
+{
+ "about": "Lines shown under the day in the Case Log app. c = when: or (days with cases), clinic (weekdays with no cases), off (weekends), empty (any day with no cases), any (every day). Added to monthly.",
+ "quotes": [
+  {
+   "t": "No cases today. Even the discs get a day off.",
+   "c": "empty"
+  },
+  {
+   "t": "Rest is part of fusion. Ask any bone graft.",
+   "c": "off"
+  },
+  {
+   "t": "Today’s only alignment goal is your own posture.",
+   "c": "off"
+  },
+  {
+   "t": "Empty schedule, open foramen. Breathe easy.",
+   "c": "empty"
+  },
+  {
+   "t": "The spine has 33 vertebrae and zero of them are on the schedule today.",
+   "c": "empty"
+  },
+  {
+   "t": "Good surgeons know when to operate. Great ones know when to go golfing.",
+   "c": "off"
+  },
+  {
+   "t": "Nothing to decompress today except you.",
+   "c": "empty"
+  },
+  {
+   "t": "A quiet OR day keeps the PACU nurses happy.",
+   "c": "clinic"
+  },
+  {
+   "t": "Bones heal on their own schedule. Today, so do you.",
+   "c": "off"
+  },
+  {
+   "t": "No retractors today. Stand up straight anyway.",
+   "c": "empty"
+  },
+  {
+   "t": "No surgery today. Clinic is just surgery with more talking.",
+   "c": "clinic"
+  },
+  {
+   "t": "Clinic: where “it’s been hurting for 20 years” is always urgent today.",
+   "c": "clinic"
+  },
+  {
+   "t": "Today’s procedure: 34 patients, one bathroom break.",
+   "c": "clinic"
+  },
+  {
+   "t": "Clinic day. Hydrate, caffeinate, explain the MRI again.",
+   "c": "clinic"
+  },
+  {
+   "t": "Somewhere a patient is bringing a binder. Godspeed.",
+   "c": "clinic"
+  },
+  {
+   "t": "“Dr. Google said it was a tumor.” It was a muscle strain.",
+   "c": "clinic"
+  },
+  {
+   "t": "Every clinic has one patient who brings their own MRI report, highlighted.",
+   "c": "clinic"
+  },
+  {
+   "t": "Clinic runs on coffee and the phrase “let’s get some imaging.”",
+   "c": "clinic"
+  },
+  {
+   "t": "The patient who “only has one quick question” has seven.",
+   "c": "clinic"
+  },
+  {
+   "t": "Pain 10 out of 10, while eating chips in the waiting room.",
+   "c": "clinic"
+  },
+  {
+   "t": "“I read online I need a fusion.” You read wrong.",
+   "c": "clinic"
+  },
+  {
+   "t": "Allergies: penicillin, latex, and physical therapy.",
+   "c": "clinic"
+  },
+  {
+   "t": "No cases today. Somewhere out there a herniated disc is waiting for you.",
+   "c": "clinic"
+  },
+  {
+   "t": "Empty OR. Time to go find some stenosis.",
+   "c": "clinic"
+  },
+  {
+   "t": "The schedule is empty, but the MRI reader is full.",
+   "c": "clinic"
+  },
+  {
+   "t": "Today we scout. Tomorrow we decompress.",
+   "c": "clinic"
+  },
+  {
+   "t": "The best operation is sometimes the one you talk someone out of.",
+   "c": "any"
+  },
+  {
+   "t": "Treat the patient, not the MRI.",
+   "c": "any"
+  },
+  {
+   "t": "Good outcomes start with good indications.",
+   "c": "any"
+  },
+  {
+   "t": "Every spine you fix belongs to someone’s whole life.",
+   "c": "any"
+  },
+  {
+   "t": "Measure twice, burr once.",
+   "c": "or"
+  },
+  {
+   "t": "Neuromonitoring is quiet. Keep it that way.",
+   "c": "or"
+  },
+  {
+   "t": "Confirm the level on fluoro. Then confirm it again.",
+   "c": "or"
+  },
+  {
+   "t": "Retractors in, phones down, music up.",
+   "c": "or"
+  },
+  {
+   "t": "The PLL is more of a suggestion.",
+   "c": "or"
+  },
+  {
+   "t": "Good hemostasis is a love language.",
+   "c": "or"
+  },
+  {
+   "t": "Healthy bleeding subchondral bone. Today’s mood.",
+   "c": "or"
+  },
+  {
+   "t": "Excellent purchase on every screw. Check the AP anyway.",
+   "c": "or"
+  }
+ ]
+}

@@ -144,6 +144,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 .addimg{background:#0C1019;color:#BEC6E4;border:1.5px solid #13213B}
 .tile .n{font-family:var(--serif);font-size:30px;font-variant-numeric:lining-nums tabular-nums}
 .tabs button.on{color:#B9D7EC;box-shadow:inset 0 3px 0 var(--accent)}
+.quote{margin:18px 22px 8px;font-family:var(--serif);font-style:italic;font-size:16px;line-height:1.45;color:#B9D7EC;text-align:center}
 .implrow{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid #2A2F38;padding:10px 0;color:inherit;font:inherit}
 .implrow .ih{font-weight:700;font-size:14px;margin-bottom:3px}.implrow .il{font-size:13.5px;color:#CAD1E6;line-height:1.45}.implrow .il.dim{color:#828A9A}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #B9D7EC;outline-offset:2px}
@@ -561,12 +562,32 @@ function go(isoDay) {
     .wdDay(isoDay);
 }
 var rmode = false, smode = false, dayCases = [];
+// ---- A line under the day: OR quotes on surgery days, clinic quotes on weekdays without cases, day-off quotes on weekends.
+// The list lives at QUOTES_URL (30 more are added each month); this copy is the fallback.
+var QUOTES_URL = 'https://wheeler023.github.io/caselog/quotes.json';
+var QUOTES = [["No cases today. Even the discs get a day off.", "empty"], ["Rest is part of fusion. Ask any bone graft.", "off"], ["Today’s only alignment goal is your own posture.", "off"], ["Empty schedule, open foramen. Breathe easy.", "empty"], ["The spine has 33 vertebrae and zero of them are on the schedule today.", "empty"], ["Good surgeons know when to operate. Great ones know when to go golfing.", "off"], ["Nothing to decompress today except you.", "empty"], ["A quiet OR day keeps the PACU nurses happy.", "clinic"], ["Bones heal on their own schedule. Today, so do you.", "off"], ["No retractors today. Stand up straight anyway.", "empty"], ["No surgery today. Clinic is just surgery with more talking.", "clinic"], ["Clinic: where “it’s been hurting for 20 years” is always urgent today.", "clinic"], ["Today’s procedure: 34 patients, one bathroom break.", "clinic"], ["Clinic day. Hydrate, caffeinate, explain the MRI again.", "clinic"], ["Somewhere a patient is bringing a binder. Godspeed.", "clinic"], ["“Dr. Google said it was a tumor.” It was a muscle strain.", "clinic"], ["Every clinic has one patient who brings their own MRI report, highlighted.", "clinic"], ["Clinic runs on coffee and the phrase “let’s get some imaging.”", "clinic"], ["The patient who “only has one quick question” has seven.", "clinic"], ["Pain 10 out of 10, while eating chips in the waiting room.", "clinic"], ["“I read online I need a fusion.” You read wrong.", "clinic"], ["Allergies: penicillin, latex, and physical therapy.", "clinic"], ["No cases today. Somewhere out there a herniated disc is waiting for you.", "clinic"], ["Empty OR. Time to go find some stenosis.", "clinic"], ["The schedule is empty, but the MRI reader is full.", "clinic"], ["Today we scout. Tomorrow we decompress.", "clinic"], ["The best operation is sometimes the one you talk someone out of.", "any"], ["Treat the patient, not the MRI.", "any"], ["Good outcomes start with good indications.", "any"], ["Every spine you fix belongs to someone’s whole life.", "any"], ["Measure twice, burr once.", "or"], ["Neuromonitoring is quiet. Keep it that way.", "or"], ["Confirm the level on fluoro. Then confirm it again.", "or"], ["Retractors in, phones down, music up.", "or"], ["The PLL is more of a suggestion.", "or"], ["Good hemostasis is a love language.", "or"], ["Healthy bleeding subchondral bone. Today’s mood.", "or"], ["Excellent purchase on every screw. Check the AP anyway.", "or"]];
+(function () {
+  try { fetch(QUOTES_URL, { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (j) {
+    var q = (j && j.quotes || []).filter(function (x) { return x && x.t && x.c; }).map(function (x) { return [String(x.t), String(x.c)]; });
+    if (q.length) { QUOTES = q; if (!rmode && day && $('vCases').style.display !== 'none' && !$('sheet').classList.contains('on')) render(); }
+  }).catch(function () {}); } catch (e) {}
+})();
+function quoteFor(isoDay, hasCases) {
+  var p = isoDay.split('-'), dow = new Date(+p[0], +p[1] - 1, +p[2]).getDay();
+  var want = hasCases ? ['or', 'any'] : dow === 0 || dow === 6 ? ['off', 'empty', 'any'] : ['clinic', 'empty', 'any'];
+  var pool = QUOTES.filter(function (q) { return want.indexOf(q[1]) >= 0; }); if (!pool.length) return '';
+  var h = 7; for (var i = 0; i < isoDay.length; i++) h = (h * 31 + isoDay.charCodeAt(i)) % 1000003;   // same line all day, a different one tomorrow
+  return pool[h % pool.length][0];
+}
+function quoteEl(isoDay, hasCases) { var q = quoteFor(isoDay, hasCases); return q ? el('div', 'quote', q) : null; }
 function render() {
   var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
   if (!rmode) dayCount();
   if (rmode && !smode) { $('rCount').textContent = cases.filter(function (c) { return c.status === 'Needs confirmation'; }).length + ' to rate'; }
   if (rmode && smode) { $('rCount').textContent = searchActive() ? cases.length + (cases.length === 150 ? '+ ' : ' ') + 'found' : ''; }
-  if (!cases.length) { list.appendChild(el('div', 'empty', smode ? (searchActive() ? 'No cases match that.' : 'Type a name or procedure, or tap a keyword or a year.') : rmode ? 'All caught up. Every past case has a rating.' : 'No cases on this day.')); return; }
+  if (!cases.length) { list.appendChild(el('div', 'empty', smode ? (searchActive() ? 'No cases match that.' : 'Type a name or procedure, or tap a keyword or a year.') : rmode ? 'All caught up. Every past case has a rating.' : 'No cases on this day.'));
+    if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); }
+    return; }
   var lastDate = '';
   cases.forEach(function (c, i) {
     if (rmode && c.dateLabel !== lastDate) { lastDate = c.dateLabel; list.appendChild(el('div', 'dhd', c.dateLabel)); }
@@ -591,6 +612,7 @@ function render() {
     if (tags.childNodes.length) m.appendChild(tags);
     card.appendChild(m); list.appendChild(card);
   });
+  if (!rmode && !smode) { var qe = quoteEl(day, true); if (qe) list.appendChild(qe); }
 }
 function addRow(box, k, v, href) {
   if (!v) return;
