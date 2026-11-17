@@ -460,11 +460,25 @@ function pairPhone(b) {
     .withFailureHandler(function (e) { b.disabled = false; b.textContent = 'Set up phone app'; toast('Could not set up: ' + e.message); }).wdPair();
 }
 setTimeout(function () { if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) stats = r; }).wdStats(); }, 600);   // Metrics/Finance open instantly
+var nearAsked = {};
+function prefetchNear(d) {   // one trip for the two weeks either side, so tapping nearby days is instant
+  var p = d.split('-'), a = new Date(+p[0], +p[1] - 1, +p[2] - 14), b = new Date(+p[0], +p[1] - 1, +p[2] + 14);
+  function f(x) { return x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); }
+  var near = [new Date(+p[0], +p[1] - 1, +p[2] - 7), new Date(+p[0], +p[1] - 1, +p[2] + 7)];
+  if (dayCache[f(near[0])] && dayCache[f(near[1])]) return;   // a week either way is already here
+  var from = f(a), to = f(b), key = from + to;
+  if (nearAsked[key]) return; nearAsked[key] = 1;
+  google.script.run.withSuccessHandler(function (r) {
+    if (!r) return;
+    for (var x = new Date(a); x <= b; x.setDate(x.getDate() + 1)) { var k = f(x); if (!dayCache[k]) dayCache[k] = r.days[k] || []; }
+  }).withFailureHandler(function () { delete nearAsked[key]; }).wdDays(from, to);
+}
 function refreshAll(d) {   // once per open: the server syncs only if the 10-minute run fell behind
   google.script.run.withSuccessHandler(function (r) {
     if (!r) return;
-    dayCache = {}; weekCache = {};
+    dayCache = {}; weekCache = {}; nearAsked = {};
     if (r.month) storeMonth(r.month);
+    prefetchNear(d);
     drawWeek(day);
     if (r.todo) drawTodo(r.todo);
     if (r.first) show(r.first);
@@ -479,9 +493,9 @@ function go(isoDay) {
   var list = $('list');
   if (dayCache[isoDay]) { cases = dayCache[isoDay]; render(); }
   else { list.innerHTML = ''; list.appendChild(el('div', 'empty', 'Loading…')); }
-  if (!refreshed && INIT.first && isoDay === INIT.first.day) { refreshed = true; refreshAll(isoDay); return; }   // first screen came with the page
+  if (!refreshed && INIT.first && isoDay === INIT.first.day) { refreshed = true; refreshAll(isoDay); prefetchNear(isoDay); return; }   // first screen came with the page
   google.script.run.withSuccessHandler(function (r) {
-    show(r);
+    show(r); prefetchNear(r.day);
     if (!refreshed) { refreshed = true; refreshAll(r.day); }
   }).withFailureHandler(function (e) { if (dayCache[isoDay]) return; list.innerHTML = ''; list.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); })
     .wdDay(isoDay);
