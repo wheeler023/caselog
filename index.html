@@ -152,6 +152,20 @@ html,body{font-family:var(--sans);line-height:1.4}
 .fact.top{margin:0 0 14px -34px;position:relative;z-index:2}
 .fact{display:block;text-decoration:none;color:inherit}.fact:active{background:#111A2A}
 .fact .fh{font-size:12px;font-weight:700;color:#D3B98C;margin-bottom:6px}.fact .ft{font-size:15px;line-height:1.45;color:#CAD1E6}.fact .fs{font-size:12px;color:#828A9A;margin-top:6px}
+.ms{margin:0 0 12px -34px;padding:10px 14px;border-radius:12px;background:#14202F;border:1px solid #2B3A52}
+.mr{display:flex;gap:8px;align-items:baseline;font-size:15px;font-weight:600;color:#D3B98C;padding:2px 0}.mi{flex:none}
+.card2 .mr{color:#CAD1E6;font-weight:500}
+.recapb{display:block;width:calc(100% + 34px);margin:0 0 12px -34px;padding:12px 14px;border-radius:12px;border:1px solid #9EC5E0;background:#13213B;color:#B9D7EC;font:inherit;font-weight:700;text-align:left}
+#sBody > .recapb{width:100%;margin:0 0 12px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.pth{position:relative;aspect-ratio:1;border:0;padding:0;border-radius:10px;overflow:hidden;background:#0C1019}
+.pth img{width:100%;height:100%;object-fit:cover;display:block}.pth img:not([src]){visibility:hidden}.pth .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#828A9A;font-size:12px}
+.pth .pc{position:absolute;left:0;right:0;bottom:0;padding:3px 5px;font-size:10.5px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.75));text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pview{position:fixed;inset:0;z-index:20;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
+.pview.on{display:flex}.pview img{max-width:100%;max-height:72vh;object-fit:contain}
+.pvbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
+.pvbar button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-weight:700}.pvbar button:disabled{opacity:.4}
+#pvMsg{color:#828A9A;margin:10px}#pvCap{color:#CAD1E6;font-size:14px;margin-top:12px}
 .implrow{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid #2A2F38;padding:10px 0;color:inherit;font:inherit}
 .implrow .ih{font-weight:700;font-size:14px;margin-bottom:3px}.implrow .il{font-size:13.5px;color:#CAD1E6;line-height:1.45}.implrow .il.dim{color:#828A9A}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #B9D7EC;outline-offset:2px}
@@ -235,6 +249,10 @@ textarea:focus{outline:2px solid #B9D7EC}
   <div class="chips" id="ichips"><button class="chip" data-p="month" onclick="setIPer('month')">This month</button><button class="chip" data-p="year" onclick="setIPer('year')">This year</button><button class="chip on" data-p="all" onclick="setIPer('all')">Since Nov 9</button></div></div>
  <div class="sp" id="iBody"></div>
 </div>
+<div id="vPhotos" style="display:none">
+ <div class="hd"><div class="who" id="who5"></div><div class="day">Photos</div><div class="chips mos" id="pchips"></div></div>
+ <div class="sp" id="pBody"></div>
+</div>
 <div id="vFin" style="display:none">
  <div class="hd"><div class="who" id="who3"></div><div class="day">Finances</div>
   <div class="chips" id="fchips"><button class="chip" data-p="month" onclick="setFPer('month')">Month</button><button class="chip" data-p="ytd" onclick="setFPer('ytd')">YTD</button><button class="chip on" data-p="12m" onclick="setFPer('12m')">12 mo</button><button class="chip" data-p="all" onclick="setFPer('all')">All time</button></div></div>
@@ -242,8 +260,14 @@ textarea:focus{outline:2px solid #B9D7EC}
  <div class="sp" id="pushBox" style="padding-top:0"></div>
  <div class="sp" id="teamBox" style="padding-top:0"></div>
 </div>
-<nav class="tabs"><button id="tCases" class="on" onclick="setTab('cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Cases</button><button id="tStats" onclick="setTab('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>Metrics</button><button id="tImp" style="display:none" onclick="setTab('imp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l-1 3H9z"/><path d="M12 6v15M9 9l6 2M9 13l6 2M9 17l6 2"/></svg>Implants</button><button id="tFin" onclick="setTab('fin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Finance</button></nav>
+<nav class="tabs"><button id="tCases" class="on" onclick="setTab('cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Cases</button><button id="tStats" onclick="setTab('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>Metrics</button><button id="tPhotos" onclick="setTab('photos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>Photos</button><button id="tImp" style="display:none" onclick="setTab('imp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l-1 3H9z"/><path d="M12 6v15M9 9l6 2M9 13l6 2M9 17l6 2"/></svg>Implants</button><button id="tFin" onclick="setTab('fin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Finance</button></nav>
 
+<div class="sheet" id="recap">
+ <div class="sh"><button onclick="closeRecap()">‹ Back</button><div class="ttl"><b id="rcTitle">Recap</b><span></span></div></div>
+ <div class="body"><div class="sp" id="rcBody"></div></div>
+</div>
+<div class="pview" id="pview"><div class="pvbar"><button onclick="closePhoto()">‹ Back</button><button id="pvShare" onclick="sharePhoto()">Share</button></div>
+ <img id="pvImg" alt=""><div id="pvMsg"></div><div id="pvCap"></div></div>
 <div class="sheet" id="rsheet">
  <div class="sh"><button onclick="closeRating()">‹ Back</button><div class="ttl"><b id="rTitle">Needs rating</b><span id="rCount"></span></div></div>
  <div class="sbox" id="sbox"><input type="search" id="q" placeholder="Name, procedure, level, CPT, note…" autocomplete="off" oninput="searchSoon()" enterkeyhint="search"><div class="chips mos" id="sYrs"></div><div class="chips mos" id="sMos"></div><div class="chips skeys" id="sKeys"></div></div>
@@ -527,7 +551,7 @@ function pairPhone(b) {
     })
     .withFailureHandler(function (e) { b.disabled = false; b.textContent = 'Set up phone app'; toast('Could not set up: ' + e.message); }).wdPair();
 }
-setTimeout(function () { if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) stats = r; }).wdStats(); }, 600);   // Metrics/Finance open instantly
+setTimeout(function () { if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) { stats = r; MS = null; if ($('vCases').style.display !== 'none' && !$('sheet').classList.contains('on') && !rmode) render(); } }).wdStats(); }, 600);   // Metrics/Finance open instantly
 var nearAsked = {};
 function prefetchNear(d) {   // one trip for the two weeks either side, so tapping nearby days is instant
   var p = d.split('-'), a = new Date(+p[0], +p[1] - 1, +p[2] - 14), b = new Date(+p[0], +p[1] - 1, +p[2] + 14);
@@ -608,14 +632,142 @@ function factEl(isoDay) {   // a spine fact under the quote on days with no case
   return box;
 }
 function quoteEl(isoDay, hasCases) { var q = quoteFor(isoDay, hasCases); return q ? el('div', 'quote', q) : null; }
+// ---- Milestones: counted from the case log (performed cases, today and earlier) ----
+var MS = null;
+function ordinal(n) { var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+function milestones() {
+  if (MS || !stats) return MS || [];
+  var t = stats.today, list = stats.cases.filter(function (c) { return c.d <= t && /Performed|Needs confirmation/.test(c.s); })
+    .slice().sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+  var tot = 0, lv = 0, yr = {}, ty = {}, tyYr = {}, big = {}, out = [];
+  function add(d, txt, w) { out.push({ d: d, t: txt, w: w }); }
+  list.forEach(function (c) {
+    var y = c.d.slice(0, 4), k = c.t && c.t !== 'Unclassified' ? c.t : '';
+    tot++; if (tot % 100 === 0) add(c.d, ordinal(tot) + ' case in your log', tot % 1000 === 0 ? 3 : 2);
+    yr[y] = (yr[y] || 0) + 1; if (yr[y] % 50 === 0) add(c.d, ordinal(yr[y]) + ' case of ' + y, 2);
+    var plv = lv; lv += c.n || 0; if (Math.floor(lv / 500) > Math.floor(plv / 500)) add(c.d, (Math.floor(lv / 500) * 500).toLocaleString('en-US') + ' levels operated', 2);
+    if (k) {
+      ty[k] = (ty[k] || 0) + 1; if (ty[k] % 50 === 0) add(c.d, ordinal(ty[k]) + ' ' + k + ' in your log', 2);
+      var ky = k + '|' + y; tyYr[ky] = (tyYr[ky] || 0) + 1; if (tyYr[ky] % 25 === 0) add(c.d, ordinal(tyYr[ky]) + ' ' + k + ' of ' + y, 1);
+    }
+    if ((c.n || 0) >= 4 && !big[y]) { big[y] = 1; add(c.d, 'First ' + c.n + '-level case of ' + y, 1); }
+  });
+  return (MS = out);
+}
+function milestonesOn(isoDay) { return milestones().filter(function (m) { return m.d === isoDay; }); }
+function msEl(isoDay) {
+  var ms = milestonesOn(isoDay); if (!ms.length) return null;
+  var box = el('div', 'ms');
+  ms.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(el('span', 'mi', '🏆')); r.appendChild(el('span', null, m.t)); box.appendChild(r); });
+  return box;
+}
+// ---- Monthly recap ----
+var MONF = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function lastMonthKey() { return monthKey(INIT.today.slice(0, 7) + '-01', -1); }
+function recapBanner() {
+  var d = +INIT.today.slice(8, 10); if (d > 7 || day !== INIT.today || rmode || smode) return null;
+  var mk = lastMonthKey(), b = el('button', 'recapb', 'Your ' + MONF[+mk.slice(5, 7) - 1] + ' recap ›');
+  b.onclick = function () { openRecap(mk); }; return b;
+}
+function openRecap(mk) {
+  $('rcTitle').textContent = MONF[+mk.slice(5, 7) - 1] + ' ' + mk.slice(0, 4);
+  $('recap').classList.add('on'); var b = $('rcBody'); b.innerHTML = '';
+  if (!stats) {
+    b.appendChild(el('div', 'empty', 'Loading…'));
+    google.script.run.withSuccessHandler(function (r) { stats = r; MS = null; openRecap(mk); }).wdStats(); return;
+  }
+  cardTarget = 'rcBody';
+  var pk = (+mk.slice(0, 4) - 1) + mk.slice(4), all = stats.cases;
+  var done = function (c) { return /Performed|Needs confirmation/.test(c.s) && c.d <= stats.today; };
+  var sel = all.filter(function (c) { return c.d.slice(0, 7) === mk && done(c); }), prev = all.filter(function (c) { return c.d.slice(0, 7) === pk && done(c); });
+  var lv = sel.reduce(function (s, c) { return s + (c.n || 0); }, 0), rated = sel.filter(function (c) { return c.df > 0; });
+  var byDay = {}; sel.forEach(function (c) { byDay[c.d] = (byDay[c.d] || 0) + 1; });
+  var bd = Object.keys(byDay).sort(function (a, b) { return byDay[b] - byDay[a] || (a < b ? -1 : 1); })[0];
+  var tiles = el('div', 'tiles'); b.appendChild(tiles);
+  var diff = prev.length ? Math.round(100 * (sel.length - prev.length) / prev.length) : null;
+  tile(tiles, String(sel.length), 'Cases' + (prev.length ? ' (' + (diff >= 0 ? '+' : '') + diff + '% vs ' + pk.slice(0, 4) + ')' : ''));
+  tile(tiles, String(lv), 'Levels');
+  tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Avg difficulty');
+  tile(tiles, bd ? String(byDay[bd]) : '–', bd ? 'Busiest day, ' + MON[+bd.slice(5, 7) - 1] + ' ' + (+bd.slice(8)) : 'Busiest day');
+  if (!sel.length) b.appendChild(el('div', 'note', 'No completed cases in this month.'));
+  hbars(card('Case mix'), tally(sel, function (c) { return c.t; }));
+  var cg = {}; sel.forEach(function (c) { (c.im || []).forEach(function (m) { if (m.k === 'Cage') { var k = m.v || 'Vendor not stated'; cg[k] = (cg[k] || 0) + 1; } }); });
+  if (Object.keys(cg).length) hbars(card('Cages by vendor', 'Each level counted once.'), Object.keys(cg).map(function (k) { return { k: k, v: cg[k] }; }).sort(function (a, b) { return b.v - a.v; }));
+  var withX = rated.filter(function (c) { return c.x; });
+  if (rated.length) card('Complications', withX.length ? withX.length + ' of ' + rated.length + ' rated cases had one or more.' : 'None recorded in ' + rated.length + ' rated cases.');
+  var ms = milestones().filter(function (m) { return m.d.slice(0, 7) === mk; });
+  if (ms.length) { var mc = card('Milestones'); ms.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(el('span', 'mi', '🏆')); r.appendChild(el('span', null, m.t + ', ' + MON[+m.d.slice(5, 7) - 1] + ' ' + (+m.d.slice(8)))); mc.appendChild(r); }); }
+}
+function closeRecap() { $('recap').classList.remove('on'); }
+// ---- Photos tab ----
+var gal = null, galType = '', galLv = '';
+function loadGallery() {
+  var b = $('pBody');
+  if (gal) drawGallery(); else { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Loading…')); }
+  google.script.run.withSuccessHandler(function (r) { gal = r || []; drawGallery(); })
+    .withFailureHandler(function (e) { if (!gal) { b.innerHTML = ''; b.appendChild(el('div', 'empty', /Unknown request/.test(e.message) ? 'Photos are almost ready. They’ll show here once the latest update is installed.' : 'Could not load: ' + e.message)); } }).wdGallery();
+}
+function drawGallery() {
+  var b = $('pBody'); b.innerHTML = '';
+  var types = {}, lvs = {}; gal.forEach(function (g) { types[g.t] = 1; (g.lv || '').split(/,\s*/).forEach(function (l) { if (l) lvs[l] = 1; }); });
+  var ch = $('pchips'); ch.innerHTML = '';
+  function chip(lbl, on, f) { var c = el('button', on ? 'chip on' : 'chip', lbl); c.onclick = f; ch.appendChild(c); }
+  chip('All', !galType && !galLv, function () { galType = ''; galLv = ''; drawGallery(); });
+  Object.keys(types).sort().forEach(function (t) { chip(t, galType === t, function () { galType = galType === t ? '' : t; drawGallery(); }); });
+  Object.keys(lvs).sort().forEach(function (l) { chip(l, galLv === l, function () { galLv = galLv === l ? '' : l; drawGallery(); }); });
+  var list = gal.filter(function (g) { return (!galType || g.t === galType) && (!galLv || (g.lv || '').split(/,\s*/).indexOf(galLv) >= 0); });
+  if (!gal.length) { b.appendChild(el('div', 'empty', 'No case photos yet. Add them from a case’s screen.')); return; }
+  b.appendChild(el('div', 'note', list.length + ' photo' + (list.length === 1 ? '' : 's') + '. Before posting, check for names, dates, faces or labels.'));
+  var grid = el('div', 'pgrid'), need = []; b.appendChild(grid);
+  list.forEach(function (g) {
+    var a = el('button', 'pth'), img = document.createElement('img');
+    img.alt = g.t; a.setAttribute('data-f', g.f);
+    if (THUMB[g.f]) img.src = THUMB[g.f]; else if (THUMB[g.f] !== '') need.push(g.f);
+    a.appendChild(img); a.appendChild(el('span', 'pc', MON[+g.d.slice(5, 7) - 1] + ' ' + (+g.d.slice(8)) + ' · ' + [g.t, g.lv].filter(Boolean).join(' ')));
+    a.onclick = function () { viewPhoto(g); }; grid.appendChild(a);
+  });
+  fetchThumbs(need);
+}
+var THUMB = {};
+function fetchThumbs(ids) {   // 12 at a time through the app's own connection
+  if (!ids.length) return;
+  var batch = ids.slice(0, 12), rest = ids.slice(12);
+  google.script.run.withSuccessHandler(function (r) {
+    batch.forEach(function (f) {
+      THUMB[f] = r && r[f] ? 'data:image/jpeg;base64,' + r[f] : '';
+      var t = document.querySelector('.pth[data-f="' + f + '"] img'); if (t && THUMB[f]) t.src = THUMB[f];
+    });
+    fetchThumbs(rest);
+  }).withFailureHandler(function () {}).wdThumbs(batch);
+}
+var pvFile = null;
+function viewPhoto(g) {
+  var v = $('pview'), im = $('pvImg'); pvFile = null;
+  im.removeAttribute('src'); $('pvCap').textContent = [g.t, g.lv].filter(Boolean).join(' ') + ', ' + MON[+g.d.slice(5, 7) - 1] + ' ' + (+g.d.slice(8)) + ', ' + g.d.slice(0, 4);
+  $('pvMsg').textContent = 'Loading…'; $('pvShare').disabled = true; v.classList.add('on');
+  google.script.run.withSuccessHandler(function (r) {
+    var bin = atob(r.b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    var ext = /png/.test(r.mime) ? 'png' : /webp/.test(r.mime) ? 'webp' : 'jpg';
+    pvFile = new File([u], (g.t + ' ' + (g.lv || '')).trim().replace(/[^A-Za-z0-9-]+/g, '-') + '.' + ext, { type: r.mime });
+    im.src = URL.createObjectURL(pvFile); $('pvMsg').textContent = ''; $('pvShare').disabled = false;
+  }).withFailureHandler(function (e) { $('pvMsg').textContent = 'Could not load: ' + e.message; }).wdImageData(g.f);
+}
+function sharePhoto() {
+  if (!pvFile) return;
+  if (navigator.canShare && navigator.canShare({ files: [pvFile] })) { navigator.share({ files: [pvFile] }).catch(function () {}); return; }
+  var a = document.createElement('a'); a.href = URL.createObjectURL(pvFile); a.download = pvFile.name; document.body.appendChild(a); a.click(); a.remove();
+}
+function closePhoto() { $('pview').classList.remove('on'); }
 function render() {
   var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
   if (!rmode) dayCount();
   if (rmode && !smode) { $('rCount').textContent = cases.filter(function (c) { return c.status === 'Needs confirmation'; }).length + ' to rate'; }
   if (rmode && smode) { $('rCount').textContent = searchActive() ? cases.length + (cases.length === 150 ? '+ ' : ' ') + 'found' : ''; }
   if (!cases.length) { list.appendChild(el('div', 'empty', smode ? (searchActive() ? 'No cases match that.' : 'Type a name or procedure, or tap a keyword or a year.') : rmode ? 'All caught up. Every past case has a rating.' : 'No cases on this day.'));
+    if (!rmode && !smode) { var rb2 = recapBanner(); if (rb2) list.insertBefore(rb2, list.firstChild); var me2 = msEl(day); if (me2) list.appendChild(me2); }
     if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); }
     return; }
+  if (!rmode && !smode) { var rb = recapBanner(); if (rb) list.appendChild(rb); var me = msEl(day); if (me) list.appendChild(me); }
   if (!rmode && !smode) { var fe0 = factEl(day); if (fe0) { fe0.className += ' top'; list.appendChild(fe0); } }   // surgery days: the fact sits above the cases
   var lastDate = '';
   cases.forEach(function (c, i) {
@@ -910,14 +1062,15 @@ var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct',
 brandRow('who2', '');
 brandRow('who3', '');
 brandRow('who4', '');
+brandRow('who5', '');
 function setTab(t) {
   $('vCases').style.display = t === 'cases' ? '' : 'none';
   $('vStats').style.display = t === 'stats' ? '' : 'none';
-  $('vFin').style.display = t === 'fin' ? '' : 'none'; $('vImp').style.display = t === 'imp' ? '' : 'none';
+  $('vFin').style.display = t === 'fin' ? '' : 'none'; $('vImp').style.display = t === 'imp' ? '' : 'none'; $('vPhotos').style.display = t === 'photos' ? '' : 'none'; $('tPhotos').className = t === 'photos' ? 'on' : '';
   $('tCases').className = t === 'cases' ? 'on' : ''; $('tStats').className = t === 'stats' ? 'on' : ''; $('tFin').className = t === 'fin' ? 'on' : ''; $('tImp').className = t === 'imp' ? 'on' : '';
   window.scrollTo(0, 0);
   if (t !== 'fin') hideMoney();
-  if (t === 'stats') { per = 'sel'; selY = +INIT.today.slice(0, 4); selM = +INIT.today.slice(5, 7); loadStats(); } else if (t === 'fin') { renderFin(); drawTeam(); } else if (t === 'imp') renderImp(); else go(day);
+  if (t === 'stats') { per = 'sel'; selY = +INIT.today.slice(0, 4); selM = +INIT.today.slice(5, 7); loadStats(); } else if (t === 'fin') { renderFin(); drawTeam(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else go(day);
 }
 // ---- Finance tab: amounts are not drawn until you tap Show amounts; leaving the tab hides them again ----
 var finShown = false, finPer = '12m', inPerFin = function () { return true; };
@@ -1091,6 +1244,8 @@ function renderStats() {
   var sel = all.filter(function (c) { return counted(c) && inPer(c); });
   var lv = sel.reduce(function (s, c) { return s + c.n; }, 0), withLv = sel.filter(function (c) { return c.n > 0; }).length;
   var rated = sel.filter(function (c) { return c.df > 0; });
+  MS = null;
+  if (per === 'sel' && selY && selM) { var rcb = el('button', 'recapb', MONF[selM - 1] + ' ' + selY + ' recap ›'); rcb.onclick = function () { openRecap(selY + '-' + ('0' + selM).slice(-2)); }; b.appendChild(rcb); }
   var tiles = el('div', 'tiles'); b.appendChild(tiles);
   tile(tiles, String(sel.length), 'Cases completed');
   tile(tiles, String(lv), 'Levels');
@@ -1139,6 +1294,8 @@ function renderStats() {
   mc.appendChild(lg); mc.appendChild(info);
 
   hbars(card('By case type'), tally(sel, function (c) { return c.t; }));
+  var msl = milestones().filter(function (m) { return inPer({ d: m.d }); }).slice(-10).reverse();
+  if (msl.length) { var mcd = card('Milestones'); msl.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(el('span', 'mi', '🏆')); r.appendChild(el('span', null, m.t + ', ' + MON[+m.d.slice(5, 7) - 1] + ' ' + (+m.d.slice(8)) + (m.d.slice(0, 4) !== stats.today.slice(0, 4) ? ', ' + m.d.slice(0, 4) : ''))); mcd.appendChild(r); }); }
   hbars(card('By vendor', 'Cases with hardware, from the scheduling orders. Tracked since Nov 9, 2026.'),
     tally(sel.filter(function (c) { return c.v; }), function (c) { return c.v.split(/\s*,\s*/); }), 'No hardware cases since Nov 9 in this period.');
   var cg = {}; sel.forEach(function (c) { (c.im || []).forEach(function (m) { if (m.k === 'Cage') { var k = m.v || 'Vendor not stated'; cg[k] = (cg[k] || 0) + 1; } }); });
