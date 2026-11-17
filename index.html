@@ -150,6 +150,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 #list > .empty{margin-left:-34px}#list > .quote{margin-left:-12px}
 .fact{margin:16px 0 8px -34px;padding:14px 16px;border-radius:14px;background:#0C1019;border:1px solid #1E2A3C}
 .fact.top{margin:0 0 14px -34px;position:relative;z-index:2}
+.fact{display:block;text-decoration:none;color:inherit}.fact:active{background:#111A2A}
 .fact .fh{font-size:12px;font-weight:700;color:#D3B98C;margin-bottom:6px}.fact .ft{font-size:15px;line-height:1.45;color:#CAD1E6}.fact .fs{font-size:12px;color:#828A9A;margin-top:6px}
 .implrow{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid #2A2F38;padding:10px 0;color:inherit;font:inherit}
 .implrow .ih{font-weight:700;font-size:14px;margin-bottom:3px}.implrow .il{font-size:13.5px;color:#CAD1E6;line-height:1.45}.implrow .il.dim{color:#828A9A}
@@ -576,7 +577,7 @@ var QUOTES = [["No cases today. Even the discs get a day off.", "empty"], ["Rest
 (function () {
   try { fetch(QUOTES_URL, { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (j) {
     var q = (j && j.quotes || []).filter(function (x) { return x && x.t && x.c; }).map(function (x) { return [String(x.t), String(x.c)]; });
-    var f = (j && j.facts || []).filter(function (x) { return x && x.t; }).map(function (x) { return [String(x.t), String(x.src || '')]; });
+    var f = (j && j.facts || []).filter(function (x) { return x && x.t; }).map(function (x) { return [String(x.t), String(x.src || ''), String(x.url || '')]; });
     if (f.length) FACTS = f;
     if (q.length) { QUOTES = q; if (!rmode && day && $('vCases').style.display !== 'none' && !$('sheet').classList.contains('on')) render(); }
   }).catch(function () {}); } catch (e) {}
@@ -588,12 +589,22 @@ function quoteFor(isoDay, hasCases) {
   var h = 7; for (var i = 0; i < isoDay.length; i++) h = (h * 31 + isoDay.charCodeAt(i)) % 1000003;   // same line all day, a different one tomorrow
   return pool[h % pool.length][0];
 }
+function factLink(f) {   // the exact page if the list has one; a PubMed search for a cited study; otherwise a web search
+  if (/^https:\/\//.test(f[2] || '')) return f[2];
+  var m = String(f[1] || '').match(/^([^\s,]+)(?: et al\.| & [^,]+)?,\s*(.+?)\s+(\d{4})$/);
+  var TA = { 'JBJS': 'J Bone Joint Surg Am', 'Spine': 'Spine', 'NEJM': 'N Engl J Med', 'AJNR': 'AJNR Am J Neuroradiol', 'JAMA': 'JAMA', 'Lancet': 'Lancet', 'BMJ': 'BMJ', 'Brain': 'Brain',
+    'Clin Rehabil': 'Clin Rehabil', 'Clin Orthop': 'Clin Orthop Relat Res', 'J Bone Miner Res': 'J Bone Miner Res', 'Spine J': 'Spine J', 'Global Spine J': 'Global Spine J',
+    'Eur Spine J': 'Eur Spine J', 'J Neurosurg Spine': 'J Neurosurg Spine' };
+  if (m) return 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encodeURIComponent(m[1] + '[au] AND ' + m[3] + '[dp]' + (TA[m[2]] ? ' AND "' + TA[m[2]] + '"[ta]' : ''));
+  return 'https://www.google.com/search?q=' + encodeURIComponent(String(f[0]).replace(/^Quiz:\s*/, '') + ' spine');
+}
 function factEl(isoDay) {   // a spine fact under the quote on days with no cases
   if (!FACTS.length) return null;
   var h = 11; for (var i = 0; i < isoDay.length; i++) h = (h * 37 + isoDay.charCodeAt(i)) % 1000033;
-  var f = FACTS[h % FACTS.length], box = el('div', 'fact');
+  var f = FACTS[h % FACTS.length], box = el('a', 'fact');
+  box.href = factLink(f); box.target = '_blank'; box.rel = 'noopener';
   box.appendChild(el('div', 'fh', 'Spine fact')); box.appendChild(el('div', 'ft', f[0]));
-  if (f[1]) box.appendChild(el('div', 'fs', f[1]));
+  box.appendChild(el('div', 'fs', (f[1] ? f[1] + '  ' : '') + 'Read more ›'));
   return box;
 }
 function quoteEl(isoDay, hasCases) { var q = quoteFor(isoDay, hasCases); return q ? el('div', 'quote', q) : null; }
