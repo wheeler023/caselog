@@ -18,14 +18,15 @@ const shim = `<div id="splash"><img src="icon-192.png" alt=""><div id="splashMsg
 <script>
 // Phone-app plumbing: every call the screens make to Google goes to the case-log script over HTTPS with this phone's key.
 window.__PHONE = true;
-var API = ${JSON.stringify(API)}, GOOGLE_APP = ${JSON.stringify(ctx.APP)}, KEY = 'caselog_key';
-function takePairing() { var m = location.hash.match(/pair=([a-f0-9]{48,})/); if (!m) return false; try { localStorage.setItem(KEY, m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return true; }
+var API = ${JSON.stringify(API)}, GOOGLE_APP = ${JSON.stringify(ctx.APP)}, KEY = 'caselog_key', SAVED = 'caselog_last';
+function takePairing() { var m = location.hash.match(/pair=([a-f0-9]{48,})/); if (!m) return false; try { localStorage.removeItem(SAVED); localStorage.setItem(KEY, m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return true; }
 takePairing();
 window.addEventListener('hashchange', function () { if (takePairing()) location.reload(); });
 function apiKey() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
 function splash(html) { document.getElementById('splashMsg').innerHTML = html; document.getElementById('splash').style.display = 'flex'; }
 function needPairing() {
-  try { localStorage.removeItem(KEY); } catch (e) {}
+  try { localStorage.removeItem(KEY); localStorage.removeItem(SAVED); } catch (e) {}
+  if (window.__STARTED) return location.reload();
   splash('This phone isn’t set up yet.<br>Paste the setup link you were sent:' +
     '<input id="pairIn" placeholder="https://wheeler023.github.io/caselog/#pair=…" style="width:100%;max-width:340px;margin-top:6px;padding:10px;border-radius:10px;border:1.5px solid #555C6B;background:transparent;color:#fff;font:13px monospace">' +
     '<div><button onclick="pastePair()">Paste</button> <button onclick="usePair()">Use link</button></div>' +
@@ -34,7 +35,7 @@ function needPairing() {
 function usePair() {
   var v = (document.getElementById('pairIn').value || '').trim(), m = v.match(/pair=([a-f0-9]{48,})/);
   if (!m) { document.getElementById('pairIn').style.borderColor = '#EE614F'; return; }
-  try { localStorage.setItem(KEY, m[1]); } catch (e) {}
+  try { localStorage.removeItem(SAVED); localStorage.setItem(KEY, m[1]); } catch (e) {}
   boot();
 }
 function pastePair() {
@@ -54,15 +55,36 @@ function runner(ok, fail) {
   } });
 }
 window.google = { script: { get run() { return runner(); } } };
+// The last opening screen is kept on this phone so the app opens at once; fresh data replaces it a moment later.
+function localDay() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function loadSaved() {
+  try {
+    var o = JSON.parse(localStorage.getItem(SAVED) || 'null');
+    if (!o || o.k !== apiKey() || !o.init) return null;
+    var init = o.init, t = localDay();
+    if (init.today !== t) { if (init.today.slice(0, 7) !== t.slice(0, 7)) init.month = null; init.today = t; init.first = null; }
+    return init;
+  } catch (e) { return null; }
+}
+function save(init) { try { localStorage.setItem(SAVED, JSON.stringify({ k: apiKey(), init: init })); } catch (e) {} }
+function start(init) {
+  window.__INIT = init; window.__STARTED = true;
+  (0, eval)(document.getElementById('appjs').textContent);
+  document.getElementById('splash').style.display = 'none';
+}
+function freshen(f) {   // drop the fresh opening data into the screens already showing
+  if (f.role !== window.__INIT.role) return location.reload();
+  try { if (f.month) storeMonth(f.month); if (f.todo) drawTodo(f.todo); if (f.first) show(f.first); drawWeek(day); } catch (e) { console.warn(e); }
+}
 function boot() {
   if (!apiKey()) return needPairing();
-  splash('Opening your case log…');
+  var saved = loadSaved();
+  if (saved) start(saved); else splash('Opening your case log…');
   callApi('init', []).then(function (init) {
-    init.icon = 'icon-192.png'; window.__INIT = init;
-    (0, eval)(document.getElementById('appjs').textContent);
-    document.getElementById('splash').style.display = 'none';
+    init.icon = 'icon-192.png'; save(init);
+    if (window.__STARTED) freshen(init); else start(init);
   }).catch(function (e) {
-    if (apiKey()) splash('Couldn’t reach your case log (' + e.message + ').<br><button onclick="boot()">Try again</button>');
+    if (!window.__STARTED && apiKey()) splash('Couldn’t reach your case log (' + e.message + ').<br><button onclick="boot()">Try again</button>');
   });
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
