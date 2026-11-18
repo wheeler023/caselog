@@ -196,6 +196,22 @@ html,body{font-family:var(--sans);line-height:1.4}
 .pvbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
 .pvbar button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-weight:700}.pvbar button:disabled{opacity:.4}
 #pvMsg{color:#828A9A;margin:10px}#pvCap{color:#CAD1E6;font-size:14px;margin-top:12px}
+.card.v2{display:flex;align-items:stretch;gap:12px;position:relative;padding:14px 14px 14px 18px;border-radius:16px;background:#14202F;border:1px solid #22324A;overflow:hidden}
+.card.v2::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px}
+.card.v2.k-sched::before{background:#9EC5E0}.card.v2.k-rate::before{background:#D3B98C}.card.v2.k-done::before{background:#5FBF7F}.card.v2.k-off::before{background:#6B7280}
+.card.v2.k-off{opacity:.6}
+.card.v2{margin-left:-34px;text-align:left}.list:has(.card.v2)::before{display:none}
+.card.v2::before{left:0;top:0;bottom:0;width:5px;height:auto;border-radius:0;border:0}
+.card.v2 .cn,.card.v2 .cp{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.card.v2 .cl{flex:none;width:80px;text-align:left}.card.v2 .cl .cd{text-align:left}.card.v2 .ct{font-size:16px;font-weight:800;color:#B9D7EC;white-space:nowrap}.card.v2 .cd{font-size:13px;color:#828A9A;margin-top:3px}
+.card.v2 .cm{flex:1;min-width:0}.card.v2 .cn{font-size:16.5px;font-weight:800;color:#fff;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.v2 .cp{font-size:14px;color:#AEB6C8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.v2 .cb{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:7px}.card.v2 .ci{font-size:13px;font-weight:600;color:#9EC5E0}.card.v2 .ci.lv{color:#D3B98C}
+.card.v2 .cb .tag{margin:0}
+.card.v2 .cr{flex:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;min-width:64px}
+.card.v2 .cv{font-family:var(--serif);font-size:30px;font-weight:700;line-height:1;color:#8FD19E}.card.v2 .cu{font-size:10.5px;font-weight:800;letter-spacing:.8px;color:#AEB6C8;text-transform:uppercase;margin-bottom:6px}
+.pill{font-size:12.5px;font-weight:800;padding:5px 10px;border-radius:14px;white-space:nowrap}
+.pill.p-done{background:#183A27;color:#8FD19E}.pill.p-rate{background:#3A2F1A;color:#E9CF9C}.pill.p-sched{background:#17304A;color:#9EC5E0}.pill.p-off{background:#3A1C1C;color:#EE8F84}
 .implrow{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid #2A2F38;padding:10px 0;color:inherit;font:inherit}
 .implrow .ih{font-weight:700;font-size:14px;margin-bottom:3px}.implrow .il{font-size:13.5px;color:#CAD1E6;line-height:1.45}.implrow .il.dim{color:#828A9A}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #B9D7EC;outline-offset:2px}
@@ -890,26 +906,29 @@ function render() {
   var lastDate = '';
   cases.forEach(function (c, i) {
     if (rmode && c.dateLabel !== lastDate) { lastDate = c.dateLabel; list.appendChild(el('div', 'dhd', c.dateLabel)); }
-    var sc = c.status === 'Performed' ? ' s-done' : c.status === 'Needs confirmation' ? ' s-rate' : /Cancelled|Postponed|Removed/.test(c.status) ? ' s-off' : '';
-    var card = el('div', 'card' + sc); card.onclick = function () { openCase(i); };
-    card.appendChild(el('div', 'tm', c.start || '—'));
-    var m = el('div'); m.style.flex = '1'; m.style.minWidth = '0';
-    m.appendChild(el('div', 'nm', c.patient || 'Patient'));
-    var sub = [c.age, c.sex].filter(Boolean).join(', '); if (sub) m.appendChild(el('div', 'sub', sub));
-    if (c.procedure) m.appendChild(el('div', 'proc', c.procedure + (c.side ? ', ' + c.side.toLowerCase() : '')));
-    var tags = el('div', 'tags');
-    if (c.duration) tags.appendChild(el('span', 'tag', c.duration));
-    if (/Cancelled|Postponed|Removed/.test(c.status)) tags.appendChild(el('span', 'tag x', c.status));
-    if (c.status === 'Needs confirmation') tags.appendChild(el('span', 'tag w', 'Needs rating'));
-    if (c.difficulty) tags.appendChild(el('span', 'tag d', 'Difficulty ' + c.difficulty));
-    if (c.levels) tags.appendChild(el('span', 'tag', c.levels));
-    if (c.images) tags.appendChild(el('span', 'tag', '📷 ' + c.images));
-    if (c.notes) tags.appendChild(el('span', 'tag n', '📝 Notes'));
-    if (c.cx) tags.appendChild(el('span', 'tag x', c.cx));
-    if (c.vendor) c.vendor.split(/\s*,\s*/).forEach(function (v) { tags.appendChild(el('span', 'tag vd' + (v === 'Medtronic' ? ' mdt' : v === 'NuVasive' ? ' nuv' : ''), v)); });
-    if (c.opnoteUrl) tags.appendChild(el('span', 'tag', '📄 Op note'));
-    if (tags.childNodes.length) m.appendChild(tags);
-    card.appendChild(m); list.appendChild(card);
+    var off = /Cancelled|Postponed|Removed/.test(c.status), rated = !!c.difficulty, toRate = c.status === 'Needs confirmation' || (c.status === 'Performed' && !rated && c.canRate !== false && (c.date || day) <= INIT.today);
+    var st = off ? 'off' : rated ? 'done' : toRate ? 'rate' : 'sched';
+    var card = el('div', 'card v2 k-' + st); card.onclick = function () { openCase(i); };
+    var L = el('div', 'cl'); L.appendChild(el('div', 'ct', c.start || '—')); if (c.duration) L.appendChild(el('div', 'cd', c.duration)); card.appendChild(L);
+    var m = el('div', 'cm');
+    m.appendChild(el('div', 'cn', (c.patient || 'Patient').toUpperCase()));
+    var proc = [c.procedure, c.side ? c.side.toLowerCase() : ''].filter(Boolean).join(', ');
+    if (proc) m.appendChild(el('div', 'cp', proc));
+    var bits = el('div', 'cb');
+    var who = [c.age, c.sex].filter(Boolean).join(' '); if (who) bits.appendChild(el('span', 'ci', who));
+    if (c.levels) bits.appendChild(el('span', 'ci lv', c.levels));
+    if (c.vendor) c.vendor.split(/\s*,\s*/).forEach(function (v) { bits.appendChild(el('span', 'tag vd' + (v === 'Medtronic' ? ' mdt' : v === 'NuVasive' ? ' nuv' : ''), v)); });
+    if (c.images) bits.appendChild(el('span', 'ci', '📷 ' + c.images));
+    if (c.notes) bits.appendChild(el('span', 'ci', '📝'));
+    if (c.opnoteUrl) bits.appendChild(el('span', 'ci', '📄'));
+    if (c.cx) bits.appendChild(el('span', 'tag x', c.cx));
+    if (bits.childNodes.length) m.appendChild(bits);
+    card.appendChild(m);
+    var R = el('div', 'cr');
+    if (rated) { R.appendChild(el('div', 'cv', String(c.difficulty))); R.appendChild(el('div', 'cu', 'Rating')); }
+    R.appendChild(el('div', 'pill p-' + st, off ? (c.status === 'Removed from calendar' ? 'Removed' : c.status) : rated ? '✓ Rated' : toRate ? 'Rate' : 'Scheduled'));
+    card.appendChild(R);
+    list.appendChild(card);
   });
   if (!rmode && !smode) { var qe = quoteEl(day, true); if (qe) list.appendChild(qe); }
   tryPendingOpen();
