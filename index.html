@@ -55,6 +55,12 @@ textarea:focus{outline:2px solid #9EC5E0;border-color:transparent}
 .thumbs .ph{display:flex;align-items:center;justify-content:center;height:100%}
 .thumbs .busy{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#FFFFFF;font-size:12px;text-align:center;padding:3px}
 .thumbs .rm{position:absolute;top:4px;right:4px;min-width:30px;height:30px;padding:0 8px;border-radius:15px;border:0;background:rgba(0,0,0,.6);color:#FFFFFF;font-size:15px}
+.upstat{min-height:0;font-size:14px;font-weight:600;color:#B9D7EC}.upstat:not(:empty){margin:8px 0 2px}.upstat.done{color:#8FD19E}
+.thumbs .th.up img{opacity:.55}
+.thumbs .spin{position:absolute;top:50%;left:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.thumbs .busy.bad{background:#B91C1C}
+.thumbs .okb{position:absolute;left:5px;top:5px;width:24px;height:24px;border-radius:12px;background:#2E8B57;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .thumbs .rm.sure{background:#B91C1C;font-size:12px;font-weight:700}
 .addimg{width:100%;height:48px;margin-top:8px;border-radius:12px;border:0;background:#13213B;color:#FFFFFF;font-size:16px;font-weight:700}
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0C1019;border-top:1px solid #1F2328;padding-bottom:env(safe-area-inset-bottom);z-index:6}
@@ -139,7 +145,9 @@ html,body{font-family:var(--sans);line-height:1.4}
 .box,.out,.notes,.tile,.card2{border:1px solid #1F2328;border-radius:12px;box-shadow:none}
 .out label,.notes label,.card2 h3{font-family:var(--serif);font-weight:700;font-size:17px}
 .rate button{border-radius:10px;font-family:var(--serif)}
-.rate button.on{background:#13213B;border-color:#13213B}
+.rate button.on{background:#9EC5E0;border-color:#9EC5E0;color:#0C1019;box-shadow:0 0 0 2px #B9D7EC}
+.rate button:active{transform:scale(.94)}
+.rate button{transition:transform .08s}
 .b1{background:#13213B}
 .addimg{background:#0C1019;color:#BEC6E4;border:1.5px solid #13213B}
 .tile .n{font-family:var(--serif);font-size:30px;font-variant-numeric:lining-nums tabular-nums}
@@ -328,6 +336,7 @@ textarea:focus{outline:2px solid #B9D7EC}
   <div class="out">
    <label>Images</label>
    <div class="hint">Fluoro shots or other photos for this case. Take one or pick from your phone; they're saved to this case's folder in your Drive.</div>
+   <div class="upstat" id="upStat"></div>
    <div class="thumbs" id="thumbs"></div>
    <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="addImages(this.files)">
    <button class="addimg" onclick="document.getElementById('imgIn').click()">📷 Add images</button>
@@ -978,8 +987,9 @@ function renderThumbs() {
     img.alt = 'Image ' + (i + 1);
     img.onerror = function () { img.remove(); var ph = el('div', 'ph', 'Image ' + (i + 1)); a.insertBefore(ph, a.firstChild); };
     a.appendChild(img);
-    if (im.busy) a.appendChild(el('span', 'busy', 'Uploading…'));
-    if (im.failed) a.appendChild(el('span', 'busy', 'Not saved'));
+    if (im.busy) { a.className = 'th up'; a.appendChild(el('span', 'spin')); a.appendChild(el('span', 'busy', 'Saving…')); }
+    if (im.failed) a.appendChild(el('span', 'busy bad', 'Not saved'));
+    if (im.ok) a.appendChild(el('span', 'okb', '✓'));
     if (im.id && !im.busy) {
       var rm = el('button', 'rm', '×');
       rm.onclick = function (ev) {
@@ -997,10 +1007,10 @@ function shrink(file, cb) {
   r.onload = function () {
     var im = new Image();
     im.onload = function () {
-      var M = 2000, s = Math.min(1, M / Math.max(im.width, im.height)), cv = document.createElement('canvas');
+      var M = 1600, s = Math.min(1, M / Math.max(im.width, im.height)), cv = document.createElement('canvas');
       cv.width = Math.round(im.width * s); cv.height = Math.round(im.height * s);
       cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
-      cb(cv.toDataURL('image/jpeg', 0.85));
+      cb(cv.toDataURL('image/jpeg', 0.82));
     };
     im.onerror = function () { cb(null); };
     im.src = r.result;
@@ -1008,19 +1018,24 @@ function shrink(file, cb) {
   r.onerror = function () { cb(null); };
   r.readAsDataURL(file);
 }
+function upStatus(txt, done) { var u = $('upStat'); if (!u) return; u.textContent = txt || ''; u.className = done ? 'upstat done' : 'upstat'; }
 function addImages(files) {
-  var c = cur, list = Array.prototype.slice.call(files || []);
+  var c = cur, list = Array.prototype.slice.call(files || []), total = list.length, k = 0, saved = 0, failed = 0;
   $('imgIn').value = '';
   var next = function () {
-    if (!list.length) { render(); return; }
+    if (!list.length) {
+      if (saved || failed) upStatus(failed ? saved + ' saved, ' + failed + ' not saved' : '✓ ' + (saved === 1 ? 'Photo saved' : saved + ' photos saved'), !failed);
+      setTimeout(function () { if (cur === c) upStatus(''); }, 4000); render(); return;
+    }
+    k++;
     shrink(list.shift(), function (raw) {
       if (!raw) { toast('Could not read that photo'); next(); return; }
       cropImage(raw, function (data) {
       if (!data) { next(); return; }
       var item = { local: data, busy: true };
-      if (cur === c) { imgs.push(item); renderThumbs(); }
-      google.script.run.withSuccessHandler(function (r) { item.id = r.id; item.busy = false; c.images = r.n; if (cur === c) renderThumbs(); toast('Image saved'); next(); })
-        .withFailureHandler(function (e) { item.busy = false; item.failed = true; if (cur === c) renderThumbs(); toast('Not saved: ' + e.message); next(); })
+      if (cur === c) { imgs.push(item); renderThumbs(); upStatus('Saving photo ' + k + (total > 1 ? ' of ' + total : '') + '…'); }
+      google.script.run.withSuccessHandler(function (r) { item.id = r.id; item.busy = false; item.ok = true; saved++; c.images = r.n; if (cur === c) renderThumbs(); next(); })
+        .withFailureHandler(function (e) { item.busy = false; item.failed = true; failed++; if (cur === c) renderThumbs(); toast('Not saved: ' + e.message); next(); })
         .wdAddImage(c.id, data);
       });
     });
@@ -1084,15 +1099,28 @@ function toggleLegend() {
   var lg = $('legend'), on = !lg.classList.contains('on');
   lg.classList.toggle('on', on); $('infoBtn').setAttribute('aria-expanded', on ? 'true' : 'false'); $('infoBtn').classList.toggle('on', on);
 }
-function setOutcome(o) {
+var outSeq = 0;
+function setOutcome(o) {   // shows the change at once; the save happens in the background
   if (!cur) return;
-  var c = cur;
+  var c = cur, before = { status: c.status, difficulty: c.difficulty }, seq = ++outSeq;
+  if (/^[1-5]$/.test(String(o))) { c.difficulty = String(o); c.status = 'Performed'; }
+  else if (o === 'cancelled') { c.difficulty = ''; c.status = 'Cancelled'; }
+  else if (o === 'clear') { c.difficulty = ''; }
+  try { navigator.vibrate && navigator.vibrate(12); } catch (e) {}
+  if (cur === c) { renderOutcome(); openRowsStatus(); }
+  render();
   google.script.run.withSuccessHandler(function (r) {
+    if (seq !== outSeq) return;   // a newer tap is on its way
     c.status = r.status; c.difficulty = r.difficulty;
     if (cur === c) { renderOutcome(); openRowsStatus(); }
-    toast(r.status === 'Performed' ? 'Rated ' + r.difficulty : r.status === 'Cancelled' ? 'Marked cancelled' : 'Cleared');
+    toast(r.status === 'Performed' ? 'Saved: rated ' + r.difficulty : r.status === 'Cancelled' ? 'Saved: cancelled' : 'Rating cleared');
     render();
-  }).withFailureHandler(function (e) { toast('Not saved: ' + e.message); }).wdOutcome(c.id, o);
+  }).withFailureHandler(function (e) {
+    if (seq !== outSeq) return;
+    c.status = before.status; c.difficulty = before.difficulty;
+    if (cur === c) { renderOutcome(); openRowsStatus(); }
+    render(); toast('Not saved: ' + e.message);
+  }).wdOutcome(c.id, o);
 }
 function openRowsStatus() {
   var rows = $('cInfo').querySelectorAll('.row');
