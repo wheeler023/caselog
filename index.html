@@ -161,6 +161,20 @@ html,body{font-family:var(--sans);line-height:1.4}
 .pth{position:relative;aspect-ratio:1;border:0;padding:0;border-radius:10px;overflow:hidden;background:#0C1019}
 .pth img{width:100%;height:100%;object-fit:cover;display:block}.pth img:not([src]){visibility:hidden}.pth .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#828A9A;font-size:12px}
 .pth .pc{position:absolute;left:0;right:0;bottom:0;padding:3px 5px;font-size:10.5px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.75));text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crop{position:fixed;inset:0;z-index:30;background:#000;display:none;flex-direction:column}.crop.on{display:flex}
+.cropbar{display:flex;gap:8px;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
+.cropbar button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:10px;padding:9px 12px;font:inherit;font-weight:700}.cropbar .pri{background:#9EC5E0;color:#0C1019}
+.cropwrap{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
+.cropwrap img{max-width:94vw;max-height:70vh;display:block;user-select:none;-webkit-user-drag:none}
+#cropBox{position:absolute;border:2px solid #9EC5E0;box-shadow:0 0 0 9999px rgba(0,0,0,.55);touch-action:none;cursor:move}
+#cropBox i{position:absolute;width:26px;height:26px;border:3px solid #fff;touch-action:none}
+#cropBox i[data-h=tl]{left:-4px;top:-4px;border-right:0;border-bottom:0}#cropBox i[data-h=tr]{right:-4px;top:-4px;border-left:0;border-bottom:0}
+#cropBox i[data-h=bl]{left:-4px;bottom:-4px;border-right:0;border-top:0}#cropBox i[data-h=br]{right:-4px;bottom:-4px;border-left:0;border-top:0}
+.crophint{color:#828A9A;font-size:13px;text-align:center;padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+.mcover{margin:18px 0 10px;padding:16px;border-radius:16px;background:linear-gradient(160deg,#13213B,#0C1019);border:1px solid #2B3A52}
+.mch{display:flex;align-items:center;gap:10px}.mch img{width:34px;height:34px;border-radius:50%}.mct{font-family:var(--serif);font-size:22px;font-weight:700;color:#fff}
+.mcs{display:flex;gap:22px;margin-top:12px}.mcs b{display:block;font-family:var(--serif);font-size:26px;color:#B9D7EC;line-height:1.1}.mcs span{font-size:12.5px;color:#828A9A}
+.mcf{margin-top:10px;font-size:13.5px;color:#D3B98C}
 .pview{position:fixed;inset:0;z-index:20;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center}
 .pview.on{display:flex}.pview img{max-width:100%;max-height:72vh;object-fit:contain}
 .pvbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
@@ -266,7 +280,10 @@ textarea:focus{outline:2px solid #B9D7EC}
  <div class="sh"><button onclick="closeRecap()">‹ Back</button><div class="ttl"><b id="rcTitle">Recap</b><span></span></div></div>
  <div class="body"><div class="sp" id="rcBody"></div></div>
 </div>
-<div class="pview" id="pview"><div class="pvbar"><button onclick="closePhoto()">‹ Back</button><button id="pvShare" onclick="sharePhoto()">Share</button></div>
+<div class="crop" id="crop"><div class="cropbar"><button id="cropCancel">Cancel</button><button id="cropFull">Use full photo</button><button id="cropUse" class="pri">Crop</button></div>
+ <div class="cropwrap"><img id="cropImg" alt=""><div id="cropBox"><i data-h="tl"></i><i data-h="tr"></i><i data-h="bl"></i><i data-h="br"></i></div></div>
+ <div class="crophint">Drag the box or its corners to trim names, dates or labels.</div></div>
+<div class="pview" id="pview"><div class="pvbar"><button onclick="closePhoto()">‹ Back</button><span><button onclick="openPhotoCase()">Open case</button> <button id="pvShare" onclick="sharePhoto()">Share</button></span></div>
  <img id="pvImg" alt=""><div id="pvMsg"></div><div id="pvCap"></div></div>
 <div class="sheet" id="rsheet">
  <div class="sh"><button onclick="closeRating()">‹ Back</button><div class="ttl"><b id="rTitle">Needs rating</b><span id="rCount"></span></div></div>
@@ -718,8 +735,11 @@ function drawGallery() {
   var list = gal.filter(function (g) { return (!galType || g.t === galType) && (!galLv || (g.lv || '').split(/,\s*/).indexOf(galLv) >= 0); });
   if (!gal.length) { b.appendChild(el('div', 'empty', 'No case photos yet. Add them from a case’s screen.')); return; }
   b.appendChild(el('div', 'note', list.length + ' photo' + (list.length === 1 ? '' : 's') + '. Before posting, check for names, dates, faces or labels.'));
-  var grid = el('div', 'pgrid'), need = []; b.appendChild(grid);
+  var grid = null, need = [], mk = '', perMonth = {};
+  list.forEach(function (g) { var k = g.d.slice(0, 7); perMonth[k] = (perMonth[k] || 0) + 1; });
+  if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) { stats = r; MS = null; if ($('vPhotos').style.display !== 'none') drawGallery(); } }).wdStats();
   list.forEach(function (g) {
+    if (g.d.slice(0, 7) !== mk) { mk = g.d.slice(0, 7); b.appendChild(monthCover(mk, perMonth[mk])); grid = el('div', 'pgrid'); b.appendChild(grid); }
     var a = el('button', 'pth'), img = document.createElement('img');
     img.alt = g.t; a.setAttribute('data-f', g.f);
     if (THUMB[g.f]) img.src = THUMB[g.f]; else if (THUMB[g.f] !== '') need.push(g.f);
@@ -740,9 +760,9 @@ function fetchThumbs(ids) {   // 12 at a time through the app's own connection
     fetchThumbs(rest);
   }).withFailureHandler(function () {}).wdThumbs(batch);
 }
-var pvFile = null;
+var pvFile = null, pvG = null;
 function viewPhoto(g) {
-  var v = $('pview'), im = $('pvImg'); pvFile = null;
+  var v = $('pview'), im = $('pvImg'); pvFile = null; pvG = g;
   im.removeAttribute('src'); $('pvCap').textContent = [g.t, g.lv].filter(Boolean).join(' ') + ', ' + MON[+g.d.slice(5, 7) - 1] + ' ' + (+g.d.slice(8)) + ', ' + g.d.slice(0, 4);
   $('pvMsg').textContent = 'Loading…'; $('pvShare').disabled = true; v.classList.add('on');
   google.script.run.withSuccessHandler(function (r) {
@@ -758,6 +778,69 @@ function sharePhoto() {
   var a = document.createElement('a'); a.href = URL.createObjectURL(pvFile); a.download = pvFile.name; document.body.appendChild(a); a.click(); a.remove();
 }
 function closePhoto() { $('pview').classList.remove('on'); }
+// ---- Crop before upload: drag the box or its corners; Use full photo skips cropping ----
+function cropImage(dataUrl, cb) {
+  var ov = $('crop'), im = $('cropImg'), box = $('cropBox'), done = false;
+  im.onload = function () {
+    var r = im.getBoundingClientRect(), w = r.width, h = r.height;
+    var b = { x: w * 0.05, y: h * 0.05, w: w * 0.9, h: h * 0.9 };
+    function draw() { box.style.left = (im.offsetLeft + b.x) + 'px'; box.style.top = (im.offsetTop + b.y) + 'px'; box.style.width = b.w + 'px'; box.style.height = b.h + 'px'; }
+    draw();
+    var mode = '', sx = 0, sy = 0, s0 = null;
+    function down(e) {
+      var t = e.target; mode = t.getAttribute('data-h') || (t === box ? 'move' : ''); if (!mode) return;
+      e.preventDefault(); sx = e.clientX; sy = e.clientY; s0 = { x: b.x, y: b.y, w: b.w, h: b.h };
+      box.setPointerCapture && box.setPointerCapture(e.pointerId);
+    }
+    function move(e) {
+      if (!mode) return; e.preventDefault();
+      var dx = e.clientX - sx, dy = e.clientY - sy, M = 40;
+      if (mode === 'move') { b.x = Math.min(Math.max(0, s0.x + dx), w - s0.w); b.y = Math.min(Math.max(0, s0.y + dy), h - s0.h); }
+      else {
+        if (mode.indexOf('l') >= 0) { var nx = Math.min(Math.max(0, s0.x + dx), s0.x + s0.w - M); b.w = s0.w + (s0.x - nx); b.x = nx; }
+        if (mode.indexOf('r') >= 0) b.w = Math.min(Math.max(M, s0.w + dx), w - s0.x);
+        if (mode.indexOf('t') >= 0) { var ny = Math.min(Math.max(0, s0.y + dy), s0.y + s0.h - M); b.h = s0.h + (s0.y - ny); b.y = ny; }
+        if (mode.indexOf('b') >= 0) b.h = Math.min(Math.max(M, s0.h + dy), h - s0.y);
+      }
+      draw();
+    }
+    function up() { mode = ''; }
+    box.onpointerdown = down; ov.onpointermove = move; ov.onpointerup = up; ov.onpointercancel = up;
+    function finish(out) { if (done) return; done = true; ov.classList.remove('on'); im.onload = null; cb(out); }
+    $('cropUse').onclick = function () {
+      var k = im.naturalWidth / w, cv = document.createElement('canvas');
+      cv.width = Math.round(b.w * k); cv.height = Math.round(b.h * k);
+      cv.getContext('2d').drawImage(im, b.x * k, b.y * k, b.w * k, b.h * k, 0, 0, cv.width, cv.height);
+      finish(cv.toDataURL('image/jpeg', 0.88));
+    };
+    $('cropFull').onclick = function () { finish(dataUrl); };
+    $('cropCancel').onclick = function () { finish(null); };
+  };
+  ov.classList.add('on'); im.src = dataUrl;
+}
+// ---- From a photo to its case ----
+var pendingOpen = null;
+function openPhotoCase() {
+  var g = pvG; if (!g) return;
+  closePhoto(); pendingOpen = g.c; setTab('cases'); go(g.d);
+}
+function tryPendingOpen() {
+  if (!pendingOpen || rmode || smode) return;
+  for (var i = 0; i < cases.length; i++) if (cases[i].id === pendingOpen) { pendingOpen = null; (function (k) { setTimeout(function () { openCase(k); }, 50); })(i); return; }
+}
+// ---- Month cover card on the Photos tab ----
+function monthCover(mk, photos) {
+  var c = el('div', 'mcover'), all = stats ? stats.cases.filter(function (x) { return x.d.slice(0, 7) === mk && /Performed|Needs confirmation/.test(x.s) && x.d <= stats.today; }) : [];
+  var top = all.length ? tally(all, function (x) { return x.t; })[0] : null, lv = all.reduce(function (s, x) { return s + (x.n || 0); }, 0);
+  var hd = el('div', 'mch'); var ic = document.createElement('img'); ic.src = INIT.icon || 'icon-192.png'; ic.alt = ''; hd.appendChild(ic);
+  hd.appendChild(el('div', 'mct', MONF[+mk.slice(5, 7) - 1] + ' ' + mk.slice(0, 4))); c.appendChild(hd);
+  var row = el('div', 'mcs');
+  function st(n, l) { var s = el('div'); s.appendChild(el('b', null, n)); s.appendChild(el('span', null, l)); row.appendChild(s); }
+  st(stats ? String(all.length) : '…', 'cases'); st(stats ? String(lv) : '…', 'levels'); st(String(photos), photos === 1 ? 'photo' : 'photos');
+  c.appendChild(row);
+  if (top) c.appendChild(el('div', 'mcf', 'Most done: ' + top.k + ' (' + top.v + ')'));
+  return c;
+}
 function render() {
   var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
   if (!rmode) dayCount();
@@ -794,6 +877,7 @@ function render() {
     card.appendChild(m); list.appendChild(card);
   });
   if (!rmode && !smode) { var qe = quoteEl(day, true); if (qe) list.appendChild(qe); }
+  tryPendingOpen();
 }
 function addRow(box, k, v, href) {
   if (!v) return;
@@ -908,13 +992,16 @@ function addImages(files) {
   $('imgIn').value = '';
   var next = function () {
     if (!list.length) { render(); return; }
-    shrink(list.shift(), function (data) {
-      if (!data) { toast('Could not read that photo'); next(); return; }
+    shrink(list.shift(), function (raw) {
+      if (!raw) { toast('Could not read that photo'); next(); return; }
+      cropImage(raw, function (data) {
+      if (!data) { next(); return; }
       var item = { local: data, busy: true };
       if (cur === c) { imgs.push(item); renderThumbs(); }
       google.script.run.withSuccessHandler(function (r) { item.id = r.id; item.busy = false; c.images = r.n; if (cur === c) renderThumbs(); toast('Image saved'); next(); })
         .withFailureHandler(function (e) { item.busy = false; item.failed = true; if (cur === c) renderThumbs(); toast('Not saved: ' + e.message); next(); })
         .wdAddImage(c.id, data);
+      });
     });
   };
   next();
