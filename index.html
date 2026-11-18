@@ -99,7 +99,10 @@ textarea:focus{outline:2px solid #9EC5E0;border-color:transparent}
 .rate button{flex:1;height:52px;border-radius:12px;border:1px solid #1F2328;background:#0C1019;font-size:20px;font-weight:700;color:#CAD1E6}
 .rate button.on{background:#9EC5E0;border-color:#9EC5E0;color:#1B1712}
 .rlbl{font-size:14px;color:#828A9A;margin-top:8px;min-height:18px}
-.cx{display:block;margin:16px 0 0 auto;padding:6px 2px;border:0;background:none;color:#828A9A;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.clr{display:inline-block;margin-top:6px;padding:4px 0;border:0;background:none;color:#828A9A;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.cxtop{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:10px 12px;border-radius:12px;background:#1C1414;border:1px solid #68292C;color:#EE614F;font-weight:700;font-size:14px}
+.cxtop button{border:0;background:#B91C1C;color:#fff;border-radius:10px;padding:7px 14px;font:inherit;font-weight:700}
+.cx{display:block;margin:28px auto 8px;padding:6px 2px;border:0;background:none;color:#828A9A;font:inherit;font-size:13px;text-decoration:underline;text-underline-offset:3px}
 .cx.sure{color:#EE614F;font-weight:700;text-decoration:none;border:1px solid #68292C;border-radius:10px;padding:8px 12px}
 .cx.on{color:#FFFFFF;background:#B91C1C;font-weight:700;text-decoration:none;border-radius:10px;padding:8px 12px}
 .lh{display:flex;align-items:center;gap:8px}
@@ -313,7 +316,8 @@ textarea:focus{outline:2px solid #B9D7EC}
    <div class="hint">Rating a case marks it performed. Tap your rating again to clear it.</div>
    <div class="rate" id="rate"></div>
    <div class="rlbl" id="rlbl"></div>
-   <button class="cx" id="cxBtn" onclick="cancelTap()">Surgery was cancelled</button>
+   <button class="clr" id="clrBtn" onclick="setOutcome('clear')">Clear rating</button>
+   <div class="cxtop" id="cxTop"><span>Marked cancelled</span><button onclick="setOutcome('clear')">Undo</button></div>
   </div>
   <div class="out">
    <label>Complications</label>
@@ -349,6 +353,7 @@ textarea:focus{outline:2px solid #B9D7EC}
    <label>Case details</label>
    <div class="box" id="cInfo"></div>
   </div>
+  <button class="cx" id="cxBtn" onclick="cancelTap()">Surgery was cancelled</button>
  </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -1061,8 +1066,11 @@ function renderOutcome() {
   });
   var L = INIT.labels || {};
   $('rlbl').textContent = fut ? 'Rating opens on the day of surgery.' : cur.difficulty ? L[cur.difficulty] || '' : 'Not rated yet';
-  var cx = $('cxBtn'), off = cur.status === 'Cancelled';
-  clearTimeout(cxTimer); cx.className = off ? 'cx on' : 'cx'; cx.textContent = off ? 'Cancelled. Tap to undo' : 'Surgery was cancelled';
+  var cx = $('cxBtn'), off = cur.status === 'Cancelled', rated = !!cur.difficulty;
+  clearTimeout(cxTimer); cx.className = 'cx'; cx.textContent = 'Surgery was cancelled';
+  cx.style.display = rated || off || cur.canRate === false ? 'none' : '';   // only for unrated cases, and only at the very bottom
+  $('cxTop').style.display = off ? '' : 'none';
+  $('clrBtn').style.display = rated && !fut ? '' : 'none';
   renderCx();
   var lg = $('legend'); lg.innerHTML = '';
   [1, 2, 3, 4, 5].forEach(function (n) { var r = el('div', 'lrow'); r.appendChild(el('b', null, String(n))); r.appendChild(el('span', null, L[n] || '')); lg.appendChild(r); });
