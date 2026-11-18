@@ -208,6 +208,17 @@ html,body{font-family:var(--sans);line-height:1.4}
 .card.v2 .cp{font-size:14px;color:#AEB6C8;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.v2 .cb{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:7px}.card.v2 .ci{font-size:13px;font-weight:600;color:#9EC5E0}.card.v2 .ci.lv{color:#D3B98C}
 .card.v2 .cb .tag{margin:0}
+.card.v2 .ca{font-size:13px;font-weight:600;color:#8FD19E;margin-top:4px}.card.v2 .cx2{font-size:12px;font-weight:700;color:#D3B98C;margin-top:3px}
+.offban{margin:0 0 10px -34px;padding:10px 12px;border-radius:12px;background:#1C1A14;color:#E9CF9C;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.offban.eo{background:#171A20;color:#AEB4C2}.offban.ask{display:block;background:#13213B;color:#B9D7EC}.offban .garow{margin-top:8px}
+.lnk{background:none;border:0;color:#9EC5E0;font:inherit;font-size:13px;font-weight:600;padding:4px 0;cursor:pointer}
+.blk{margin:16px 0 0 -34px;text-align:center}.blk .card2{text-align:left}
+.blk select,.blk input{background:#121722;color:#E6E9F0;border:1px solid #1F2328;border-radius:10px;padding:8px;font:inherit;font-size:14px;min-width:0}
+.eapfin{margin:4px 0 0 -34px;padding:10px 12px;text-align:center;font-size:14px;font-weight:600;color:#D3B98C}
+.cd .om{display:flex;gap:3px;height:5px}.cd .om i{width:5px;height:5px;border-radius:50%;background:#D3B98C}.cd .om i.eo{background:#6B7280}
+.eff{font-size:13px;margin-top:6px}.eff .er{display:grid;grid-template-columns:2.1fr .7fr 1fr 1fr .8fr 1fr;gap:4px;padding:7px 0;border-top:1px solid #1F2328;align-items:center}
+.eff .eh{color:#828A9A;font-weight:700;border-top:0;font-size:12px}.eff .few{opacity:.45}.eff .er span:not(:first-child){text-align:right}.eff .bk{color:#D3B98C;font-weight:700}
+.effo{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;color:#CAD1E6;margin:2px 0 8px}.effo b{color:#B9D7EC}
 .card.v2 .cr{flex:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;min-width:64px}
 .card.v2 .cv{font-family:var(--serif);font-size:30px;font-weight:700;line-height:1;color:#8FD19E}.card.v2 .cu{font-size:10.5px;font-weight:800;letter-spacing:.8px;color:#AEB6C8;text-transform:uppercase;margin-bottom:6px}
 .pill{font-size:12.5px;font-weight:800;padding:5px 10px;border-radius:14px;white-space:nowrap}
@@ -509,7 +520,9 @@ function drawWeek(isoDay) {   // month calendar (kept the old name so every call
     var cls = 'cd' + (d.getMonth() + 1 !== mm ? ' out' : '') + (k === isoDay ? ' on' : '') + (k === INIT.today ? ' td' : '');
     var b = el('button', cls); b.appendChild(el('span', 'cn', String(d.getDate())));
     var c = el('span', 'cc' + (x && x.u ? ' red' : ''), x && x.n ? String(x.n) : ''); b.appendChild(c);
-    b.setAttribute('aria-label', label(k) + (x && x.n ? ', ' + x.n + ' case' + (x.n === 1 ? '' : 's') : '') + (x && x.u ? ', ' + x.u + ' to rate' : ''));
+    var wo = woBlock(k).length > 0, eo = edOff(k);
+    if (wo || eo) { var om = el('span', 'om'); if (wo) om.appendChild(el('i')); if (eo) om.appendChild(el('i', 'eo')); b.appendChild(om); }
+    b.setAttribute('aria-label', label(k) + (x && x.n ? ', ' + x.n + ' case' + (x.n === 1 ? '' : 's') : '') + (x && x.u ? ', ' + x.u + ' to rate' : '') + (wo ? ', you’re out' : '') + (eo ? ', Dr. Edwards off' : ''));
     (function (k) { b.onclick = function () { go(k); }; })(k);
     g.appendChild(b);
   }
@@ -525,7 +538,8 @@ function drawWeek(isoDay) {   // month calendar (kept the old name so every call
   cal.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) stepCal(dx < 0 ? 1 : -1); }, { passive: true });
 })();
 var dayCache = {}, refreshed = false;
-if (INIT.first) dayCache[INIT.first.day] = INIT.first.cases;
+var dayEap = {};
+if (INIT.first) { dayCache[INIT.first.day] = INIT.first.cases; if (INIT.first.eap) dayEap[INIT.first.day] = INIT.first.eap; }
 if (INIT.month) storeMonth(INIT.month);
 if (INIT.todo) drawTodo(INIT.todo); else setTimeout(loadTodo, 400);
 if (!window.__PHONE && INIT.phoneApp) $('getApp').style.display = '';   // only in the Google page, never in the phone app
@@ -616,7 +630,7 @@ function prefetchNear(d) {   // one trip for the two weeks either side, so tappi
   if (nearAsked[key]) return; nearAsked[key] = 1;
   google.script.run.withSuccessHandler(function (r) {
     if (!r) return;
-    for (var x = new Date(a); x <= b; x.setDate(x.getDate() + 1)) { var k = f(x); if (!dayCache[k]) dayCache[k] = r.days[k] || []; }
+    for (var x = new Date(a); x <= b; x.setDate(x.getDate() + 1)) { var k = f(x); if (!dayCache[k]) { dayCache[k] = r.days[k] || []; if (r.eap && r.eap[k]) dayEap[k] = r.eap[k]; } }
   }).withFailureHandler(function () { delete nearAsked[key]; }).wdDays(from, to);
 }
 function refreshAll(d) {   // once per open: the server syncs only if the 10-minute run fell behind
@@ -631,7 +645,7 @@ function refreshAll(d) {   // once per open: the server syncs only if the 10-min
   }).wdRefresh(d);
 }
 function dayCount() { var n = (cases || []).filter(function (c) { return !/Cancelled|Postponed/.test(c.status); }).length; $('dayCnt').textContent = n ? n + ' case' + (n === 1 ? '' : 's') : ''; }
-function show(r) { dayCache[r.day] = r.cases; if (r.day !== day) return; if (rmode) { dayCases = r.cases; return; } cases = r.cases; if (!$('sheet').classList.contains('on')) render(); }
+function show(r) { dayCache[r.day] = r.cases; dayEap[r.day] = r.eap || null; if (r.day !== day) return; if (rmode) { dayCases = r.cases; return; } cases = r.cases; if (!$('sheet').classList.contains('on')) render(); }
 function go(isoDay) {
   day = isoDay; $('pick').value = isoDay; $('dayLbl').textContent = label(isoDay); viewMon = firstOf(isoDay);
   var tb = document.querySelector('.nav .t'); if (tb) tb.classList.toggle('now', isoDay === INIT.today);
@@ -892,14 +906,126 @@ function showNotice(n) {
   };
 }
 setTimeout(function () { showNotice(INIT.notice); }, 400);
+// ---- Dr. Edwards: anesthesia times, finish forecast, days off; your time off back to him ----
+function dur(m) { m = Math.round(+m || 0); if (!m) return ''; var h = Math.floor(m / 60), r = m % 60; return h ? h + 'h' + (r ? ' ' + r + 'm' : '') : r + 'm'; }
+function hm(t) { if (!t) return ''; var p = String(t).split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + (h < 12 ? ' AM' : ' PM'); }
+var WO = null;
+function loadWO() { google.script.run.withSuccessHandler(function (r) { WO = r; drawWeek(day); if ($('vCases').style.display !== 'none' && !$('sheet').classList.contains('on') && !rmode) render(); }).withFailureHandler(function () {}).wdTimeOff(); }
+setTimeout(loadWO, 900);
+function inRange(k, a, b) { return k >= a && k <= (b || a); }
+function woBlock(k) { return WO ? (WO.blocks || []).filter(function (b) { return inRange(k, b.date, b.endDate); }) : []; }
+function edOff(k) { return WO ? (WO.ed || []).some(function (b) { return inRange(k, b.from, b.to); }) : false; }
+var WOT = { vacation: 'Vacation', off: 'Off', late_start: 'Late start', early_out: 'Early out', blocked: 'Blocked' };
+function woText(b) {
+  var t = WOT[b.type] || 'Out';
+  if (b.type === 'late_start') t += ' at ' + hm(b.start);
+  if (b.type === 'early_out') t += ', done by ' + hm(b.end);
+  if (b.type === 'blocked') t += ' ' + hm(b.start) + ' to ' + hm(b.end);
+  return t + (b.note ? ' (' + b.note + ')' : '');
+}
+function woDone(msg) { return function (r) { WO = r; if (msg) toast(msg); drawWeek(day); render(); }; }
+function offEls(k) {
+  var out = [];
+  woBlock(k).forEach(function (b) {
+    var d = el('div', 'offban'); d.appendChild(el('span', null, (b.type === 'vacation' || b.type === 'off' ? 'You’re out: ' : '') + woText(b)));
+    if (!TEAM) {
+      var x = el('button', 'lnk', 'Remove');
+      x.onclick = function () {
+        if (x.textContent !== 'Tap again to remove') { x.textContent = 'Tap again to remove'; return; }
+        x.disabled = true;
+        google.script.run.withSuccessHandler(woDone('Removed. Dr. Edwards’ calendar clears within the hour.')).withFailureHandler(function (e) { x.disabled = false; toast(e.message); }).wdTimeOffRemove(b.id);
+      };
+      d.appendChild(x);
+    }
+    out.push(d);
+  });
+  if (edOff(k)) out.push(el('div', 'offban eo', 'Dr. Edwards off'));
+  return out;
+}
+function rangeLbl(a, b) { return b && b !== a ? label(a) + ' to ' + label(b) : label(a); }
+function suggEls() {
+  if (TEAM || !WO || !WO.sugg || !WO.sugg.length) return [];
+  return WO.sugg.slice(0, 2).map(function (s) {
+    var d = el('div', 'offban ask'); d.appendChild(el('div', null, 'Are you out ' + rangeLbl(s.date, s.endDate) + '? Your calendar says “' + s.title + '.”'));
+    var row = el('div', 'garow');
+    [['Yes, I’m out', true], ['No', false]].forEach(function (p) {
+      var b = el('button', null, p[0]);
+      b.onclick = function () { b.disabled = true; google.script.run.withSuccessHandler(woDone(p[1] ? 'Blocked. Dr. Edwards sees it within the hour.' : 'Got it.')).withFailureHandler(function (e) { b.disabled = false; toast(e.message); }).wdTripAnswer(s.key, p[1]); };
+      row.appendChild(b);
+    });
+    d.appendChild(row); return d;
+  });
+}
+function blockEl(k) {
+  if (TEAM || k < INIT.today) return null;
+  var dw = parse(k).getDay(); if (dw === 0 || dw === 6) return null;
+  var w = el('div', 'blk'), a = el('button', 'lnk', 'Block time this day'); w.appendChild(a);
+  a.onclick = function () {
+    w.innerHTML = '';
+    var f = el('div', 'card2'); f.appendChild(el('h3', null, 'Block time, ' + label(k)));
+    f.appendChild(el('div', 'note', 'Shows on Dr. Edwards’ calendar within the hour.'));
+    var sel = el('select');
+    [['off', 'Off all day'], ['late_start', 'Late start'], ['early_out', 'Early out'], ['blocked', 'Blocked, from and to']].forEach(function (o) { var op = el('option', null, o[1]); op.value = o[0]; sel.appendChild(op); });
+    var t1 = el('input'), t2 = el('input'), nt = el('input'); t1.type = 'time'; t2.type = 'time'; nt.placeholder = 'Short note, no patient names'; nt.maxLength = 60;
+    function vis() { var v = sel.value; t1.style.display = v === 'late_start' || v === 'blocked' ? '' : 'none'; t2.style.display = v === 'early_out' || v === 'blocked' ? '' : 'none'; }
+    sel.onchange = vis; vis();
+    var r1 = el('div', 'garow'); [sel, t1, t2].forEach(function (x) { r1.appendChild(x); }); f.appendChild(r1);
+    var r2 = el('div', 'garow'), sv = el('button', null, 'Save'); r2.appendChild(nt); r2.appendChild(sv); f.appendChild(r2);
+    sv.onclick = function () {
+      var b = { type: sel.value, date: k, note: nt.value.trim() };
+      if (t1.style.display !== 'none') { if (!t1.value) { toast('Pick a time.'); return; } b.start = t1.value; }
+      if (t2.style.display !== 'none') { if (!t2.value) { toast('Pick a time.'); return; } b.end = t2.value; }
+      sv.disabled = true;
+      google.script.run.withSuccessHandler(woDone('Saved. Dr. Edwards sees it within the hour.')).withFailureHandler(function (e) { sv.disabled = false; toast(e.message); }).wdTimeOffAdd(b);
+    };
+    w.appendChild(f);
+  };
+  return w;
+}
+function finEl(k) {
+  var d = dayEap[k] && dayEap[k].day; if (!d) return null;
+  if (d.finished) return el('div', 'eapfin', 'Finished ' + hm(d.finished));
+  if (d.expectedFinish) return el('div', 'eapfin', 'Expected finish ' + hm(d.expectedFinish) + (d.likelyFrom && d.likelyTo ? ', likely ' + hm(d.likelyFrom) + ' to ' + hm(d.likelyTo) : ''));
+  return null;
+}
+var EFF = null;
+function eapEff() {
+  var c = card('Booked vs actual', 'From Dr. Edwards’ anesthesia times, last 180 days. Actual runs from anesthesia start to stop.');
+  function draw(r) {
+    var e = r && r.efficiency;
+    if (!e || !e.overall) { c.appendChild(el('div', 'note', 'Nothing yet. This fills in from Dr. Edwards’ schedule feed.')); return; }
+    var o = e.overall, top = el('div', 'effo');
+    function stat(l, v) { var s = el('span'); s.appendChild(document.createTextNode(l + ' ')); s.appendChild(el('b', null, v)); top.appendChild(s); }
+    stat('Cases', String(o.cases || 0)); stat('Booked', dur(o.bookedMedianMin)); stat('Actual', dur(o.actualMedianMin));
+    if (o.within15MinPct != null) stat('Within 15 min', Math.round(o.within15MinPct) + '%');
+    if (o.turnoverMedianMin != null) stat('Turnover', dur(o.turnoverMedianMin));
+    c.appendChild(top);
+    var t = el('div', 'eff'), hd = el('div', 'er eh');
+    ['Procedure', 'Cases', 'Booked', 'Actual', '±', 'Book as'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); t.appendChild(hd);
+    (e.byProcedure || []).forEach(function (p) {
+      var r2 = el('div', 'er' + (p.fewCases ? ' few' : '')), ou = Math.round(+p.avgOverUnderMin || 0);
+      r2.appendChild(el('span', null, p.procedure || p.group || p.name || p.key || ''));
+      r2.appendChild(el('span', null, String(p.cases || 0)));
+      r2.appendChild(el('span', null, dur(p.bookedMedianMin)));
+      r2.appendChild(el('span', null, dur(p.actualMedianMin)));
+      r2.appendChild(el('span', null, (ou > 0 ? '+' : ou < 0 ? '−' : '') + Math.abs(ou) + 'm'));
+      r2.appendChild(el('span', 'bk', p.fewCases || !p.actualMedianMin ? '' : dur(Math.ceil(p.actualMedianMin / 15) * 15)));
+      t.appendChild(r2);
+    });
+    c.appendChild(t);
+    c.appendChild(el('div', 'note', 'Book as: the actual median rounded up to the next 15 minutes. Grey rows have fewer than 5 cases.'));
+  }
+  if (EFF) draw(EFF); else google.script.run.withSuccessHandler(function (r) { EFF = r || {}; draw(EFF); }).withFailureHandler(function () { draw(null); }).wdEap();
+}
 function render() {
   var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
   if (!rmode) dayCount();
   if (rmode && !smode) { $('rCount').textContent = cases.filter(function (c) { return c.status === 'Needs confirmation'; }).length + ' to rate'; }
   if (rmode && smode) { $('rCount').textContent = searchActive() ? cases.length + (cases.length === 150 ? '+ ' : ' ') + 'found' : ''; }
+  if (!rmode && !smode) suggEls().concat(offEls(day)).forEach(function (x) { list.appendChild(x); });
   if (!cases.length) { list.appendChild(el('div', 'empty', smode ? (searchActive() ? 'No cases match that.' : 'Type a name or procedure, or tap a keyword or a year.') : rmode ? 'All caught up. Every past case has a rating.' : 'No cases on this day.'));
     if (!rmode && !smode) { var rb2 = recapBanner(); if (rb2) list.insertBefore(rb2, list.firstChild); var me2 = msEl(day); if (me2) list.appendChild(me2); }
-    if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); }
+    if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); var bk0 = blockEl(day); if (bk0) list.appendChild(bk0); }
     return; }
   if (!rmode && !smode) { var rb = recapBanner(); if (rb) list.appendChild(rb); var me = msEl(day); if (me) list.appendChild(me); }
   if (!rmode && !smode) { var fe0 = factEl(day); if (fe0) { fe0.className += ' top'; list.appendChild(fe0); } }   // surgery days: the fact sits above the cases
@@ -908,13 +1034,21 @@ function render() {
     if (rmode && c.dateLabel !== lastDate) { lastDate = c.dateLabel; list.appendChild(el('div', 'dhd', c.dateLabel)); }
     var off = /Cancelled|Postponed|Removed/.test(c.status), rated = !!c.difficulty, toRate = c.status === 'Needs confirmation' || (c.status === 'Performed' && !rated && c.canRate !== false && (c.date || day) <= INIT.today);
     var st = off ? 'off' : rated ? 'done' : toRate ? 'rate' : 'sched';
-    var card = el('div', 'card v2 k-' + st); card.onclick = function () { openCase(i); };
-    var L = el('div', 'cl'); L.appendChild(el('div', 'ct', c.start || '—')); if (c.duration) L.appendChild(el('div', 'cd', c.duration)); card.appendChild(L);
+    var E = c.eap || null;
+    var card = el('div', 'card v2 k-' + st); card.onclick = c.eapOnly ? function () { toast('From Dr. Edwards’ schedule. Its order hasn’t come in yet.'); } : function () { openCase(i); };
+    var L = el('div', 'cl'); L.appendChild(el('div', 'ct', E && E.st ? E.st : E && E.tp ? 'Time TBD' : c.start || '—'));
+    if (E && E.ex) L.appendChild(el('div', 'cx2', '≈ ' + E.ex));
+    var du = E && E.len ? dur(E.len) : c.duration; if (du) L.appendChild(el('div', 'cd', du)); card.appendChild(L);
     var m = el('div', 'cm');
     m.appendChild(el('div', 'cn', (c.patient || 'Patient').toUpperCase()));
     var proc = [c.procedure, c.side ? c.side.toLowerCase() : ''].filter(Boolean).join(', ');
     if (proc) m.appendChild(el('div', 'cp', proc));
+    if (E && E.a) m.appendChild(el('div', 'ca', 'Anesthesia ' + E.a + (E.b ? ' – ' + E.b + ' (' + dur(E.am) + ')' : ', in progress')));
     var bits = el('div', 'cb');
+    if (c.eapOnly) bits.appendChild(el('span', 'tag', 'From Dr. Edwards'));
+    if (c.eapMissing) bits.appendChild(el('span', 'tag x', 'Not on Dr. Edwards’ list'));
+    if (E && /postpon/i.test(E.s)) bits.appendChild(el('span', 'tag x', 'Postponed per Dr. Edwards'));
+    if (E && /covered/i.test(E.s)) bits.appendChild(el('span', 'tag', 'Other anesthesiologist'));
     var who = [c.age, c.sex].filter(Boolean).join(' '); if (who) bits.appendChild(el('span', 'ci', who));
     if (c.levels) bits.appendChild(el('span', 'ci lv', c.levels));
     if (c.vendor) c.vendor.split(/\s*,\s*/).forEach(function (v) { bits.appendChild(el('span', 'tag vd' + (v === 'Medtronic' ? ' mdt' : v === 'NuVasive' ? ' nuv' : ''), v)); });
@@ -930,7 +1064,7 @@ function render() {
     card.appendChild(R);
     list.appendChild(card);
   });
-  if (!rmode && !smode) { var qe = quoteEl(day, true); if (qe) list.appendChild(qe); }
+  if (!rmode && !smode) { var fin = finEl(day); if (fin) list.appendChild(fin); var qe = quoteEl(day, true); if (qe) list.appendChild(qe); var bk = blockEl(day); if (bk) list.appendChild(bk); }
   tryPendingOpen();
 }
 function addRow(box, k, v, href) {
@@ -961,6 +1095,7 @@ function openCase(i) {
   addRow(b, 'Side', cur.side); addRow(b, 'Diagnosis', cur.dx); addRow(b, 'Start', cur.start); addRow(b, 'Duration', cur.duration);
   addRow(b, 'Assistant', cur.assistant); addRow(b, 'Anesthesia', cur.anesthesia); addRow(b, 'Stay', cur.stay);
   addRow(b, 'Position', cur.position); addRow(b, 'Facility', cur.facility); addRow(b, 'Status', cur.status);
+  if (cur.eap && cur.eap.a) addRow(b, 'Anesthesia time', cur.eap.a + (cur.eap.b ? ' – ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
   renderOutcome(); loadImages(); renderMoney(null);
   if (cur.vendor) addRow(b, 'Vendor', cur.vendor);
   (cur.implants || []).forEach(function (m, i) { addRow(b, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
@@ -1476,6 +1611,7 @@ function renderStats() {
   hbars(card('Complications', rated.length ? withX.length + ' of ' + rated.length + ' rated cases (' + Math.round(100 * withX.length / rated.length) + '%) had one or more.' : 'Rated cases only.'),
     (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0 }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
   hbars(card('Difficulty', 'Rated cases only.'), [1, 2, 3, 4, 5].map(function (n) { return { k: n + ' · ' + (L[n] || ''), v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
+  eapEff();
 }
 go(day);
 </script><script>boot();</script></body></html>
