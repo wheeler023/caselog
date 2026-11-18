@@ -77,6 +77,7 @@ function start(init) {
 }
 function freshen(f) {   // drop the fresh opening data into the screens already showing
   if (f.role !== window.__INIT.role) return location.reload();
+  try { if (f.notice) showNotice(f.notice); } catch (e) {}
   try { if (f.month) storeMonth(f.month); if (f.todo) drawTodo(f.todo); if (f.first) show(f.first); drawWeek(day); } catch (e) { console.warn(e); }
 }
 function boot() {
