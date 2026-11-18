@@ -955,7 +955,7 @@ function renderMoney(m) {
   addRow(b, 'Expected pro fee', m.fee ? money(m.fee) : 'No estimate' + (m.group ? ' (' + m.group + ')' : ''));
   if (m.group) addRow(b, 'Payer group', m.group);
   if (m.expected) addRow(b, 'Billed CPTs', m.expected);
-  addRow(b, 'Expected PA/IDR', m.commercial ? money(m.pa) : 'Not counted (not commercial)');
+  addRow(b, 'Expected PA/IDR', m.commercial ? money(m.pa) + (m.paGroup ? ' (' + m.paGroup + ' average)' : '') : 'Not counted (not commercial)');
   addRow(b, 'Neuro', m.commercial ? money(m.neuro) + ' over 12 months' : 'Not counted (not commercial)');
   var pa = m.payments.reduce(function (s, p) { return s + p.a; }, 0);
   addRow(b, 'PA collected (SUSA)', m.payments.length ? money(pa) : 'None yet');
@@ -1212,12 +1212,13 @@ function renderFin() {
   var fee = sel.reduce(function (s, c) { return s + c.f; }, 0), feeN = sel.filter(function (c) { return c.f > 0; }).length;
   var pa = pay.reduce(function (s, p) { return s + p.a; }, 0), awards = pay.filter(function (p) { return /Award|Additional/.test(p.k); });
   var nv = (stats.neuro && stats.neuro.value) || 0, pv = (stats.neuro && stats.neuro.pa) || 0, ncm = sel.filter(function (c) { return c.cm; }).length;
-  var total = fee + ncm * (nv + pv);
+  var paSum = sel.reduce(function (s, c) { return s + (c.cm ? (c.pv != null ? c.pv : pv) : 0); }, 0);
+  var total = fee + ncm * nv + paSum;
   var tiles = el('div', 'tiles'); b.appendChild(tiles);
   tile(tiles, money(total), 'Expected total');
   tile(tiles, sel.length ? money(total / sel.length) : '–', 'Per case');
   tile(tiles, money(fee), 'Expected pro fees');
-  tile(tiles, money(ncm * pv), 'Expected PA/IDR');
+  tile(tiles, money(paSum), 'Expected PA/IDR');
   tile(tiles, money(ncm * nv), 'Expected neuromonitoring');
   tile(tiles, String(ncm) + ' of ' + sel.length, 'Commercial cases');
   var fs = {}; sel.forEach(function (c) { if (c.f > 0) fs[c.t] = (fs[c.t] || 0) + c.f; });
