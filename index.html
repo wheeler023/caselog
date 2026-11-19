@@ -151,6 +151,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 .rate button.on{background:#9EC5E0;border-color:#9EC5E0;color:#0C1019;box-shadow:0 0 0 2px #B9D7EC}
 .rate button:active{transform:scale(.94)}
 .rate button{transition:transform .08s}
+.rate.scrub button{font-size:15px;font-family:inherit;height:46px}
 .b1{background:#13213B}
 .addimg{background:#0C1019;color:#BEC6E4;border:1.5px solid #13213B}
 .tile .n{font-family:var(--serif);font-size:30px;font-variant-numeric:lining-nums tabular-nums}
@@ -217,6 +218,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 .eapfin{margin:4px 0 0 -34px;padding:10px 12px;text-align:center;font-size:14px;font-weight:600;color:#D3B98C}
 .cd .om{display:flex;gap:3px;height:5px}.cd .om i{width:5px;height:5px;border-radius:50%;background:#D3B98C}.cd .om i.eo{background:#6B7280}
 .eff{font-size:13px;margin-top:6px}.eff .er{display:grid;grid-template-columns:2.1fr .7fr 1fr 1fr .8fr 1fr;gap:4px;padding:7px 0;border-top:1px solid #1F2328;align-items:center}
+.eff .er.sc4{grid-template-columns:1.3fr .7fr 1.1fr 1.1fr 1.2fr}
 .eff .eh{color:#828A9A;font-weight:700;border-top:0;font-size:12px}.eff .few{opacity:.45}.eff .er span:not(:first-child){text-align:right}.eff .bk{color:#D3B98C;font-weight:700}
 .effo{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;color:#CAD1E6;margin:2px 0 8px}.effo b{color:#B9D7EC}
 .card.v2 .cr{flex:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;min-width:64px}
@@ -371,6 +373,11 @@ textarea:focus{outline:2px solid #B9D7EC}
    <div class="thumbs" id="thumbs"></div>
    <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="addImages(this.files)">
    <button class="addimg" onclick="document.getElementById('imgIn').click()">📷 Add images</button>
+  </div>
+  <div class="out">
+   <label>Primary scrub</label>
+   <div class="hint">Tap again to clear.</div>
+   <div class="rate scrub" id="scrub"></div>
   </div>
   <div class="out" id="moneyCard">
    <label>Finances</label>
@@ -1018,6 +1025,58 @@ function eapEff() {
   }
   if (EFF) draw(EFF); else google.script.run.withSuccessHandler(function (r) { EFF = r || {}; draw(EFF); }).withFailureHandler(function () { draw(null); }).wdEap();
 }
+// ---- Primary scrub: one tap on the case, compared on Metrics ----
+var scrubSeq = 0;
+function scrubNames() { return INIT.scrubs || ['Kaven', 'Dottie', 'Jaylenn']; }
+function renderScrub() {
+  var box = $('scrub'); if (!box || !cur) return; box.innerHTML = '';
+  scrubNames().forEach(function (n) {
+    var b = el('button', cur.scrub === n ? 'on' : '', n);
+    b.onclick = function () {
+      var c = cur, prev = c.scrub || '', next = prev === n ? '' : n, my = ++scrubSeq;
+      c.scrub = next; renderScrub(); if (navigator.vibrate) navigator.vibrate(10);
+      google.script.run.withSuccessHandler(function () { if (my === scrubSeq) toast(next ? 'Scrub: ' + next : 'Scrub cleared'); })
+        .withFailureHandler(function (e) { if (my === scrubSeq) { c.scrub = prev; renderScrub(); } toast('Not saved: ' + e.message); }).wdScrub(c.id, next);
+    };
+    box.appendChild(b);
+  });
+}
+function tmin(t) { var p = String(t || '').split(':'); return p.length < 2 ? NaN : +p[0] * 60 + +p[1]; }
+function median(a) { if (!a.length) return null; var b = a.slice().sort(function (x, y) { return x - y; }), m = Math.floor(b.length / 2); return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
+function scrubCard(sel) {
+  var names = scrubNames();
+  var c = card('By primary scrub', 'Turnover runs from one case’s anesthesia stop to the next case’s start the same day, credited to the scrub on the earlier case. Times come from Dr. Edwards’ feed.');
+  var S = {}; names.forEach(function (n) { S[n] = { n: 0, df: [], to: [], len: [] }; });
+  var byDay = {};
+  sel.forEach(function (x) {
+    if (!x.sc || !S[x.sc]) return;
+    S[x.sc].n++; if (x.df) S[x.sc].df.push(x.df);
+    var a = tmin(x.as), b = tmin(x.ae);
+    if (!isNaN(a) && !isNaN(b) && b > a) S[x.sc].len.push(b - a);
+  });
+  sel.forEach(function (x) { if (!isNaN(tmin(x.as))) (byDay[x.d] = byDay[x.d] || []).push(x); });
+  Object.keys(byDay).forEach(function (d) {
+    var L = byDay[d].sort(function (p, q) { return tmin(p.as) - tmin(q.as); });
+    for (var i = 0; i + 1 < L.length; i++) {
+      var t = tmin(L[i + 1].as) - tmin(L[i].ae);
+      if (L[i].sc && S[L[i].sc] && !isNaN(t) && t > 0 && t < 180) S[L[i].sc].to.push(t);
+    }
+  });
+  var tb = el('div', 'eff'), hd = el('div', 'er eh sc4');
+  ['Scrub', 'Cases', 'Avg difficulty', 'Turnover', 'Anesthesia time'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
+  var any = false;
+  names.forEach(function (n) {
+    var v = S[n]; if (v.n) any = true;
+    var r = el('div', 'er sc4' + (v.n < 5 ? ' few' : ''));
+    r.appendChild(el('span', null, n)); r.appendChild(el('span', null, String(v.n)));
+    r.appendChild(el('span', null, v.df.length ? (v.df.reduce(function (a, b) { return a + b; }, 0) / v.df.length).toFixed(1) : '–'));
+    var mt = median(v.to); r.appendChild(el('span', 'bk', mt == null ? '–' : Math.round(mt) + 'm' + ' (' + v.to.length + ')'));
+    var ml = median(v.len); r.appendChild(el('span', null, ml == null ? '–' : dur(ml)));
+    tb.appendChild(r);
+  });
+  c.appendChild(tb);
+  c.appendChild(el('div', 'note', any ? 'Medians. The number in brackets is how many turnovers were measured. Grey rows have fewer than 5 cases.' : 'Pick the primary scrub on each case (under Images). Numbers fill in as cases add up.'));
+}
 function render() {
   var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
   if (!rmode) dayCount();
@@ -1097,7 +1156,7 @@ function openCase(i) {
   addRow(b, 'Assistant', cur.assistant); addRow(b, 'Anesthesia', cur.anesthesia); addRow(b, 'Stay', cur.stay);
   addRow(b, 'Position', cur.position); addRow(b, 'Facility', cur.facility); addRow(b, 'Status', cur.status);
   if (cur.eap && cur.eap.a) addRow(b, 'Anesthesia time', cur.eap.a + (cur.eap.b ? ' – ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
-  renderOutcome(); loadImages(); renderMoney(null);
+  renderOutcome(); loadImages(); renderMoney(null); renderScrub();
   if (cur.vendor) addRow(b, 'Vendor', cur.vendor);
   (cur.implants || []).forEach(function (m, i) { addRow(b, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
   if (cur.order) addRow(b, 'Order', 'Open surgery order', cur.order);
@@ -1612,6 +1671,7 @@ function renderStats() {
   hbars(card('Complications', rated.length ? withX.length + ' of ' + rated.length + ' rated cases (' + Math.round(100 * withX.length / rated.length) + '%) had one or more.' : 'Rated cases only.'),
     (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0 }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
   hbars(card('Difficulty', 'Rated cases only.'), [1, 2, 3, 4, 5].map(function (n) { return { k: n + ' · ' + (L[n] || ''), v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
+  scrubCard(sel);
   eapEff();
 }
 go(day);
