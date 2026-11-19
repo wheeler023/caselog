@@ -151,7 +151,13 @@ html,body{font-family:var(--sans);line-height:1.4}
 .rate button.on{background:#9EC5E0;border-color:#9EC5E0;color:#0C1019;box-shadow:0 0 0 2px #B9D7EC}
 .rate button:active{transform:scale(.94)}
 .rate button{transition:transform .08s}
-.rate.scrub button{font-size:15px;font-family:inherit;height:46px}
+.rate.scrub{flex-wrap:wrap}.rate.scrub button{font-size:15px;font-family:inherit;height:46px;min-width:70px}
+.team{margin:0 0 12px -34px;padding:10px 12px;border-radius:12px;background:#0C1019;border:1px solid #1F2328}
+.team .tl{font-size:12px;font-weight:700;color:#828A9A;margin-bottom:4px}
+.trow{display:flex;align-items:center;gap:8px;margin:6px 0;flex-wrap:wrap}.trow .tk{width:76px;font-size:13px;color:#CAD1E6;font-weight:600}
+.tb{display:flex;gap:6px;flex-wrap:wrap;flex:1}.tb button{height:32px;padding:0 11px;border-radius:999px;border:1px solid #2A2F38;background:transparent;color:#CAD1E6;font:inherit;font-size:13px}
+.tb button.on{background:#9EC5E0;border-color:#9EC5E0;color:#0C1019;font-weight:700}
+.oth{display:flex;gap:6px;width:100%;margin-top:6px}.oth input{flex:1;min-width:0;background:#121722;color:#E6E9F0;border:1px solid #1F2328;border-radius:10px;padding:8px;font:inherit;font-size:14px}.oth button{border-radius:10px;border:0;background:#9EC5E0;color:#0C1019;font-weight:700;padding:0 14px}
 .b1{background:#13213B}
 .addimg{background:#0C1019;color:#BEC6E4;border:1.5px solid #13213B}
 .tile .n{font-family:var(--serif);font-size:30px;font-variant-numeric:lining-nums tabular-nums}
@@ -376,8 +382,13 @@ textarea:focus{outline:2px solid #B9D7EC}
   </div>
   <div class="out">
    <label>Primary scrub</label>
-   <div class="hint">N/A if it was mixed or unclear. Tap again to clear.</div>
+   <div class="hint" id="scrubHint"></div>
    <div class="rate scrub" id="scrub"></div>
+  </div>
+  <div class="out">
+   <label>Circulator</label>
+   <div class="hint" id="circHint"></div>
+   <div class="rate scrub" id="circ"></div>
   </div>
   <div class="out" id="moneyCard">
    <label>Finances</label>
@@ -545,8 +556,8 @@ function drawWeek(isoDay) {   // month calendar (kept the old name so every call
   cal.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) stepCal(dx < 0 ? 1 : -1); }, { passive: true });
 })();
 var dayCache = {}, refreshed = false;
-var dayEap = {};
-if (INIT.first) { dayCache[INIT.first.day] = INIT.first.cases; if (INIT.first.eap) dayEap[INIT.first.day] = INIT.first.eap; }
+var dayEap = {}, dayTeam = {};
+if (INIT.first) { dayCache[INIT.first.day] = INIT.first.cases; if (INIT.first.eap) dayEap[INIT.first.day] = INIT.first.eap; if (INIT.first.team) dayTeam[INIT.first.day] = INIT.first.team; }
 if (INIT.month) storeMonth(INIT.month);
 if (INIT.todo) drawTodo(INIT.todo); else setTimeout(loadTodo, 400);
 if (!window.__PHONE && INIT.phoneApp) $('getApp').style.display = '';   // only in the Google page, never in the phone app
@@ -637,7 +648,7 @@ function prefetchNear(d) {   // one trip for the two weeks either side, so tappi
   if (nearAsked[key]) return; nearAsked[key] = 1;
   google.script.run.withSuccessHandler(function (r) {
     if (!r) return;
-    for (var x = new Date(a); x <= b; x.setDate(x.getDate() + 1)) { var k = f(x); if (!dayCache[k]) { dayCache[k] = r.days[k] || []; if (r.eap && r.eap[k]) dayEap[k] = r.eap[k]; } }
+    for (var x = new Date(a); x <= b; x.setDate(x.getDate() + 1)) { var k = f(x); if (!dayCache[k]) { dayCache[k] = r.days[k] || []; if (r.eap && r.eap[k]) dayEap[k] = r.eap[k]; if (r.teams && r.teams[k] && !dayTeam[k]) dayTeam[k] = r.teams[k]; } }
   }).withFailureHandler(function () { delete nearAsked[key]; }).wdDays(from, to);
 }
 function refreshAll(d) {   // once per open: the server syncs only if the 10-minute run fell behind
@@ -652,7 +663,7 @@ function refreshAll(d) {   // once per open: the server syncs only if the 10-min
   }).wdRefresh(d);
 }
 function dayCount() { var n = (cases || []).filter(function (c) { return !/Cancelled|Postponed/.test(c.status); }).length; $('dayCnt').textContent = n ? n + ' case' + (n === 1 ? '' : 's') : ''; }
-function show(r) { dayCache[r.day] = r.cases; dayEap[r.day] = r.eap || null; if (r.day !== day) return; if (rmode) { dayCases = r.cases; return; } cases = r.cases; if (!$('sheet').classList.contains('on')) render(); }
+function show(r) { dayCache[r.day] = r.cases; dayEap[r.day] = r.eap || null; if (r.team) dayTeam[r.day] = r.team; if (r.day !== day) return; if (rmode) { dayCases = r.cases; return; } cases = r.cases; if (!$('sheet').classList.contains('on')) render(); }
 function go(isoDay) {
   day = isoDay; $('pick').value = isoDay; $('dayLbl').textContent = label(isoDay); viewMon = firstOf(isoDay);
   var tb = document.querySelector('.nav .t'); if (tb) tb.classList.toggle('now', isoDay === INIT.today);
@@ -1026,56 +1037,84 @@ function eapEff() {
   if (EFF) draw(EFF); else google.script.run.withSuccessHandler(function (r) { EFF = r || {}; draw(EFF); }).withFailureHandler(function () { draw(null); }).wdEap();
 }
 // ---- Primary scrub: one tap on the case, compared on Metrics ----
-var scrubSeq = 0;
-function scrubNames() { return INIT.scrubs || ['Kaven', 'Dottie', 'Jaylenn', 'N/A']; }
-function renderScrub() {
-  var box = $('scrub'); if (!box || !cur) return; box.innerHTML = '';
-  scrubNames().forEach(function (n) {
-    var b = el('button', cur.scrub === n ? 'on' : '', n);
-    b.onclick = function () {
-      var c = cur, prev = c.scrub || '', next = prev === n ? '' : n, my = ++scrubSeq;
-      c.scrub = next; renderScrub(); if (navigator.vibrate) navigator.vibrate(10);
-      google.script.run.withSuccessHandler(function () { if (my === scrubSeq) toast(next ? 'Scrub: ' + next : 'Scrub cleared'); })
-        .withFailureHandler(function (e) { if (my === scrubSeq) { c.scrub = prev; renderScrub(); } toast('Not saved: ' + e.message); }).wdScrub(c.id, next);
-    };
-    box.appendChild(b);
+var ROLE = {
+  scrub: { names: function () { return INIT.scrubs || ['Kaven', 'Dottie', 'Jaylenn', 'N/A']; }, fn: 'wdScrub', f: 'sc', label: 'Scrub', other: true },
+  circ: { names: function () { return INIT.circs || ['Lindsey', 'Laura']; }, fn: 'wdCirc', f: 'ci', label: 'Circulator', other: true }
+};
+function teamOf(d) { return dayTeam[d] || {}; }
+function otherInput(box, cb) {
+  if (box.querySelector('.oth')) return;
+  var w = el('div', 'oth'), inp = el('input'), b = el('button', null, 'Save'); inp.placeholder = 'Name'; inp.maxLength = 40;
+  b.onclick = function () { var v = inp.value.trim(); if (v) cb(v); };
+  inp.onkeydown = function (e) { if (e.key === 'Enter') b.onclick(); };
+  w.appendChild(inp); w.appendChild(b); box.appendChild(w); inp.focus();
+}
+var roleSeq = {};
+function renderRole(k) {
+  var R = ROLE[k], box = $(k); if (!box || !cur) return; box.innerHTML = '';
+  var def = teamOf(cur.date || day)[R.f] || '', own = cur[k] || '', eff = own || def, h = $(k + 'Hint');
+  if (h) h.textContent = own ? (def && def !== own ? 'Changed for this case. The day’s team has ' + def + '; tap ' + own + ' again to go back.' : 'Tap again to clear.')
+    : def ? 'From the day’s team. Tap another name to change it for this case only.' : (k === 'scrub' ? 'N/A if it was mixed or unclear. ' : '') + 'Or set the day’s team at the top of the day.';
+  var names = R.names().slice(); if (eff && names.indexOf(eff) < 0) names.push(eff);
+  names.forEach(function (n) { var b = el('button', eff === n ? 'on' : '', n); b.onclick = function () { saveRole(k, own === n ? '' : n); }; box.appendChild(b); });
+  if (R.other) { var o = el('button', null, 'Other…'); o.onclick = function () { otherInput(box, function (v) { saveRole(k, v); }); }; box.appendChild(o); }
+}
+function saveRole(k, v) {
+  var R = ROLE[k], c = cur, prev = c[k] || '', my = roleSeq[k] = (roleSeq[k] || 0) + 1;
+  c[k] = v; renderRole(k); if (navigator.vibrate) navigator.vibrate(10);
+  google.script.run.withSuccessHandler(function () { if (my === roleSeq[k]) toast(v ? R.label + ' for this case: ' + v : 'Back to the day’s team'); })
+    .withFailureHandler(function (e) { if (my === roleSeq[k]) { c[k] = prev; if (cur === c) renderRole(k); } toast('Not saved: ' + e.message); })[R.fn](c.id, v);
+}
+function renderScrub() { renderRole('scrub'); renderRole('circ'); }
+function teamEl(d) {
+  var t = teamOf(d), w = el('div', 'team'); w.appendChild(el('div', 'tl', 'Day’s team'));
+  ['scrub', 'circ'].forEach(function (k) {
+    var R = ROLE[k], row = el('div', 'trow'), bx = el('div', 'tb'), v = t[R.f] || '', names = R.names().slice();
+    row.appendChild(el('span', 'tk', R.label)); if (v && names.indexOf(v) < 0) names.push(v);
+    names.forEach(function (n) { var b = el('button', v === n ? 'on' : '', n); b.onclick = function () { saveTeam(d, R.f, v === n ? '' : n); }; bx.appendChild(b); });
+    if (R.other) { var o = el('button', null, 'Other…'); o.onclick = function () { otherInput(row, function (x) { saveTeam(d, R.f, x); }); }; bx.appendChild(o); }
+    row.appendChild(bx); w.appendChild(row);
   });
+  return w;
+}
+function saveTeam(d, f, v) {
+  var prev = Object.assign({}, teamOf(d)), t = Object.assign({}, prev); if (v) t[f] = v; else delete t[f];
+  dayTeam[d] = t; render(); if (navigator.vibrate) navigator.vibrate(10);
+  google.script.run.withSuccessHandler(function () { toast(v ? 'Day’s ' + (f === 'sc' ? 'scrub' : 'circulator') + ': ' + v : 'Cleared'); })
+    .withFailureHandler(function (e) { dayTeam[d] = prev; render(); toast('Not saved: ' + e.message); }).wdTeam(d, f, v);
 }
 function tmin(t) { var p = String(t || '').split(':'); return p.length < 2 ? NaN : +p[0] * 60 + +p[1]; }
 function median(a) { if (!a.length) return null; var b = a.slice().sort(function (x, y) { return x - y; }), m = Math.floor(b.length / 2); return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
-function scrubCard(sel) {
-  var names = scrubNames();
-  var c = card('By primary scrub', 'Turnover runs from one case’s anesthesia stop to the next case’s start the same day, credited to the scrub on the earlier case. Times come from Dr. Edwards’ feed.');
+function roleCard(sel, f, title, base) {
+  var team = (stats && stats.team) || {}, who = function (x) { return x[f] || (team[x.d] && team[x.d][f]) || ''; };
+  var names = base.slice(); sel.forEach(function (x) { var w = who(x); if (w && names.indexOf(w) < 0) names.push(w); });
+  var c = card(title, 'Turnover runs from one case’s anesthesia stop to the next case’s start the same day, credited to whoever was on the earlier case. Cases use the day’s team unless changed on the case.');
   var S = {}; names.forEach(function (n) { S[n] = { n: 0, df: [], to: [], len: [] }; });
   var byDay = {};
   sel.forEach(function (x) {
-    if (!x.sc || !S[x.sc]) return;
-    S[x.sc].n++; if (x.df) S[x.sc].df.push(x.df);
-    var a = tmin(x.as), b = tmin(x.ae);
-    if (!isNaN(a) && !isNaN(b) && b > a) S[x.sc].len.push(b - a);
+    var w = who(x); if (!w || !S[w]) return;
+    S[w].n++; if (x.df) S[w].df.push(x.df);
+    var a = tmin(x.as), b = tmin(x.ae); if (!isNaN(a) && !isNaN(b) && b > a) S[w].len.push(b - a);
   });
   sel.forEach(function (x) { if (!isNaN(tmin(x.as))) (byDay[x.d] = byDay[x.d] || []).push(x); });
   Object.keys(byDay).forEach(function (d) {
     var L = byDay[d].sort(function (p, q) { return tmin(p.as) - tmin(q.as); });
-    for (var i = 0; i + 1 < L.length; i++) {
-      var t = tmin(L[i + 1].as) - tmin(L[i].ae);
-      if (L[i].sc && S[L[i].sc] && !isNaN(t) && t > 0 && t < 180) S[L[i].sc].to.push(t);
-    }
+    for (var i = 0; i + 1 < L.length; i++) { var t = tmin(L[i + 1].as) - tmin(L[i].ae), w = who(L[i]); if (w && S[w] && !isNaN(t) && t > 0 && t < 180) S[w].to.push(t); }
   });
   var tb = el('div', 'eff'), hd = el('div', 'er eh sc4');
-  ['Scrub', 'Cases', 'Avg difficulty', 'Turnover', 'Anesthesia time'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
+  [title.indexOf('scrub') >= 0 ? 'Scrub' : 'Circulator', 'Cases', 'Avg difficulty', 'Turnover', 'Anesthesia time'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
   var any = false;
   names.forEach(function (n) {
     var v = S[n]; if (v.n) any = true;
     var r = el('div', 'er sc4' + (v.n < 5 ? ' few' : ''));
     r.appendChild(el('span', null, n)); r.appendChild(el('span', null, String(v.n)));
     r.appendChild(el('span', null, v.df.length ? (v.df.reduce(function (a, b) { return a + b; }, 0) / v.df.length).toFixed(1) : '–'));
-    var mt = median(v.to); r.appendChild(el('span', 'bk', mt == null ? '–' : Math.round(mt) + 'm' + ' (' + v.to.length + ')'));
+    var mt = median(v.to); r.appendChild(el('span', 'bk', mt == null ? '–' : Math.round(mt) + 'm (' + v.to.length + ')'));
     var ml = median(v.len); r.appendChild(el('span', null, ml == null ? '–' : dur(ml)));
     tb.appendChild(r);
   });
   c.appendChild(tb);
-  c.appendChild(el('div', 'note', any ? 'Medians. The number in brackets is how many turnovers were measured. Grey rows have fewer than 5 cases.' : 'Pick the primary scrub on each case (under Images). Numbers fill in as cases add up.'));
+  c.appendChild(el('div', 'note', any ? 'Medians. The number in brackets is how many turnovers were measured. Grey rows have fewer than 5 cases.' : 'Set the day’s team at the top of a surgery day. Numbers fill in as cases add up.'));
 }
 function render() {
   var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
@@ -1088,6 +1127,7 @@ function render() {
     if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); var bk0 = blockEl(day); if (bk0) list.appendChild(bk0); }
     return; }
   if (!rmode && !smode) { var rb = recapBanner(); if (rb) list.appendChild(rb); var me = msEl(day); if (me) list.appendChild(me); }
+  if (!rmode && !smode && cases.some(function (c) { return !c.eapOnly && !/Cancelled|Postponed|Removed/.test(c.status); })) list.appendChild(teamEl(day));
   if (!rmode && !smode) { var fe0 = factEl(day); if (fe0) { fe0.className += ' top'; list.appendChild(fe0); } }   // surgery days: the fact sits above the cases
   var lastDate = '';
   cases.forEach(function (c, i) {
@@ -1671,7 +1711,8 @@ function renderStats() {
   hbars(card('Complications', rated.length ? withX.length + ' of ' + rated.length + ' rated cases (' + Math.round(100 * withX.length / rated.length) + '%) had one or more.' : 'Rated cases only.'),
     (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0 }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
   hbars(card('Difficulty', 'Rated cases only.'), [1, 2, 3, 4, 5].map(function (n) { return { k: n + ' · ' + (L[n] || ''), v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
-  scrubCard(sel);
+  roleCard(sel, 'sc', 'By primary scrub', ROLE.scrub.names());
+  roleCard(sel, 'ci', 'By circulator', ROLE.circ.names());
   eapEff();
 }
 go(day);
