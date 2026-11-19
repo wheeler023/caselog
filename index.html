@@ -1237,6 +1237,18 @@ function openRec() {
     };
   }).catch(function () { closeRec(); toast('Allow camera and microphone for this app, then try again.'); });
 }
+function vidFail(c, st, e) {
+  st.className = 'upstat'; st.textContent = e.message + ' ';
+  if (!/saved to the case/i.test(e.message)) return;
+  var b = el('button', 'lnk', 'Send again'); st.appendChild(b);
+  b.onclick = function () {
+    st.textContent = 'Sending…';
+    google.script.run.withSuccessHandler(function (r) {
+      if (r && r.at) { VID.info[c.id] = { to: r.to, sent: r }; toast('Update sent'); }
+      if (cur === c) { renderVid(); st.className = 'upstat done'; st.textContent = r && r.at ? '✓ Sent to ' + r.to + (r.docs ? ' with ' + r.docs + ' document' + (r.docs === 1 ? '' : 's') : '') : '✓ Saved to this case'; }
+    }).withFailureHandler(function (x) { vidFail(c, st, x); }).wdVidResend(c.id);
+  };
+}
 function vidUpload(c, blob) {
   var st = $('vidStat'), tok = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
   st.className = 'upstat'; st.textContent = 'Uploading video…';
@@ -1263,7 +1275,7 @@ function vidUpload(c, blob) {
       google.script.run.withSuccessHandler(function (r) {
         if (r && r.at) { VID.info[c.id] = { to: r.to, sent: r }; toast('Update sent'); } else toast('Video saved to the case');
         if (cur === c) { renderVid(); st.className = 'upstat done'; st.textContent = r && r.at ? '✓ Sent to ' + r.to + (r.docs ? ' with ' + r.docs + ' document' + (r.docs === 1 ? '' : 's') : '') : '✓ Saved to this case'; }
-      }).withFailureHandler(function (e) { st.textContent = e.message; }).wdVidSend(c.id, tok, parts.length, blob.type);
+      }).withFailureHandler(function (e) { vidFail(c, st, e); }).wdVidSend(c.id, tok, parts.length, blob.type);
     }
   };
   fr.readAsDataURL(blob);
