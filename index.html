@@ -1129,6 +1129,7 @@ function tmin(t) { var p = String(t || '').split(':'); return p.length < 2 ? NaN
 function median(a) { if (!a.length) return null; var b = a.slice().sort(function (x, y) { return x - y; }), m = Math.floor(b.length / 2); return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
 function roleCard(sel, f, title, base) {
   var team = (stats && stats.team) || {}, who = function (x) { return x[f] || (team[x.d] && team[x.d][f]) || ''; };
+  if (!sel.some(function (x) { return who(x); })) return;   // nothing from Dr. Edwards yet: no card
   var names = base.slice(); sel.forEach(function (x) { var w = who(x); if (w && names.indexOf(w) < 0) names.push(w); });
   var c = card(title, 'Names come from Dr. Edwards’ records. Turnover runs from one case’s anesthesia stop to the next case’s start the same day, credited to whoever was on the earlier case.');
   var S = {}; names.forEach(function (n) { S[n] = { n: 0, df: [], to: [], len: [] }; });
