@@ -381,12 +381,12 @@ textarea:focus{outline:2px solid #B9D7EC}
    <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="addImages(this.files)">
    <button class="addimg" onclick="document.getElementById('imgIn').click()">📷 Add images</button>
   </div>
-  <div class="out">
+  <div class="out" id="roleScrub">
    <label>Primary scrub</label>
    <div class="hint" id="scrubHint"></div>
    <div class="rate scrub" id="scrub"></div>
   </div>
-  <div class="out">
+  <div class="out" id="roleCirc">
    <label>Circulator</label>
    <div class="hint" id="circHint"></div>
    <div class="rate scrub" id="circ"></div>
@@ -1083,7 +1083,10 @@ function saveRole(k, v) {
   google.script.run.withSuccessHandler(function () { if (my === roleSeq[k]) toast(v ? R.label + ' for this case: ' + v : 'Back to the day’s team'); })
     .withFailureHandler(function (e) { if (my === roleSeq[k]) { c[k] = prev; if (cur === c) renderRole(k); } toast('Not saved: ' + e.message); })[R.fn](c.id, v);
 }
-function renderScrub() { renderRole('scrub'); renderRole('circ'); }
+function renderScrub() {   // only on the day of surgery or after; not when looking ahead
+  var fut = cur && (cur.date || day) > INIT.today; $('roleScrub').style.display = fut ? 'none' : ''; $('roleCirc').style.display = fut ? 'none' : '';
+  if (!fut) { renderRole('scrub'); renderRole('circ'); }
+}
 function teamEl(d) {
   var t = teamOf(d), w = el('div', 'team'); w.appendChild(el('div', 'tl', 'Day’s team'));
   ['scrub', 'circ'].forEach(function (k) {
@@ -1145,7 +1148,7 @@ function render() {
     if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); var bk0 = blockEl(day); if (bk0) list.appendChild(bk0); }
     return; }
   if (!rmode && !smode) { var rb = recapBanner(); if (rb) list.appendChild(rb); var me = msEl(day); if (me) list.appendChild(me); }
-  if (!rmode && !smode && cases.some(function (c) { return !c.eapOnly && !/Cancelled|Postponed|Removed/.test(c.status); })) list.appendChild(teamEl(day));
+  if (!rmode && !smode && day <= INIT.today && cases.some(function (c) { return !c.eapOnly && !/Cancelled|Postponed|Removed/.test(c.status); })) list.appendChild(teamEl(day));
   if (!rmode && !smode) { var fe0 = factEl(day); if (fe0) { fe0.className += ' top'; list.appendChild(fe0); } }   // surgery days: the fact sits above the cases
   var lastDate = '';
   cases.forEach(function (c, i) {
