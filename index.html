@@ -194,6 +194,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 #cropBox i[data-h=tl]{left:-4px;top:-4px;border-right:0;border-bottom:0}#cropBox i[data-h=tr]{right:-4px;top:-4px;border-left:0;border-bottom:0}
 #cropBox i[data-h=bl]{left:-4px;bottom:-4px;border-right:0;border-top:0}#cropBox i[data-h=br]{right:-4px;bottom:-4px;border-left:0;border-top:0}
 .crophint{color:#828A9A;font-size:13px;text-align:center;padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+.mcover{cursor:pointer}.mcover .mtg{margin-top:10px;font-size:13px;font-weight:700;color:#9EC5E0}
 .mcover{margin:18px 0 10px;padding:16px;border-radius:16px;background:linear-gradient(160deg,#13213B,#0C1019);border:1px solid #2B3A52}
 .mch{display:flex;align-items:center;gap:10px}.mch img{width:34px;height:34px;border-radius:50%}.mct{font-family:var(--serif);font-size:22px;font-weight:700;color:#fff}
 .mcs{display:flex;gap:22px;margin-top:12px}.mcs b{display:block;font-family:var(--serif);font-size:26px;color:#B9D7EC;line-height:1.1}.mcs span{font-size:12.5px;color:#828A9A}
@@ -493,6 +494,15 @@ function brandRow(id, sub) {
   var w = $(id); w.innerHTML = '';
   if (INIT.icon) { var im = document.createElement('img'); im.src = INIT.icon; im.alt = ''; im.onerror = function () { im.remove(); }; w.appendChild(im); }
   var t = el('div', null, 'Michael R. Wheeler, MD'); if (sub) t.appendChild(el('small', null, sub)); w.appendChild(t);
+  w.style.cursor = 'pointer'; w.onclick = function () { goHome(); };
+}
+/** Tap the logo anywhere: back to today's cases, with any open screen closed (unsaved notes are saved first). */
+function goHome() {
+  try { closePhoto(); closeRecap(); } catch (e) {}
+  if ($('rsheet').classList.contains('on')) closeRating();
+  if ($('sheet').classList.contains('on')) closeCase();
+  day = INIT.today; viewMon = '';
+  setTab('cases');
 }
 brandRow('who', '');
 
@@ -787,6 +797,7 @@ function openRecap(mk) {
 function closeRecap() { $('recap').classList.remove('on'); }
 // ---- Photos tab ----
 var gal = null, galType = '', galLv = '';
+var galOpen = {};
 function loadGallery() {
   var b = $('pBody');
   if (gal) drawGallery(); else { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Loading…')); }
@@ -795,20 +806,27 @@ function loadGallery() {
 }
 function drawGallery() {
   var b = $('pBody'); b.innerHTML = '';
-  var types = {}, lvs = {}; gal.forEach(function (g) { types[g.t] = 1; (g.lv || '').split(/,\s*/).forEach(function (l) { if (l) lvs[l] = 1; }); });
+  var types = {}; gal.forEach(function (g) { types[g.t] = 1; });
   var ch = $('pchips'); ch.innerHTML = '';
   function chip(lbl, on, f) { var c = el('button', on ? 'chip on' : 'chip', lbl); c.onclick = f; ch.appendChild(c); }
-  chip('All', !galType && !galLv, function () { galType = ''; galLv = ''; drawGallery(); });
+  galLv = '';
+  chip('All', !galType, function () { galType = ''; drawGallery(); });
   Object.keys(types).sort().forEach(function (t) { chip(t, galType === t, function () { galType = galType === t ? '' : t; drawGallery(); }); });
-  Object.keys(lvs).sort().forEach(function (l) { chip(l, galLv === l, function () { galLv = galLv === l ? '' : l; drawGallery(); }); });
-  var list = gal.filter(function (g) { return (!galType || g.t === galType) && (!galLv || (g.lv || '').split(/,\s*/).indexOf(galLv) >= 0); });
+  var list = gal.filter(function (g) { return !galType || g.t === galType; }).sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; });
   if (!gal.length) { b.appendChild(el('div', 'empty', 'No case photos yet. Add them from a case’s screen.')); return; }
   b.appendChild(el('div', 'note', list.length + ' photo' + (list.length === 1 ? '' : 's') + '. Before posting, check for names, dates, faces or labels.'));
   var grid = null, need = [], mk = '', perMonth = {};
   list.forEach(function (g) { var k = g.d.slice(0, 7); perMonth[k] = (perMonth[k] || 0) + 1; });
   if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) { stats = r; MS = null; if ($('vPhotos').style.display !== 'none') drawGallery(); } }).wdStats();
   list.forEach(function (g) {
-    if (g.d.slice(0, 7) !== mk) { mk = g.d.slice(0, 7); b.appendChild(monthCover(mk, perMonth[mk])); grid = el('div', 'pgrid'); b.appendChild(grid); }
+    if (g.d.slice(0, 7) !== mk) {
+      mk = g.d.slice(0, 7); if (galOpen[mk] === undefined) galOpen[mk] = !Object.keys(galOpen).length;   // newest month starts open
+      var cv = monthCover(mk, perMonth[mk]), open = galOpen[mk];
+      cv.appendChild(el('div', 'mtg', open ? 'Hide photos ▴' : 'Show ' + perMonth[mk] + ' photo' + (perMonth[mk] === 1 ? '' : 's') + ' ▾'));
+      (function (k) { cv.onclick = function () { galOpen[k] = !galOpen[k]; drawGallery(); }; })(mk);
+      b.appendChild(cv); grid = el('div', 'pgrid'); if (!open) grid.style.display = 'none'; b.appendChild(grid);
+    }
+    if (!galOpen[mk]) return;
     var a = el('button', 'pth'), img = document.createElement('img');
     img.alt = g.t; a.setAttribute('data-f', g.f);
     if (THUMB[g.f]) img.src = THUMB[g.f]; else if (THUMB[g.f] !== '') need.push(g.f);
