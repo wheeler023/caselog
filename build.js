@@ -91,7 +91,7 @@ function boot() {
     if (!window.__STARTED && apiKey()) splash('Couldn’t reach your case log (' + e.message + ').<br><button onclick="boot()">Try again</button>');
   });
 }
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 </script>`;
 const marker = '<script>\nvar INIT = __INIT__;';
 if (!h.includes(marker)) throw new Error('script marker missing');
