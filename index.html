@@ -1330,6 +1330,31 @@ function render() {
   if (!rmode && !smode) { var fin = finEl(day); if (fin) list.appendChild(fin); var qe = quoteEl(day, true); if (qe) list.appendChild(qe); }
   tryPendingOpen();
 }
+var VEND = ['NuVasive', 'Medtronic', 'Globus', 'Stryker', 'NEXXT', 'ProDisc', 'Orthofix', 'ATEC', 'SI-BONE', 'Spinal Elements', 'Zimvie'];
+function vendorRow(box) {   // tap the vendor to change it; every change asks first
+  if (!cur || cur.eapOnly || (INIT.role && INIT.role !== 'owner')) { if (cur && cur.vendor) addRow(box, 'Vendor', cur.vendor); return; }
+  var c = cur, r = el('div', 'row'); r.appendChild(el('div', 'k', 'Vendor'));
+  var v = el('div', 'v'), b = el('button', 'lnk', (c.vendor || 'Not set') + ' ✎'); v.appendChild(b); r.appendChild(v); box.appendChild(r);
+  b.onclick = function () {
+    var p = el('div', 'rate scrub'); v.appendChild(p); b.style.display = 'none';
+    VEND.concat(['None', 'Other…', 'Cancel']).forEach(function (n) {
+      var x = el('button', n === c.vendor ? 'on' : '', n); p.appendChild(x);
+      x.onclick = function () {
+        if (n === 'Cancel') { p.remove(); b.style.display = ''; return; }
+        if (n === 'Other…') { p.remove(); otherInput(r, function (t) { pick(t); }); return; }
+        pick(n === 'None' ? '' : n);
+      };
+    });
+    function pick(n) {
+      var o = r.querySelector('.oth'); if (o) o.remove();
+      if (n === (c.vendor || '')) { p.remove(); b.style.display = ''; return; }
+      if (!confirm('Change vendor from ' + (c.vendor || 'not set') + ' to ' + (n || 'none') + '?')) return;
+      var prev = c.vendor; c.vendor = n; b.textContent = (n || 'Not set') + ' ✎'; p.remove(); b.style.display = '';
+      google.script.run.withSuccessHandler(function (x) { c.vendor = x; toast('Vendor: ' + (x || 'none')); render(); })
+        .withFailureHandler(function (e) { c.vendor = prev; b.textContent = (prev || 'Not set') + ' ✎'; toast('Not saved: ' + e.message); }).wdVendor(c.id, n);
+    }
+  };
+}
 function addRow(box, k, v, href) {
   if (!v) return;
   var r = el('div', 'row'); r.appendChild(el('div', 'k', k));
@@ -1360,7 +1385,7 @@ function openCase(i) {
   addRow(b, 'Position', cur.position); addRow(b, 'Facility', cur.facility); addRow(b, 'Status', cur.status);
   if (cur.eap && cur.eap.a) addRow(b, 'Anesthesia time', cur.eap.a + (cur.eap.b ? ' – ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
   renderOutcome(); loadImages(); renderMoney(null); renderScrub(); renderVid();
-  if (cur.vendor) addRow(b, 'Vendor', cur.vendor);
+  vendorRow(b);
   (cur.implants || []).forEach(function (m, i) { addRow(b, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
   if (cur.order) addRow(b, 'Order', 'Open surgery order', cur.order);
   var on = $('opnote'); on.innerHTML = '';
