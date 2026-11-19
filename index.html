@@ -942,7 +942,8 @@ function offEls(k) {
   if (edOff(k)) out.push(el('div', 'offban eo', 'Dr. Edwards off'));
   return out;
 }
-function rangeLbl(a, b) { return b && b !== a ? label(a) + ' to ' + label(b) : label(a); }
+function yLbl(k) { return parse(k).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); }
+function rangeLbl(a, b) { return b && b !== a ? yLbl(a) + ' to ' + yLbl(b) : yLbl(a); }
 function suggEls() {
   if (TEAM || !WO || !WO.sugg || !WO.sugg.length) return [];
   return WO.sugg.slice(0, 2).map(function (s) {
