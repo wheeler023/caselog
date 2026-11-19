@@ -1,6 +1,6 @@
 {
-  "name": "Wheeler Case Log",
-  "short_name": "Case Log",
+  "name": "Wheeler MD",
+  "short_name": "Wheeler MD",
   "description": "Dr. Michael Wheeler's surgical case log",
   "start_url": "./",
   "scope": "./",
