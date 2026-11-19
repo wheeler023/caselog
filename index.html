@@ -1242,7 +1242,8 @@ function vidUpload(c, blob) {
   st.className = 'upstat'; st.textContent = 'Uploading video…';
   var fr = new FileReader();
   fr.onload = function () {
-    var b64 = String(fr.result).split(',')[1] || '', size = 3000000, parts = [];
+    var du = String(fr.result), bi = du.indexOf('base64,'), b64 = bi >= 0 ? du.slice(bi + 7) : '', size = 3000000, parts = [];
+    if (!b64) { st.textContent = 'Upload failed: the phone didn’t hand over the video. Record again.'; return; }
     for (var i = 0; i < b64.length; i += size) parts.push(b64.slice(i, i + size));
     var k = 0;
     (function next() {
