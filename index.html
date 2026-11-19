@@ -151,6 +151,13 @@ html,body{font-family:var(--sans);line-height:1.4}
 .rate button.on{background:#9EC5E0;border-color:#9EC5E0;color:#0C1019;box-shadow:0 0 0 2px #B9D7EC}
 .rate button:active{transform:scale(.94)}
 .rate button{transition:transform .08s}
+.alog{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.amsg{padding:10px 12px;border-radius:14px;max-width:88%;white-space:pre-wrap;font-size:15px;line-height:1.4}
+.amsg.me{align-self:flex-end;background:#9EC5E0;color:#0C1019}.amsg.ai{align-self:flex-start;background:#0C1019;border:1px solid #1F2328;color:#E6E9F0}.amsg.think{opacity:.6}
+.aex{text-align:left;background:transparent;border:1px solid #2A2F38;border-radius:12px;color:#B9D7EC;padding:10px 12px;font:inherit;font-size:14px}
+.arow{display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));background:#121722;padding:8px 0}
+.arow textarea{flex:1;min-width:0;background:#0C1019;color:#E6E9F0;border:1px solid #1F2328;border-radius:12px;padding:10px;font:inherit;font-size:15px;resize:none}
+.arow button{height:44px;border:0;border-radius:12px;background:#9EC5E0;color:#0C1019;font-weight:700;padding:0 16px}
 .rate.scrub{flex-wrap:wrap}.rate.scrub button{font-size:15px;font-family:inherit;height:46px;min-width:70px}
 .team{margin:0 0 12px -34px;padding:10px 12px;border-radius:12px;background:#0C1019;border:1px solid #1F2328}
 .team .tl{font-size:12px;font-weight:700;color:#828A9A;margin-bottom:4px}
@@ -319,6 +326,10 @@ textarea:focus{outline:2px solid #B9D7EC}
  <div class="hd"><div class="who" id="who5"></div><div class="day">Photos</div><div class="chips mos" id="pchips"></div></div>
  <div class="sp" id="pBody"></div>
 </div>
+<div id="vAsk" style="display:none">
+ <div class="hd"><div class="who" id="who6"></div><div class="day">Ask</div></div>
+ <div class="sp" id="aBody"></div>
+</div>
 <div id="vFin" style="display:none">
  <div class="hd"><div class="who" id="who3"></div><div class="day">Finances</div>
   <div class="chips" id="fchips"><button class="chip" data-p="month" onclick="setFPer('month')">Month</button><button class="chip" data-p="ytd" onclick="setFPer('ytd')">YTD</button><button class="chip on" data-p="12m" onclick="setFPer('12m')">12 mo</button><button class="chip" data-p="all" onclick="setFPer('all')">All time</button></div></div>
@@ -326,7 +337,7 @@ textarea:focus{outline:2px solid #B9D7EC}
  <div class="sp" id="pushBox" style="padding-top:0"></div>
  <div class="sp" id="teamBox" style="padding-top:0"></div>
 </div>
-<nav class="tabs"><button id="tCases" class="on" onclick="setTab('cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Cases</button><button id="tStats" onclick="setTab('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>Metrics</button><button id="tPhotos" onclick="setTab('photos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>Photos</button><button id="tImp" style="display:none" onclick="setTab('imp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l-1 3H9z"/><path d="M12 6v15M9 9l6 2M9 13l6 2M9 17l6 2"/></svg>Implants</button><button id="tFin" onclick="setTab('fin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Finance</button></nav>
+<nav class="tabs"><button id="tCases" class="on" onclick="setTab('cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Cases</button><button id="tStats" onclick="setTab('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>Metrics</button><button id="tPhotos" onclick="setTab('photos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>Photos</button><button id="tImp" style="display:none" onclick="setTab('imp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l-1 3H9z"/><path d="M12 6v15M9 9l6 2M9 13l6 2M9 17l6 2"/></svg>Implants</button><button id="tAsk" onclick="setTab('ask')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M9 10h.01M12 10h.01M15 10h.01"/></svg>Ask</button><button id="tFin" onclick="setTab('fin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Finance</button></nav>
 
 <div class="sheet" id="recap">
  <div class="sh"><button onclick="closeRecap()">‹ Back</button><div class="ttl"><b id="rcTitle">Recap</b><span></span></div></div>
@@ -572,7 +583,7 @@ if (INIT.month) storeMonth(INIT.month);
 if (INIT.todo) drawTodo(INIT.todo); else setTimeout(loadTodo, 400);
 if (!window.__PHONE && INIT.phoneApp) $('getApp').style.display = '';   // only in the Google page, never in the phone app
 var TEAM = INIT.role === 'team';
-if (TEAM) { $('tFin').style.display = 'none'; $('moneyCard').style.display = 'none'; }   // team phones: no finances anywhere
+if (TEAM) { $('tAsk').style.display = 'none'; $('tFin').style.display = 'none'; $('moneyCard').style.display = 'none'; }   // team phones: no finances anywhere
 function drawPush() {   // your phone app only: the 7 pm rating reminder
   var box = $('pushBox'); if (!box) return; box.innerHTML = '';
   if (TEAM || !window.__PHONE || !('PushManager' in window) || !navigator.serviceWorker) return;
@@ -1137,6 +1148,41 @@ function roleCard(sel, f, title, base) {
   c.appendChild(tb);
   c.appendChild(el('div', 'note', any ? 'Medians. The number in brackets is how many turnovers were measured. Grey rows have fewer than 5 cases.' : 'Set the day’s team at the top of a surgery day. Numbers fill in as cases add up.'));
 }
+// ---- Ask: questions about the practice, answered from totals only ----
+var ASK = { hist: [], key: null, busy: false };
+var ASK_EX = ['What’s my expected revenue for November, and how does it compare to last November?', 'Which procedure pays best per case this year?', 'How has my turnover trended the last 3 months?', 'What share of my cases this year were commercial?'];
+function drawAsk() {
+  var b = $('aBody'); b.innerHTML = '';
+  if (ASK.key === null) { b.appendChild(el('div', 'empty', 'Loading…')); google.script.run.withSuccessHandler(function (r) { ASK.key = !!(r && r.set); drawAsk(); }).withFailureHandler(function (e) { b.innerHTML = ''; b.appendChild(el('div', 'empty', /Unknown request/.test(e.message) ? 'Ask is almost ready. It works once the latest update is installed.' : 'Could not load: ' + e.message)); }).wdAiInfo(); return; }
+  if (!ASK.key) { b.appendChild(keyCard()); return; }
+  var log = el('div', 'alog'); b.appendChild(log);
+  if (!ASK.hist.length) {
+    log.appendChild(el('div', 'note', 'Ask about volume, revenue, payers, procedures, difficulty, staff or times. Answers come from totals only; no patient names leave your Google account.'));
+    ASK_EX.forEach(function (x) { var c = el('button', 'aex', x); c.onclick = function () { askSend(x); }; log.appendChild(c); });
+  }
+  ASK.hist.forEach(function (m) { log.appendChild(el('div', 'amsg ' + (m.role === 'user' ? 'me' : 'ai'), m.content)); });
+  if (ASK.busy) log.appendChild(el('div', 'amsg ai think', 'Thinking…'));
+  var row = el('div', 'arow'), inp = el('textarea'), go = el('button', null, 'Ask');
+  inp.id = 'askIn'; inp.rows = 2; inp.placeholder = 'Ask a question…'; inp.value = ASK.draft || ''; inp.oninput = function () { ASK.draft = inp.value; };
+  go.disabled = ASK.busy; go.onclick = function () { askSend(inp.value); };
+  row.appendChild(inp); row.appendChild(go); b.appendChild(row);
+  if (ASK.hist.length) { var nw = el('button', 'lnk', 'New conversation'); nw.onclick = function () { ASK.hist = []; drawAsk(); }; b.appendChild(nw); }
+  var ky = el('button', 'lnk', 'Change API key'); ky.onclick = function () { ASK.key = false; drawAsk(); }; b.appendChild(ky);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+function askSend(q) {
+  q = String(q || '').trim(); if (!q || ASK.busy) return;
+  var hist = ASK.hist.slice(); ASK.hist.push({ role: 'user', content: q }); ASK.draft = ''; ASK.busy = true; drawAsk();
+  google.script.run.withSuccessHandler(function (a) { ASK.busy = false; ASK.hist.push({ role: 'assistant', content: a || 'No answer came back.' }); if ($('vAsk').style.display !== 'none') drawAsk(); })
+    .withFailureHandler(function (e) { ASK.busy = false; ASK.hist.push({ role: 'assistant', content: e.message }); if (/key/i.test(e.message) && /accepted|first/i.test(e.message)) ASK.key = false; if ($('vAsk').style.display !== 'none') drawAsk(); }).wdAsk(q, hist);
+}
+function keyCard() {
+  var c = el('div', 'card2'); c.appendChild(el('h3', null, 'Connect Claude'));
+  c.appendChild(el('div', 'note', 'Paste your Claude API key from console.anthropic.com (API keys, Create key). It’s stored only in your Google script.'));
+  var r = el('div', 'oth'), inp = el('input'), sv = el('button', null, 'Save'); inp.type = 'password'; inp.placeholder = 'sk-ant-…'; inp.autocomplete = 'off';
+  sv.onclick = function () { sv.disabled = true; sv.textContent = 'Checking…'; google.script.run.withSuccessHandler(function (x) { ASK.key = !!(x && x.set); toast('Connected'); drawAsk(); }).withFailureHandler(function (e) { sv.disabled = false; sv.textContent = 'Save'; toast(e.message); }).wdAiKey(inp.value); };
+  r.appendChild(inp); r.appendChild(sv); c.appendChild(r); return c;
+}
 function render() {
   var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
   if (!rmode) dayCount();
@@ -1482,14 +1528,15 @@ brandRow('who2', '');
 brandRow('who3', '');
 brandRow('who4', '');
 brandRow('who5', '');
+brandRow('who6', '');
 function setTab(t) {
   $('vCases').style.display = t === 'cases' ? '' : 'none';
   $('vStats').style.display = t === 'stats' ? '' : 'none';
-  $('vFin').style.display = t === 'fin' ? '' : 'none'; $('vImp').style.display = t === 'imp' ? '' : 'none'; $('vPhotos').style.display = t === 'photos' ? '' : 'none'; $('tPhotos').className = t === 'photos' ? 'on' : '';
+  $('vFin').style.display = t === 'fin' ? '' : 'none'; $('vAsk').style.display = t === 'ask' ? '' : 'none'; $('tAsk').className = t === 'ask' ? 'on' : ''; $('vImp').style.display = t === 'imp' ? '' : 'none'; $('vPhotos').style.display = t === 'photos' ? '' : 'none'; $('tPhotos').className = t === 'photos' ? 'on' : '';
   $('tCases').className = t === 'cases' ? 'on' : ''; $('tStats').className = t === 'stats' ? 'on' : ''; $('tFin').className = t === 'fin' ? 'on' : ''; $('tImp').className = t === 'imp' ? 'on' : '';
   window.scrollTo(0, 0);
   if (t !== 'fin') hideMoney();
-  if (t === 'stats') { per = 'sel'; selY = +INIT.today.slice(0, 4); selM = +INIT.today.slice(5, 7); loadStats(); } else if (t === 'fin') { renderFin(); drawTeam(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else go(day);
+  if (t === 'stats') { per = 'sel'; selY = +INIT.today.slice(0, 4); selM = +INIT.today.slice(5, 7); loadStats(); } else if (t === 'fin') { renderFin(); drawTeam(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else if (t === 'ask') drawAsk(); else go(day);
 }
 // ---- Finance tab: amounts are not drawn until you tap Show amounts; leaving the tab hides them again ----
 var finShown = false, finPer = '12m', inPerFin = function () { return true; };
