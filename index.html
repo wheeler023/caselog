@@ -376,7 +376,7 @@ textarea:focus{outline:2px solid #B9D7EC}
   </div>
   <div class="out">
    <label>Primary scrub</label>
-   <div class="hint">Tap again to clear.</div>
+   <div class="hint">N/A if it was mixed or unclear. Tap again to clear.</div>
    <div class="rate scrub" id="scrub"></div>
   </div>
   <div class="out" id="moneyCard">
@@ -1027,7 +1027,7 @@ function eapEff() {
 }
 // ---- Primary scrub: one tap on the case, compared on Metrics ----
 var scrubSeq = 0;
-function scrubNames() { return INIT.scrubs || ['Kaven', 'Dottie', 'Jaylenn']; }
+function scrubNames() { return INIT.scrubs || ['Kaven', 'Dottie', 'Jaylenn', 'N/A']; }
 function renderScrub() {
   var box = $('scrub'); if (!box || !cur) return; box.innerHTML = '';
   scrubNames().forEach(function (n) {
