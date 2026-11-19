@@ -55,6 +55,9 @@ textarea:focus{outline:2px solid #9EC5E0;border-color:transparent}
 .thumbs .ph{display:flex;align-items:center;justify-content:center;height:100%}
 .thumbs .busy{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#FFFFFF;font-size:12px;text-align:center;padding:3px}
 .thumbs .rm{position:absolute;top:4px;right:4px;min-width:30px;height:30px;padding:0 8px;border-radius:15px;border:0;background:rgba(0,0,0,.6);color:#FFFFFF;font-size:15px}
+.rec{position:fixed;inset:0;background:#000;z-index:60;display:none;flex-direction:column}.rec.on{display:flex}.rec video{flex:1;width:100%;object-fit:cover;transform:scaleX(-1)}
+.rect{position:absolute;top:calc(14px + env(safe-area-inset-top));left:0;right:0;text-align:center;color:#fff;font-weight:700;font-size:18px}
+.recb{display:flex;gap:10px;padding:14px 14px calc(14px + env(safe-area-inset-bottom));background:#000}.recb button{flex:1;height:52px;border-radius:14px;border:0;font-size:17px;font-weight:700;background:#2A2F38;color:#fff}.recb .pri{background:#C0392B}
 .upstat{min-height:0;font-size:14px;font-weight:600;color:#B9D7EC}.upstat:not(:empty){margin:8px 0 2px}.upstat.done{color:#8FD19E}
 .thumbs .th.up img{opacity:.55}
 .thumbs .spin{position:absolute;top:50%;left:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
@@ -344,6 +347,8 @@ textarea:focus{outline:2px solid #B9D7EC}
  <div class="body"><div class="sp" id="rcBody"></div></div>
 </div>
 <div class="notice" id="notice"><div class="ntc"><div class="ntk">From your case log</div><b id="ntTitle"></b><div id="ntBody"></div><button id="ntOk">Got it</button></div></div>
+<div class="rec" id="rec"><video id="recV" playsinline muted autoplay></video><div class="rect" id="recT">0:00</div>
+ <div class="recb"><button id="recX">Cancel</button><button id="recGo" class="pri">● Record</button></div></div>
 <div class="crop" id="crop"><div class="cropbar"><button id="cropCancel">Cancel</button><button id="cropFull">Use full photo</button><button id="cropUse" class="pri">Crop</button></div>
  <div class="cropwrap"><img id="cropImg" alt=""><div id="cropBox"><i data-h="tl"></i><i data-h="tr"></i><i data-h="bl"></i><i data-h="br"></i></div></div>
  <div class="crophint">Drag the box or its corners to trim names, dates or labels.</div></div>
@@ -391,6 +396,12 @@ textarea:focus{outline:2px solid #B9D7EC}
    <div class="thumbs" id="thumbs"></div>
    <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="addImages(this.files)">
    <button class="addimg" onclick="document.getElementById('imgIn').click()">📷 Add images</button>
+  </div>
+  <div class="out" id="vidCard">
+   <label>Patient update</label>
+   <div class="hint" id="vidHint">Checking the order for the patient’s email…</div>
+   <div class="upstat" id="vidStat"></div>
+   <button class="addimg" onclick="openRec()">🎥 Record video</button>
   </div>
   <div class="out" id="roleScrub">
    <label>Primary scrub</label>
@@ -1190,6 +1201,72 @@ function keyCard() {
   sv.onclick = function () { sv.disabled = true; sv.textContent = 'Checking…'; google.script.run.withSuccessHandler(function (x) { ASK.key = !!(x && x.set); toast('Connected'); drawAsk(); }).withFailureHandler(function (e) { sv.disabled = false; sv.textContent = 'Save'; toast(e.message); }).wdAiKey(inp.value); };
   r.appendChild(inp); r.appendChild(sv); c.appendChild(r); return c;
 }
+// ---- Patient update video: record, it uploads, then emails itself to the patient after 5 seconds ----
+var VID = { info: {}, stream: null, rec: null, chunks: [], t0: 0, timer: null };
+function renderVid() {
+  var c = cur, fut = c && (c.date || day) > INIT.today; $('vidCard').style.display = fut ? 'none' : ''; if (fut) return;
+  var info = VID.info[c.id]; $('vidStat').textContent = ''; $('vidStat').className = 'upstat';
+  function show(i) {
+    if (cur !== c) return;
+    $('vidHint').textContent = i.sent ? '✓ Update sent ' + i.sent.at + ' to ' + i.sent.to + '. Record again to send another.'
+      : i.to ? 'Sends to ' + i.to + ' with this procedure’s recovery documents. Keep it under 2 minutes.'
+      : 'No email found on the surgery order. A video still saves to this case.';
+  }
+  if (info) show(info); else { $('vidHint').textContent = 'Checking the order for the patient’s email…'; google.script.run.withSuccessHandler(function (i) { VID.info[c.id] = i || {}; show(VID.info[c.id]); }).withFailureHandler(function () { $('vidHint').textContent = ''; }).wdVidInfo(c.id); }
+}
+function vidMime() {
+  var o = ['video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  for (var i = 0; i < o.length; i++) if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(o[i])) return o[i];
+  return '';
+}
+function closeRec() { clearInterval(VID.timer); if (VID.stream) VID.stream.getTracks().forEach(function (t) { t.stop(); }); VID.stream = null; $('rec').classList.remove('on'); }
+function openRec() {
+  if (!navigator.mediaDevices || !window.MediaRecorder) { toast('This phone can’t record video in the app.'); return; }
+  var c = cur; $('recT').textContent = '0:00'; $('recGo').textContent = '● Record'; $('rec').classList.add('on');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true }).then(function (st) {
+    VID.stream = st; $('recV').srcObject = st;
+    $('recX').onclick = function () { if (VID.rec && VID.rec.state === 'recording') { VID.cancel = true; VID.rec.stop(); } closeRec(); };
+    $('recGo').onclick = function () {
+      if (VID.rec && VID.rec.state === 'recording') { VID.rec.stop(); return; }
+      var mt = vidMime(); VID.chunks = []; VID.cancel = false;
+      VID.rec = new MediaRecorder(st, mt ? { mimeType: mt, videoBitsPerSecond: 900000, audioBitsPerSecond: 64000 } : { videoBitsPerSecond: 900000 });
+      VID.rec.ondataavailable = function (e) { if (e.data && e.data.size) VID.chunks.push(e.data); };
+      VID.rec.onstop = function () { clearInterval(VID.timer); var cx = VID.cancel; closeRec(); if (!cx) vidUpload(c, new Blob(VID.chunks, { type: VID.rec.mimeType || mt || 'video/mp4' })); };
+      VID.rec.start(1000); VID.t0 = Date.now(); $('recGo').textContent = '■ Stop';
+      VID.timer = setInterval(function () { var s = Math.floor((Date.now() - VID.t0) / 1000); $('recT').textContent = Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); if (s >= 150) VID.rec.stop(); }, 250);
+    };
+  }).catch(function () { closeRec(); toast('Allow camera and microphone for this app, then try again.'); });
+}
+function vidUpload(c, blob) {
+  var st = $('vidStat'), tok = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+  st.className = 'upstat'; st.textContent = 'Uploading video…';
+  var fr = new FileReader();
+  fr.onload = function () {
+    var b64 = String(fr.result).split(',')[1] || '', size = 3000000, parts = [];
+    for (var i = 0; i < b64.length; i += size) parts.push(b64.slice(i, i + size));
+    var k = 0;
+    (function next() {
+      if (k >= parts.length) return countdown();
+      google.script.run.withSuccessHandler(function () { k++; if (cur === c) st.textContent = 'Uploading video… ' + Math.round(k * 100 / parts.length) + '%'; next(); })
+        .withFailureHandler(function (e) { st.textContent = 'Upload failed: ' + e.message; }).wdVidPart(c.id, tok, k, parts[k]);
+    })();
+    function countdown() {
+      var info = VID.info[c.id] || {}, n = 5, stop = false;
+      if (!info.to) return send();
+      st.innerHTML = ''; var msg = el('span'), x = el('button', 'lnk', 'Cancel'); st.appendChild(msg); st.appendChild(document.createTextNode(' ')); st.appendChild(x);
+      x.onclick = function () { stop = true; st.textContent = 'Not sent. Record again when you’re ready.'; };
+      (function tick() { if (stop) return; if (n <= 0) return send(); msg.textContent = 'Sending to ' + info.to + ' in ' + n + '…'; n--; setTimeout(tick, 1000); })();
+    }
+    function send() {
+      st.textContent = 'Sending…';
+      google.script.run.withSuccessHandler(function (r) {
+        if (r && r.at) { VID.info[c.id] = { to: r.to, sent: r }; toast('Update sent'); } else toast('Video saved to the case');
+        if (cur === c) { renderVid(); st.className = 'upstat done'; st.textContent = r && r.at ? '✓ Sent to ' + r.to + (r.docs ? ' with ' + r.docs + ' document' + (r.docs === 1 ? '' : 's') : '') : '✓ Saved to this case'; }
+      }).withFailureHandler(function (e) { st.textContent = e.message; }).wdVidSend(c.id, tok, parts.length, blob.type);
+    }
+  };
+  fr.readAsDataURL(blob);
+}
 function render() {
   var list = rmode ? $('rList') : $('list'); list.innerHTML = '';
   if (!rmode) dayCount();
@@ -1270,7 +1347,7 @@ function openCase(i) {
   addRow(b, 'Assistant', cur.assistant); addRow(b, 'Anesthesia', cur.anesthesia); addRow(b, 'Stay', cur.stay);
   addRow(b, 'Position', cur.position); addRow(b, 'Facility', cur.facility); addRow(b, 'Status', cur.status);
   if (cur.eap && cur.eap.a) addRow(b, 'Anesthesia time', cur.eap.a + (cur.eap.b ? ' – ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
-  renderOutcome(); loadImages(); renderMoney(null); renderScrub();
+  renderOutcome(); loadImages(); renderMoney(null); renderScrub(); renderVid();
   if (cur.vendor) addRow(b, 'Vendor', cur.vendor);
   (cur.implants || []).forEach(function (m, i) { addRow(b, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
   if (cur.order) addRow(b, 'Order', 'Open surgery order', cur.order);
