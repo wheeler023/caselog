@@ -189,7 +189,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 .pth{position:relative;aspect-ratio:1;border:0;padding:0;border-radius:10px;overflow:hidden;background:#0C1019}
 .pth img{width:100%;height:100%;object-fit:cover;display:block}.pth img:not([src]){visibility:hidden}.pth .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#828A9A;font-size:12px}
 .pth .pc{position:absolute;left:0;right:0;bottom:0;padding:3px 5px;font-size:10.5px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.75));text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.notice{position:fixed;inset:0;z-index:40;background:rgba(5,8,14,.72);display:none;align-items:center;justify-content:center;padding:20px}.notice.on{display:flex}
+.newc{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 58px);z-index:35;display:flex;flex-direction:column;gap:6px;max-width:520px;margin:0 auto}.nc{display:flex;align-items:flex-start;gap:8px;background:#fff;color:#14233a;border-left:4px solid #b5653d;border-radius:10px;padding:10px 8px 10px 12px;box-shadow:0 6px 18px rgba(0,0,0,.28)}.nct{flex:1;cursor:pointer}.nck{font-size:11px;color:#6b7280;margin-bottom:2px}.ncw{font-weight:600;font-size:14px}.ncd{font-size:13px;color:#374151}.ncx{border:0;background:none;font-size:22px;line-height:1;color:#6b7280;padding:0 6px;cursor:pointer}.nca{align-self:flex-end;border:0;border-radius:8px;background:#14233a;color:#fff;font-size:12px;padding:5px 10px}.notice{position:fixed;inset:0;z-index:40;background:rgba(5,8,14,.72);display:none;align-items:center;justify-content:center;padding:20px}.notice.on{display:flex}
 .ntc{width:100%;max-width:400px;background:#13213B;border:1px solid #2B3A52;border-radius:18px;padding:20px 20px 16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .ntk{font-size:12px;font-weight:700;color:#D3B98C;margin-bottom:4px}.ntc b{display:block;font-family:var(--serif);font-size:21px;color:#fff;margin-bottom:10px}
 #ntBody p{margin:0 0 9px;font-size:15px;line-height:1.45;color:#CAD1E6}
@@ -519,11 +519,12 @@ function brandRow(id, sub) {
   w.style.cursor = 'pointer'; w.onclick = function () { goHome(); };
 }
 /** Tap the logo anywhere: back to today's cases, with any open screen closed (unsaved notes are saved first). */
-function goHome() {
+function goHome() { goDay(INIT.today); }
+function goDay(d) {
   try { closePhoto(); closeRecap(); } catch (e) {}
   if ($('rsheet').classList.contains('on')) closeRating();
   if ($('sheet').classList.contains('on')) closeCase();
-  day = INIT.today; viewMon = '';
+  day = d || INIT.today; viewMon = '';
   setTab('cases');
 }
 brandRow('who', '');
@@ -964,6 +965,30 @@ function showNotice(n) {
   };
 }
 setTimeout(function () { showNotice(INIT.notice); }, 400);
+function showNewCases(list) {   // "New surgery scheduled" cards; X each one, or tap to open that day
+  if (TEAM || !list || !list.length) return;
+  var w = $('newc') || el('div', 'newc'); w.id = 'newc'; w.innerHTML = ''; document.body.appendChild(w);
+  var left = list.slice().sort(function (a, b) { return a.at - b.at; });
+  function draw() {
+    w.innerHTML = ''; if (!left.length) { w.remove(); return; }
+    left.slice(0, 3).forEach(function (x) {
+      var c = el('div', 'nc'), t = el('div', 'nct');
+      t.appendChild(el('div', 'nck', 'New surgery scheduled'));
+      t.appendChild(el('div', 'ncw', x.what + (x.who ? ', ' + x.who : '')));
+      if (x.when) t.appendChild(el('div', 'ncd', x.when));
+      t.onclick = function () { if (x.d && typeof goDay === 'function') goDay(x.d); };
+      var b = el('button', 'ncx', '×'); b.setAttribute('aria-label', 'Dismiss');
+      b.onclick = function () { left = left.filter(function (y) { return y.id !== x.id; }); draw(); google.script.run.withFailureHandler(function () {}).wdNewSeen([x.id]); };
+      c.appendChild(t); c.appendChild(b); w.appendChild(c);
+    });
+    if (left.length > 1) {
+      var a = el('button', 'nca', left.length > 3 ? 'Dismiss all ' + left.length : 'Dismiss all');
+      a.onclick = function () { left = []; draw(); google.script.run.withFailureHandler(function () {}).wdNewSeen('all'); }; w.appendChild(a);
+    }
+  }
+  draw();
+}
+setTimeout(function () { showNewCases(INIT.newCases); }, 600);
 // ---- Dr. Edwards: anesthesia times, finish forecast, days off; your time off back to him ----
 function dur(m) { m = Math.round(+m || 0); if (!m) return ''; var h = Math.floor(m / 60), r = m % 60; return h ? h + 'h' + (r ? ' ' + r + 'm' : '') : r + 'm'; }
 function hm(t) { if (!t) return ''; var p = String(t).split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + (h < 12 ? ' AM' : ' PM'); }
