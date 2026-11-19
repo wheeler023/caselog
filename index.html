@@ -996,9 +996,9 @@ function suggEls() {
   return WO.sugg.slice(0, 2).map(function (s) {
     var d = el('div', 'offban ask'); d.appendChild(el('div', null, 'Are you out ' + rangeLbl(s.date, s.endDate) + '? Your calendar says “' + s.title + '.”'));
     var row = el('div', 'garow');
-    [['Yes, I’m out', true], ['No', false]].forEach(function (p) {
+    [['Yes, I’m out', true], ['No', false], ['Not sure yet', 'later']].forEach(function (p) {
       var b = el('button', null, p[0]);
-      b.onclick = function () { b.disabled = true; google.script.run.withSuccessHandler(woDone(p[1] ? 'Blocked. Dr. Edwards sees it within the hour.' : 'Got it.')).withFailureHandler(function (e) { b.disabled = false; toast(e.message); }).wdTripAnswer(s.key, p[1]); };
+      b.onclick = function () { b.disabled = true; google.script.run.withSuccessHandler(woDone(p[1] === 'later' ? 'I’ll ask again closer to it.' : p[1] ? 'Blocked. Dr. Edwards sees it within the hour.' : 'Got it.')).withFailureHandler(function (e) { b.disabled = false; toast(e.message); }).wdTripAnswer(s.key, p[1]); };
       row.appendChild(b);
     });
     d.appendChild(row); return d;
@@ -1155,6 +1155,13 @@ function drawAsk() {
   var b = $('aBody'); b.innerHTML = '';
   if (ASK.key === null) { b.appendChild(el('div', 'empty', 'Loading…')); google.script.run.withSuccessHandler(function (r) { ASK.key = !!(r && r.set); drawAsk(); }).withFailureHandler(function (e) { b.innerHTML = ''; b.appendChild(el('div', 'empty', /Unknown request/.test(e.message) ? 'Ask is almost ready. It works once the latest update is installed.' : 'Could not load: ' + e.message)); }).wdAiInfo(); return; }
   if (!ASK.key) { b.appendChild(keyCard()); return; }
+  if (ASK.ins === undefined) { ASK.ins = null; google.script.run.withSuccessHandler(function (r) { ASK.ins = r || []; if ($('vAsk').style.display !== 'none') drawAsk(); }).withFailureHandler(function () { ASK.ins = []; }).wdInsights(); }
+  if (ASK.ins && ASK.ins.length && !ASK.hist.length) {
+    var w = ASK.ins[0], c = el('div', 'card2'); c.appendChild(el('h3', null, 'Weekly trends, ' + yLbl(w.d)));
+    c.appendChild(el('div', 'amsg ai', w.text));
+    var f = el('button', 'lnk', 'Ask about these'); f.onclick = function () { ASK.hist = [{ role: 'user', content: 'What are this week’s trends?' }, { role: 'assistant', content: w.text }]; drawAsk(); }; c.appendChild(f);
+    b.appendChild(c);
+  }
   var log = el('div', 'alog'); b.appendChild(log);
   if (!ASK.hist.length) {
     log.appendChild(el('div', 'note', 'Ask about volume, revenue, payers, procedures, difficulty, staff or times. Answers come from totals only; no patient names leave your Google account.'));
