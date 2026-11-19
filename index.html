@@ -1105,9 +1105,8 @@ function saveRole(k, v) {
   google.script.run.withSuccessHandler(function () { if (my === roleSeq[k]) toast(v ? R.label + ' for this case: ' + v : 'Back to the day’s team'); })
     .withFailureHandler(function (e) { if (my === roleSeq[k]) { c[k] = prev; if (cur === c) renderRole(k); } toast('Not saved: ' + e.message); })[R.fn](c.id, v);
 }
-function renderScrub() {   // only on the day of surgery or after; not when looking ahead
-  var fut = cur && (cur.date || day) > INIT.today; $('roleScrub').style.display = fut ? 'none' : ''; $('roleCirc').style.display = fut ? 'none' : '';
-  if (!fut) { renderRole('scrub'); renderRole('circ'); }
+function renderScrub() {   // scrub and circulator now come from Dr. Edwards' records; nothing to pick here
+  $('roleScrub').style.display = 'none'; $('roleCirc').style.display = 'none';
 }
 function teamEl(d) {
   var t = teamOf(d), w = el('div', 'team'); w.appendChild(el('div', 'tl', 'Day’s team'));
@@ -1131,7 +1130,7 @@ function median(a) { if (!a.length) return null; var b = a.slice().sort(function
 function roleCard(sel, f, title, base) {
   var team = (stats && stats.team) || {}, who = function (x) { return x[f] || (team[x.d] && team[x.d][f]) || ''; };
   var names = base.slice(); sel.forEach(function (x) { var w = who(x); if (w && names.indexOf(w) < 0) names.push(w); });
-  var c = card(title, 'Turnover runs from one case’s anesthesia stop to the next case’s start the same day, credited to whoever was on the earlier case. Cases use the day’s team unless changed on the case.');
+  var c = card(title, 'Names come from Dr. Edwards’ records. Turnover runs from one case’s anesthesia stop to the next case’s start the same day, credited to whoever was on the earlier case.');
   var S = {}; names.forEach(function (n) { S[n] = { n: 0, df: [], to: [], len: [] }; });
   var byDay = {};
   sel.forEach(function (x) {
@@ -1291,7 +1290,6 @@ function render() {
     if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); }
     return; }
   if (!rmode && !smode) { var rb = recapBanner(); if (rb) list.appendChild(rb); var me = msEl(day); if (me) list.appendChild(me); }
-  if (!rmode && !smode && day <= INIT.today && cases.some(function (c) { return !c.eapOnly && !/Cancelled|Postponed|Removed/.test(c.status); })) list.appendChild(teamEl(day));
   if (!rmode && !smode) { var fe0 = factEl(day); if (fe0) { fe0.className += ' top'; list.appendChild(fe0); } }   // surgery days: the fact sits above the cases
   var lastDate = '';
   cases.forEach(function (c, i) {
