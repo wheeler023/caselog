@@ -964,7 +964,7 @@ function offEls(k) {
   var out = [];
   woBlock(k).forEach(function (b) {
     var d = el('div', 'offban'); d.appendChild(el('span', null, (b.type === 'vacation' || b.type === 'off' ? 'You’re out: ' : '') + woText(b)));
-    if (!TEAM) {
+    if (false) {   // time off is changed from your calendar, not in the app
       var x = el('button', 'lnk', 'Remove');
       x.onclick = function () {
         if (x.textContent !== 'Tap again to remove') { x.textContent = 'Tap again to remove'; return; }
@@ -1145,7 +1145,7 @@ function render() {
   if (!rmode && !smode) suggEls().concat(offEls(day)).forEach(function (x) { list.appendChild(x); });
   if (!cases.length) { list.appendChild(el('div', 'empty', smode ? (searchActive() ? 'No cases match that.' : 'Type a name or procedure, or tap a keyword or a year.') : rmode ? 'All caught up. Every past case has a rating.' : 'No cases on this day.'));
     if (!rmode && !smode) { var rb2 = recapBanner(); if (rb2) list.insertBefore(rb2, list.firstChild); var me2 = msEl(day); if (me2) list.appendChild(me2); }
-    if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); var bk0 = blockEl(day); if (bk0) list.appendChild(bk0); }
+    if (!rmode && !smode) { var qe = quoteEl(day, false); if (qe) list.appendChild(qe); var fe = factEl(day); if (fe) list.appendChild(fe); }
     return; }
   if (!rmode && !smode) { var rb = recapBanner(); if (rb) list.appendChild(rb); var me = msEl(day); if (me) list.appendChild(me); }
   if (!rmode && !smode && day <= INIT.today && cases.some(function (c) { return !c.eapOnly && !/Cancelled|Postponed|Removed/.test(c.status); })) list.appendChild(teamEl(day));
@@ -1185,7 +1185,7 @@ function render() {
     card.appendChild(R);
     list.appendChild(card);
   });
-  if (!rmode && !smode) { var fin = finEl(day); if (fin) list.appendChild(fin); var qe = quoteEl(day, true); if (qe) list.appendChild(qe); var bk = blockEl(day); if (bk) list.appendChild(bk); }
+  if (!rmode && !smode) { var fin = finEl(day); if (fin) list.appendChild(fin); var qe = quoteEl(day, true); if (qe) list.appendChild(qe); }
   tryPendingOpen();
 }
 function addRow(box, k, v, href) {
