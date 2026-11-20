@@ -1985,7 +1985,8 @@ function renderStats() {
   hbars(card('Levels per case'), tally(sel, function (c) { return c.n ? (c.n >= 4 ? LV[3] : LV[c.n - 1]) : LV[4]; }).sort(function (a, b) { return LV.indexOf(a.k) - LV.indexOf(b.k); }));
   hbars(card('By payer', 'Share of cases in this period.'), tally(sel, function (c) { return c.ins; }), null,
     function (v) { return v + ' (' + Math.round(100 * v / Math.max(1, sel.length)) + '%)'; });
-  hbars(card('CPT mix', 'Expected CPTs; each code counted once per case. Top 15.'), tally(sel, function (c) { return c.cpt; }).slice(0, 15));
+  // CPT mix card removed (Nov 2026): case type already says it.
+  if (0) hbars(card('CPT mix', 'Expected CPTs; each code counted once per case. Top 15.'), tally(sel, function (c) { return c.cpt; }).slice(0, 15));
   var L = INIT.labels || {};
   var withX = rated.filter(function (c) { return c.x; }), xs = {};
   withX.forEach(function (c) { c.x.split(/\s*,\s*/).forEach(function (k) { if (k) xs[k] = (xs[k] || 0) + 1; }); });
