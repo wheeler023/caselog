@@ -409,7 +409,7 @@ textarea{background:#0F1828;border-color:#22314C}
 <div class="crop" id="crop"><div class="cropbar"><button id="cropCancel">Cancel</button><button id="cropFull">Use full photo</button><button id="cropUse" class="pri">Crop</button></div>
  <div class="cropwrap"><img id="cropImg" alt=""><div id="cropBox"><i data-h="tl"></i><i data-h="tr"></i><i data-h="bl"></i><i data-h="br"></i></div></div>
  <div class="crophint">Drag the box or its corners to trim names, dates or labels.</div></div>
-<div class="pview" id="pview"><div class="pvbar"><button onclick="closePhoto()">‹ Back</button><span><button onclick="openPhotoCase()">Open case</button> <button id="pvShare" onclick="sharePhoto()">Share</button></span></div>
+<div class="pview" id="pview"><div class="pvbar"><button onclick="closePhoto()">‹ Back</button><span><button onclick="openPhotoCase()">Open case</button> <button id="pvSave" onclick="savePhoto()">Save</button> <button id="pvShare" onclick="sharePhoto()">Share</button></span></div>
  <img id="pvImg" alt=""><div id="pvMsg"></div><div id="pvCap"></div></div>
 <div class="sheet" id="rsheet">
  <div class="sh"><button onclick="closeRating()">‹ Back</button><div class="ttl"><b id="rTitle">Needs rating</b><span id="rCount"></span></div></div>
@@ -931,18 +931,22 @@ var pvFile = null, pvG = null;
 function viewPhoto(g) {
   var v = $('pview'), im = $('pvImg'); pvFile = null; pvG = g;
   im.removeAttribute('src'); $('pvCap').textContent = [g.t, g.lv].filter(Boolean).join(' ') + ', ' + MON[+g.d.slice(5, 7) - 1] + ' ' + (+g.d.slice(8)) + ', ' + g.d.slice(0, 4);
-  $('pvMsg').textContent = 'Loading…'; $('pvShare').disabled = true; v.classList.add('on');
+  $('pvMsg').textContent = 'Loading…'; $('pvShare').disabled = true; $('pvSave').disabled = true; v.classList.add('on');
   google.script.run.withSuccessHandler(function (r) {
     var bin = atob(r.b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
     var ext = /png/.test(r.mime) ? 'png' : /webp/.test(r.mime) ? 'webp' : 'jpg';
     pvFile = new File([u], (g.t + ' ' + (g.lv || '')).trim().replace(/[^A-Za-z0-9-]+/g, '-') + '.' + ext, { type: r.mime });
-    im.src = URL.createObjectURL(pvFile); $('pvMsg').textContent = ''; $('pvShare').disabled = false;
+    im.src = URL.createObjectURL(pvFile); $('pvMsg').textContent = ''; $('pvShare').disabled = false; $('pvSave').disabled = false;
   }).withFailureHandler(function (e) { $('pvMsg').textContent = 'Could not load: ' + e.message; }).wdImageData(g.f);
 }
 function sharePhoto() {
   if (!pvFile) return;
   if (navigator.canShare && navigator.canShare({ files: [pvFile] })) { navigator.share({ files: [pvFile] }).catch(function () {}); return; }
   var a = document.createElement('a'); a.href = URL.createObjectURL(pvFile); a.download = pvFile.name; document.body.appendChild(a); a.click(); a.remove();
+}
+function savePhoto() {   // straight to the phone's downloads / photos
+  if (!pvFile) return;
+  var a = document.createElement('a'); a.href = URL.createObjectURL(pvFile); a.download = pvFile.name; document.body.appendChild(a); a.click(); a.remove(); toast('Saved to your phone');
 }
 function closePhoto() { $('pview').classList.remove('on'); }
 // ---- Crop before upload: drag the box or its corners; Use full photo skips cropping ----
