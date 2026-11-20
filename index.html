@@ -358,7 +358,18 @@ textarea{background:#0F1828;border-color:#22314C}
 .nc{background:#18263F;color:#E6EBF3;border:1px solid #2D3D5A;border-left:3px solid #C9A86A;box-shadow:0 10px 28px rgba(0,0,0,.45)}
 .nck{color:#C9A86A;font-weight:600}.ncw{color:#F3F5FA}.ncd{color:#A9B3C6}.ncx{color:#8C97AB}
 .nca{background:#22314C;color:#DCE4F2}
-.cxc{background:#18243B;border-color:#2D3D5A}.pnav button{border:1px solid #2D3D5A;background:#17253F;border-radius:10px;color:#DCE4F2}.chip{border-color:#2D3D5A}
+.cxc{background:#18243B;border-color:#2D3D5A}
+#sheet .body{display:flex;flex-direction:column}
+#sheet .out,#sheet .notes{background:#131E33;border:1px solid #22314C;border-radius:14px}
+.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}
+#outCard{order:1}#sumCard{order:2}#opCard{order:3}#imgCard{order:4}#vidCard{order:5}#cxCard{order:6}#notesCard{order:7}#roleScrub,#roleCirc{order:8}#moneyCard{order:9}#detCard{order:10}#cxBtn{order:11}
+#sheet .body>*{flex:none}
+#notes{min-height:96px;height:96px;overflow:hidden;resize:none}
+#cSum{margin:6px 0 0;padding:2px 12px;background:#0F1828}#cSum .row .k{width:88px}
+.incase .newc,.offhome .newc{display:none}
+.hd .day,.mhd .day{font-size:24px}
+.fact.top{padding:9px 12px;display:flex;gap:8px;align-items:baseline}
+.fact.top .fh{margin:0;flex:none}.fact.top .ft{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}.fact.top .fs{display:none}.pnav button{border:1px solid #2D3D5A;background:#17253F;border-radius:10px;color:#DCE4F2}.chip{border-color:#2D3D5A}
 </style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -428,25 +439,29 @@ textarea{background:#0F1828;border-color:#22314C}
    <button class="clr" id="clrBtn" onclick="setOutcome('clear')">Clear rating</button>
    <div class="cxtop" id="cxTop"><span>Marked cancelled</span><button onclick="setOutcome('clear')">Undo</button></div>
   </div>
-  <div class="out">
+  <div class="out" id="sumCard">
+   <label>Surgery</label>
+   <div class="box" id="cSum"></div>
+  </div>
+  <div class="out" id="cxCard">
    <label>Complications</label>
    <div class="hint">Tap any that happened. Leave blank if none.</div>
    <div class="cxs" id="cxs"></div>
   </div>
-  <div class="notes">
+  <div class="notes" id="notesCard">
    <label for="notes">Notes</label>
    <div class="hint">Tap in the box, then tap 🎤 on your keyboard to dictate. Saves to the Notes column of your case log.</div>
-   <textarea id="notes" oninput="dirty()" placeholder="Dictate or type notes…"></textarea>
+   <textarea id="notes" rows="3" oninput="dirty();growNotes()" placeholder="Dictate or type notes…"></textarea>
    <div class="acts"><button class="b2" onclick="stamp()">+ Time stamp</button><button class="b1" id="saveBtn" onclick="save(false)">Save</button></div>
    <div class="st" id="st"></div>
    <div class="conf" id="conf"><b>These notes were changed at a computer since you opened this case.</b> Here is what's in the case log now:<pre id="confTxt"></pre>
     <div class="acts"><button class="b2" onclick="useSheet()">Use case log version</button><button class="b1" onclick="save(true)">Save mine</button></div></div>
   </div>
-  <div class="out">
+  <div class="out" id="opCard">
    <label>Op note</label>
    <div id="opnote"></div>
   </div>
-  <div class="out">
+  <div class="out" id="imgCard">
    <label>Images</label>
    <div class="hint">Fluoro shots or other photos for this case. Take one or pick from your phone; they're saved to this case's folder in your Drive.</div>
    <div class="upstat" id="upStat"></div>
@@ -474,8 +489,8 @@ textarea{background:#0F1828;border-color:#22314C}
    <label>Finances</label>
    <div id="money"></div>
   </div>
-  <div class="out">
-   <label>Case details</label>
+  <div class="out" id="detCard">
+   <label>Patient and order</label>
    <div class="box" id="cInfo"></div>
   </div>
   <button class="cx" id="cxBtn" onclick="cancelTap()">Surgery was cancelled</button>
@@ -568,6 +583,11 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { up
 var INIT = window.__INIT;
 var day = INIT.today, cases = [], cur = null, base = '', isDirty = false, saving = false;
 var $ = function (id) { return document.getElementById(id); };
+function pName(p) {   // "DOE JR, JANE A" -> "Jane A Doe Jr"
+  p = String(p || '').trim(); if (!p) return 'Patient';
+  var b = p.split(','), n = b.length > 1 ? (b.slice(1).join(' ').trim() + ' ' + b[0].trim()) : p;
+  return n.replace(/\s+/g, ' ').toLowerCase().replace(/(^|[\s'\-])([a-z])/g, function (a, x, y) { return x + y.toUpperCase(); }).replace(/\bMc([a-z])/g, function (a, y) { return 'Mc' + y.toUpperCase(); }).replace(/\b(Ii|Iii|Iv)\b/g, function (a) { return a.toUpperCase(); });
+}
 (function () { var r = document.documentElement.style, b = INIT.brand || {}; if (b.navy) r.setProperty('--navy', b.navy); if (b.accent) r.setProperty('--accent', b.accent); if (b.off) r.setProperty('--off', b.off); if (b.light) r.setProperty('--light', b.light); })();
 function brandRow(id, sub) {
   var w = $(id); w.innerHTML = '';
@@ -1389,7 +1409,7 @@ function render() {
     if (E && E.ex) L.appendChild(el('div', 'cx2', '≈ ' + E.ex));
     var du = E && E.len ? dur(E.len) : c.duration; if (du) L.appendChild(el('div', 'cd', du)); card.appendChild(L);
     var m = el('div', 'cm');
-    m.appendChild(el('div', 'cn', (c.patient || 'Patient').toUpperCase()));
+    m.appendChild(el('div', 'cn', pName(c.patient)));
     var proc = [c.procedure, c.side ? c.side.toLowerCase() : ''].filter(Boolean).join(', ');
     if (proc) m.appendChild(el('div', 'cp', proc));
     if (E && E.a) m.appendChild(el('div', 'ca', 'Anesthesia ' + E.a + (E.b ? ' – ' + E.b + ' (' + dur(E.am) + ')' : ', in progress')));
@@ -1460,25 +1480,26 @@ function phoneRow(box, txt) {
 }
 function openCase(i) {
   cur = cases[i]; base = cur.notes || ''; isDirty = false;
-  $('cName').textContent = cur.patient || 'Patient';
+  $('cName').textContent = pName(cur.patient);
   $('cSub').textContent = [cur.start, cur.age, cur.sex].filter(Boolean).join(', ');
+  var sb = $('cSum'); sb.innerHTML = '';   // what you look at most, at the top
+  addRow(sb, 'Procedure', cur.procedure); addRow(sb, 'Case type', cur.caseType); addRow(sb, 'Levels', cur.levels); addRow(sb, 'Side', cur.side);
+  vendorRow(sb);
+  (cur.implants || []).forEach(function (m, i) { addRow(sb, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
+  addRow(sb, 'Start', cur.start); addRow(sb, 'Duration', cur.duration);
+  if (cur.eap && cur.eap.a) addRow(sb, 'Anesthesia time', cur.eap.a + (cur.eap.b ? ' – ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
   var b = $('cInfo'); b.innerHTML = '';
   addRow(b, 'DOB', cur.dob); addRow(b, 'Age', cur.age); addRow(b, 'Sex', cur.sex); phoneRow(b, cur.phone);
-  addRow(b, 'Insurance', cur.insurance); addRow(b, 'Procedure', cur.procedure); addRow(b, 'Case type', cur.caseType);
-  addRow(b, 'Levels', cur.levels); addRow(b, 'CPT', cur.cpt);
-  addRow(b, 'Side', cur.side); addRow(b, 'Diagnosis', cur.dx); addRow(b, 'Start', cur.start); addRow(b, 'Duration', cur.duration);
+  addRow(b, 'Insurance', cur.insurance); addRow(b, 'CPT', cur.cpt); addRow(b, 'Diagnosis', cur.dx);
   addRow(b, 'Assistant', cur.assistant); addRow(b, 'Anesthesia', cur.anesthesia); addRow(b, 'Stay', cur.stay);
   addRow(b, 'Position', cur.position); addRow(b, 'Facility', cur.facility); addRow(b, 'Status', cur.status);
-  if (cur.eap && cur.eap.a) addRow(b, 'Anesthesia time', cur.eap.a + (cur.eap.b ? ' – ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
   renderOutcome(); loadImages(); renderMoney(null); renderScrub(); renderVid();
-  vendorRow(b);
-  (cur.implants || []).forEach(function (m, i) { addRow(b, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
   if (cur.order) addRow(b, 'Order', 'Open surgery order', cur.order);
   var on = $('opnote'); on.innerHTML = '';
   if (cur.opnoteUrl) { var a = el('a', 'addimg oplink', 'Open op note'); a.href = cur.opnoteUrl; a.target = '_blank'; a.rel = 'noopener'; on.appendChild(a); }
   else on.appendChild(el('div', 'hint', 'Files itself here after Claude writes it.'));
   $('notes').value = base; $('st').textContent = ''; $('conf').style.display = 'none'; $('saveBtn').disabled = false;
-  $('sheet').classList.add('on');
+  $('sheet').classList.add('on'); document.body.classList.add('incase'); $('sheet').querySelector('.body').scrollTop = 0; setTimeout(growNotes, 0);
 }
 function renderMoney(m) {
   var box = $('money'); box.innerHTML = '';
@@ -1681,7 +1702,8 @@ function save(force, after) {
     .wdSave(c.id, text, base, !!force);
 }
 function useSheet() { var t = $('confTxt').textContent; $('notes').value = t; base = t; cur.notes = t; isDirty = false; $('conf').style.display = 'none'; $('st').textContent = 'Showing the case log version'; render(); }
-function closeCase() {
+function growNotes() { var t = $('notes'); if (!t) return; t.style.height = 'auto'; t.style.height = Math.max(96, t.scrollHeight + 2) + 'px'; }
+function closeCase() { document.body.classList.remove('incase');
   if (isDirty && !saving) { save(false, function () { $('sheet').classList.remove('on'); afterClose(); }); return; }
   if (!saving) { $('sheet').classList.remove('on'); afterClose(); }
 }
@@ -1743,6 +1765,7 @@ function openAsk() {
 }
 function closeAsk() { $('vAsk').style.display = 'none'; document.body.style.overflow = ''; }
 function setTab(t) {
+  document.body.classList.toggle('offhome', t !== 'cases');
   $('vCases').style.display = t === 'cases' ? '' : 'none';
   $('vStats').style.display = t === 'stats' ? '' : 'none';
   $('vFin').style.display = t === 'fin' ? '' : 'none'; $('vAsk').style.display = t === 'ask' ? '' : 'none'; $('tAsk').className = t === 'ask' ? 'on' : ''; $('vImp').style.display = t === 'imp' ? '' : 'none'; $('vPhotos').style.display = t === 'photos' ? '' : 'none'; $('tPhotos').className = t === 'photos' ? 'on' : '';
