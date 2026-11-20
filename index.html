@@ -361,7 +361,7 @@ textarea{background:#0F1828;border-color:#22314C}
 .cxc{background:#18243B;border-color:#2D3D5A}
 #sheet .body{display:flex;flex-direction:column}
 #sheet .out,#sheet .notes{background:#131E33;border:1px solid #22314C;border-radius:14px}
-.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}
+.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}
 #outCard{order:1}#sumCard{order:2}#opCard{order:3}#imgCard{order:4}#vidCard{order:5}#cxCard{order:6}#notesCard{order:7}#roleScrub,#roleCirc{order:8}#moneyCard{order:9}#detCard{order:10}#cxBtn{order:11}
 #sheet .body>*{flex:none}
 #notes{min-height:96px;height:96px;overflow:hidden;resize:none}
@@ -1070,7 +1070,7 @@ function showNewCases(list) {   // "New surgery scheduled" cards; X each one, or
   draw();
 }
 setTimeout(function () { showNewCases(INIT.newCases); }, 600);
-// ---- Dr. Edwards: anesthesia times, finish forecast, days off; your time off back to him ----
+// ---- Dr. Edwards: room times, finish forecast, days off; your time off back to him ----
 function dur(m) { m = Math.round(+m || 0); if (!m) return ''; var h = Math.floor(m / 60), r = m % 60; return h ? h + 'h' + (r ? ' ' + r + 'm' : '') : r + 'm'; }
 function hm(t) { if (!t) return ''; var p = String(t).split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + (h < 12 ? ' AM' : ' PM'); }
 var WO = null;
@@ -1155,7 +1155,7 @@ function finEl(k) {
 }
 var EFF = null;
 function eapEff() {
-  var c = card('Booked vs actual', 'From Dr. Edwards’ anesthesia times, last 180 days. Actual runs from anesthesia start to stop.');
+  var c = card('Booked vs actual', 'From Dr. Edwards’ room times, last 180 days. Actual runs from patient into the OR to into PACU. Turnover runs from PACU to the next patient into the OR.');
   function draw(r) {
     var e = r && r.efficiency;
     if (!e || !e.overall) { c.appendChild(el('div', 'note', 'Nothing yet. This fills in from Dr. Edwards’ schedule feed.')); return; }
@@ -1165,6 +1165,8 @@ function eapEff() {
     if (o.within15MinPct != null) stat('Within 15 min', Math.round(o.within15MinPct) + '%');
     if (o.turnoverMedianMin != null) stat('Turnover', dur(o.turnoverMedianMin));
     c.appendChild(top);
+    var fa = r.forecastAccuracy;
+    if (fa && fa.daysMeasured) c.appendChild(el('div', 'note', 'Finish forecast: off by ' + Math.round(+fa.averageMissMin || 0) + ' min on average over ' + fa.daysMeasured + ' day' + (fa.daysMeasured === 1 ? '' : 's') + (fa.biasMin ? ', usually ' + (fa.biasMin > 0 ? 'finishing later' : 'finishing earlier') + ' than forecast' : '') + (fa.withinLikelyRangePct != null ? '; ' + Math.round(fa.withinLikelyRangePct) + '% landed in the likely range' : '') + '.'));
     var t = el('div', 'eff'), hd = el('div', 'er eh');
     ['Procedure', 'Cases', 'Booked', 'Actual', '±', 'Book as'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); t.appendChild(hd);
     (e.byProcedure || []).forEach(function (p) {
@@ -1237,7 +1239,7 @@ function roleCard(sel, f, title, base) {
   var team = (stats && stats.team) || {}, who = function (x) { return x[f] || (team[x.d] && team[x.d][f]) || ''; };
   if (!sel.some(function (x) { return who(x); })) return;   // nothing from Dr. Edwards yet: no card
   var names = base.slice(); sel.forEach(function (x) { var w = who(x); if (w && names.indexOf(w) < 0) names.push(w); });
-  var c = card(title, 'Names come from Dr. Edwards’ records. Turnover runs from one case’s anesthesia stop to the next case’s start the same day, credited to whoever was on the earlier case.');
+  var c = card(title, 'Names come from Dr. Edwards’ records. Turnover runs from one patient into PACU to the next patient into the OR the same day, credited to whoever was on the earlier case.');
   var S = {}; names.forEach(function (n) { S[n] = { n: 0, df: [], to: [], len: [] }; });
   var byDay = {};
   sel.forEach(function (x) {
@@ -1248,10 +1250,10 @@ function roleCard(sel, f, title, base) {
   sel.forEach(function (x) { if (!isNaN(tmin(x.as))) (byDay[x.d] = byDay[x.d] || []).push(x); });
   Object.keys(byDay).forEach(function (d) {
     var L = byDay[d].sort(function (p, q) { return tmin(p.as) - tmin(q.as); });
-    for (var i = 0; i + 1 < L.length; i++) { var t = tmin(L[i + 1].as) - tmin(L[i].ae), w = who(L[i]); if (w && S[w] && !isNaN(t) && t > 0 && t < 180) S[w].to.push(t); }
+    for (var i = 0; i + 1 < L.length; i++) { var t = tmin(L[i + 1].as) - tmin(L[i].ae), w = who(L[i]); if (w && S[w] && !isNaN(t) && t >= 0 && t <= 120) S[w].to.push(t); }
   });
   var tb = el('div', 'eff'), hd = el('div', 'er eh sc4');
-  [title.indexOf('scrub') >= 0 ? 'Scrub' : 'Circulator', 'Cases', 'Avg difficulty', 'Turnover', 'Anesthesia time'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
+  [title.indexOf('scrub') >= 0 ? 'Scrub' : 'Circulator', 'Cases', 'Avg difficulty', 'Turnover', 'Room time'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
   var any = false;
   names.forEach(function (n) {
     var v = S[n]; if (v.n) any = true;
@@ -1398,7 +1400,7 @@ function render() {
     return; }
   if (!rmode && !smode) { var rb = recapBanner(); if (rb) list.appendChild(rb); var me = msEl(day); if (me) list.appendChild(me); }
   if (!rmode && !smode) { var fe0 = factEl(day); if (fe0) { fe0.className += ' top'; list.appendChild(fe0); } }   // surgery days: the fact sits above the cases
-  var lastDate = '';
+  var lastDate = '', prevPb = null;
   cases.forEach(function (c, i) {
     if (rmode && c.dateLabel !== lastDate) { lastDate = c.dateLabel; list.appendChild(el('div', 'dhd', c.dateLabel)); }
     var off = /Cancelled|Postponed|Removed/.test(c.status), rated = !!c.difficulty, toRate = c.status === 'Needs confirmation' || (c.status === 'Performed' && !rated && c.canRate !== false && (c.date || day) <= INIT.today);
@@ -1412,7 +1414,9 @@ function render() {
     m.appendChild(el('div', 'cn', pName(c.patient)));
     var proc = [c.procedure, c.side ? c.side.toLowerCase() : ''].filter(Boolean).join(', ');
     if (proc) m.appendChild(el('div', 'cp', proc));
-    if (E && E.a) m.appendChild(el('div', 'ca', 'Anesthesia ' + E.a + (E.b ? ' – ' + E.b + ' (' + dur(E.am) + ')' : ', in progress')));
+    if (!rmode && !smode && E && E.ia != null && prevPb != null) { var tov = E.ia - prevPb; if (tov >= 0 && tov <= 120) m.appendChild(el('div', 'ca tov', 'Turnover ' + dur(tov))); }
+    if (E && E.a) m.appendChild(el('div', 'ca', 'In OR ' + E.a + (E.b ? ', PACU ' + E.b + ' (' + dur(E.am) + ')' : ', in progress')));
+    if (E && E.pb != null && !off) prevPb = E.pb;
     var bits = el('div', 'cb');
     if (c.eapOnly) bits.appendChild(el('span', 'tag', 'From Dr. Edwards'));
     if (c.eapMissing) bits.appendChild(el('span', 'tag x', 'Not on Dr. Edwards’ list'));
@@ -1487,7 +1491,7 @@ function openCase(i) {
   vendorRow(sb);
   (cur.implants || []).forEach(function (m, i) { addRow(sb, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
   addRow(sb, 'Start', cur.start); addRow(sb, 'Duration', cur.duration);
-  if (cur.eap && cur.eap.a) addRow(sb, 'Anesthesia time', cur.eap.a + (cur.eap.b ? ' – ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
+  if (cur.eap && cur.eap.a) addRow(sb, 'Room time', 'In OR ' + cur.eap.a + (cur.eap.b ? ', PACU ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
   var b = $('cInfo'); b.innerHTML = '';
   addRow(b, 'DOB', cur.dob); addRow(b, 'Age', cur.age); addRow(b, 'Sex', cur.sex); phoneRow(b, cur.phone);
   addRow(b, 'Insurance', cur.insurance); addRow(b, 'CPT', cur.cpt); addRow(b, 'Diagnosis', cur.dx);
