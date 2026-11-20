@@ -302,10 +302,67 @@ textarea:focus{outline:2px solid #B9D7EC}
 .rate.locked button,.cxc:disabled{opacity:.35;cursor:not-allowed}
 .tag.vd{background:var(--navy);color:#fff;font-weight:700;letter-spacing:.01em}
 .tag.vd.mdt{background:#1D4ED8;background-image:linear-gradient(#1D4ED8,#1D4ED8)}
-.tag.vd.nuv{background:#1E1206;color:#FF9A1F;border:1.5px solid #FF9A1F;padding:1px 8px}   /* orange carried by text and outline: phone browsers that force their own dark mode repaint backgrounds but leave these alone */@media (prefers-reduced-motion:reduce){.sheet,.toast{transition:none}}</style></head><body>
+.tag.vd.nuv{background:#1E1206;color:#FF9A1F;border:1.5px solid #FF9A1F;padding:1px 8px}   /* orange carried by text and outline: phone browsers that force their own dark mode repaint backgrounds but leave these alone */@media (prefers-reduced-motion:reduce){.sheet,.toast{transition:none}}
+/* ---- Polish layer (Nov 2026): one calm navy surface system, quieter chrome, data in the sans, titles in the serif ---- */
+html,body{background:#0F1726;color:#D7DDEA}
+.hd{background:linear-gradient(180deg,#14223D 0%,#111D33 100%);border-bottom:1px solid #22314C;padding-bottom:12px}
+.hd .who{font-size:14px;color:#C9D3E6}
+.hd .who small{color:#8C97AB;opacity:1}
+.hd .day{font-size:27px;letter-spacing:-.015em;color:#F3F5FA}
+.mhd .day{font-size:24px}.mhd .nav{gap:6px}.mhd .nav button{height:34px;min-width:34px;padding:0 9px;border:1px solid #2D3D5A;background:#17253F;border-radius:10px;color:#DCE4F2}
+.mhd .nav button:active{background:#1F3050}
+.nav .srch svg,.nav .ask svg{width:19px;height:19px}
+.nav .ask,.mhd .nav .srch{width:36px;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
+.calc,.box,.notes,.tile,.card2,.veil,.fact{background:#131E33;border:1px solid #22314C;border-radius:14px}
+.calc{padding:10px 6px 6px}
+.cw{color:#7D889D;font-weight:600;letter-spacing:.04em}
+.cd{min-height:50px}
+.cd .cc:not(:empty){box-shadow:inset 0 0 0 20px #3A5A80;color:#E8F0FB}
+.cd .cc.red:not(:empty){box-shadow:inset 0 0 0 20px #8C5A2B;color:#FFF4E6}
+.cd.td{background:#1A2C47;box-shadow:inset 0 0 0 1.5px #7FA9D6}
+.dhd2{margin:20px 16px 4px;font-size:19px;color:#E6EBF3}
+.dhd2 #dayCnt{color:#7D889D;font-weight:500}
+.fact{padding:12px 14px}
+.fact .fh{color:#C9A86A;font-size:11.5px;letter-spacing:.02em}
+.fact .ft{font-size:14.5px;color:#C3CBDA}
+.card.v2{background:#131E33;border:1px solid #22314C;border-radius:14px;padding:13px 14px 13px 17px}
+.card.v2::before{width:3px}
+.card.v2.k-sched::before{background:#7FA9D6}.card.v2.k-rate::before{background:#C9A86A}.card.v2.k-done::before{background:#5FA97A}
+.card.v2 .ct{font-size:15px;font-weight:700;color:#DCE6F5;font-variant-numeric:tabular-nums}
+.card.v2 .cd{font-size:12.5px;color:#7D889D}
+.card.v2 .cn{font-size:16px;font-weight:700;color:#F3F5FA;letter-spacing:.01em}
+.card.v2 .cp{font-size:13.5px;color:#A9B3C6}
+.card.v2 .ci{font-size:12.5px;font-weight:600;color:#9FBEDF}.card.v2 .ci.lv{color:#C9A86A}
+.pill{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;letter-spacing:.01em}
+.pill.p-sched{background:transparent;box-shadow:inset 0 0 0 1px #35527A;color:#9FBEDF}
+.pill.p-rate{background:transparent;box-shadow:inset 0 0 0 1px #6E5A35;color:#E2C68E}
+.pill.p-done{background:transparent;box-shadow:inset 0 0 0 1px #2F5A40;color:#8FD19E}
+.tag{background:#18243B;color:#9AA5BA}
+.tag.vd,.tag.vd.mdt,.tag.vd.nuv{background:transparent;background-image:none;border:1px solid #3A4A66;color:#C9D3E6;font-weight:600;padding:1px 8px}
+.tag.vd.nuv{border-color:#8A5A22;color:#F0B060}.tag.vd.mdt{border-color:#3557A8;color:#9DB8F2}
+.sh{background:linear-gradient(180deg,#14223D 0%,#111D33 100%);border-bottom:1px solid #22314C}
+.sh button{border:1px solid #2D3D5A;background:#17253F}
+.row{border-bottom-color:#1E2B44}.row .k{color:#7D889D}
+textarea{background:#0F1828;border-color:#22314C}
+.tabs{background:#0F1726;border-top:1px solid #1E2B44}
+.tabs button{color:#7D889D;font-weight:600}
+.tabs button.on{color:#DCE6F5;box-shadow:inset 0 2px 0 #7FA9D6}
+.todo{background:#4A2A12;box-shadow:inset 0 0 0 1px #8C5A2B;color:#FBE7CF}
+.todo b{background:#2A1808;color:#F0B060}
+/* Ask: a sheet that slides over whatever you were looking at */
+#vAsk{position:fixed;inset:0;z-index:30;background:#0F1726;overflow:auto;-webkit-overflow-scrolling:touch}
+#vAsk .hd .askx{float:right;margin-top:-4px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:22px;line-height:1}
+#vAsk .sp{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+/* new-surgery cards sit just above the tab bar so they never cover the header */
+.newc{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 70px);z-index:25}
+.nc{background:#18263F;color:#E6EBF3;border:1px solid #2D3D5A;border-left:3px solid #C9A86A;box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.nck{color:#C9A86A;font-weight:600}.ncw{color:#F3F5FA}.ncd{color:#A9B3C6}.ncx{color:#8C97AB}
+.nca{background:#22314C;color:#DCE4F2}
+.cxc{background:#18243B;border-color:#2D3D5A}.pnav button{border:1px solid #2D3D5A;background:#17253F;border-radius:10px;color:#DCE4F2}.chip{border-color:#2D3D5A}
+</style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
-<div class="nav"><button class="t" onclick="go(INIT.today)" aria-label="Back to today">Today</button><button onclick="stepCal(-1)" aria-label="Previous month">‹</button><button onclick="stepCal(1)" aria-label="Next month">›</button><button class="srch" onclick="openSearch()" aria-label="Search cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></div></div>
+<div class="nav"><button class="t" onclick="go(INIT.today)" aria-label="Back to today">Today</button><button onclick="stepCal(-1)" aria-label="Previous month">‹</button><button onclick="stepCal(1)" aria-label="Next month">›</button><button class="ask" id="askBtn" onclick="openAsk()" aria-label="Ask about your numbers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M9 10h.01M12 10h.01M15 10h.01"/></svg></button><button class="srch" onclick="openSearch()" aria-label="Search cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></div></div>
 <input type="date" id="pick" style="display:none"></div>
 <div class="todo" id="todo" style="display:none" onclick="openRating()"></div>
 <div class="getapp" id="getApp" style="display:none"><span>Install the full-screen phone app</span><button onclick="pairPhone(this)">Set up phone app</button></div>
@@ -330,7 +387,7 @@ textarea:focus{outline:2px solid #B9D7EC}
  <div class="sp" id="pBody"></div>
 </div>
 <div id="vAsk" style="display:none">
- <div class="hd"><div class="who" id="who6"></div><div class="day">Ask</div></div>
+ <div class="hd"><button class="askx" onclick="closeAsk()" aria-label="Close">×</button><div class="who" id="who6"></div><div class="day">Ask</div></div>
  <div class="sp" id="aBody"></div>
 </div>
 <div id="vFin" style="display:none">
@@ -340,7 +397,7 @@ textarea:focus{outline:2px solid #B9D7EC}
  <div class="sp" id="pushBox" style="padding-top:0"></div>
  <div class="sp" id="teamBox" style="padding-top:0"></div>
 </div>
-<nav class="tabs"><button id="tCases" class="on" onclick="setTab('cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Cases</button><button id="tStats" onclick="setTab('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>Metrics</button><button id="tPhotos" onclick="setTab('photos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>Photos</button><button id="tImp" style="display:none" onclick="setTab('imp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l-1 3H9z"/><path d="M12 6v15M9 9l6 2M9 13l6 2M9 17l6 2"/></svg>Implants</button><button id="tAsk" onclick="setTab('ask')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M9 10h.01M12 10h.01M15 10h.01"/></svg>Ask</button><button id="tFin" onclick="setTab('fin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Finance</button></nav>
+<nav class="tabs"><button id="tCases" class="on" onclick="setTab('cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Cases</button><button id="tStats" onclick="setTab('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>Metrics</button><button id="tPhotos" onclick="setTab('photos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg>Photos</button><button id="tImp" style="display:none" onclick="setTab('imp')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l-1 3H9z"/><path d="M12 6v15M9 9l6 2M9 13l6 2M9 17l6 2"/></svg>Implants</button><button id="tAsk" style="display:none" onclick="openAsk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M9 10h.01M12 10h.01M15 10h.01"/></svg>Ask</button><button id="tFin" onclick="setTab('fin')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Finance</button></nav>
 
 <div class="sheet" id="recap">
  <div class="sh"><button onclick="closeRecap()">‹ Back</button><div class="ttl"><b id="rcTitle">Recap</b><span></span></div></div>
@@ -595,7 +652,7 @@ if (INIT.month) storeMonth(INIT.month);
 if (INIT.todo) drawTodo(INIT.todo); else setTimeout(loadTodo, 400);
 if (!window.__PHONE && INIT.phoneApp) $('getApp').style.display = '';   // only in the Google page, never in the phone app
 var TEAM = INIT.role === 'team';
-if (TEAM) { $('tAsk').style.display = 'none'; $('tFin').style.display = 'none'; $('moneyCard').style.display = 'none'; }   // team phones: no finances anywhere
+if (TEAM) { $('tAsk').style.display = 'none'; $('askBtn').style.display = 'none'; $('tFin').style.display = 'none'; $('moneyCard').style.display = 'none'; }   // team phones: no finances anywhere
 function drawPush() {   // your phone app only: the 7 pm rating reminder
   var box = $('pushBox'); if (!box) return; box.innerHTML = '';
   if (TEAM || !window.__PHONE || !('PushManager' in window) || !navigator.serviceWorker) return;
@@ -1675,6 +1732,12 @@ brandRow('who3', '');
 brandRow('who4', '');
 brandRow('who5', '');
 brandRow('who6', '');
+var askPrev = 'cases';
+function openAsk() {
+  ['cases', 'stats', 'fin', 'imp', 'photos'].forEach(function (k) { var v = { cases: 'vCases', stats: 'vStats', fin: 'vFin', imp: 'vImp', photos: 'vPhotos' }[k]; if ($(v) && $(v).style.display !== 'none') askPrev = k; });
+  $('vAsk').style.display = ''; document.body.style.overflow = 'hidden'; drawAsk();
+}
+function closeAsk() { $('vAsk').style.display = 'none'; document.body.style.overflow = ''; }
 function setTab(t) {
   $('vCases').style.display = t === 'cases' ? '' : 'none';
   $('vStats').style.display = t === 'stats' ? '' : 'none';
