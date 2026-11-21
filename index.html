@@ -373,7 +373,7 @@ textarea{background:#0F1828;border-color:#22314C}
 #vSet{position:fixed;inset:0;z-index:30;background:#0F1726;overflow:auto}#vSet .hd .askx{float:right;margin-top:-4px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:22px;line-height:1}
 .seg{display:flex;background:#0F1726;border:1px solid #22314C;border-radius:10px;padding:3px;margin:0 0 10px;max-width:260px}.seg button{flex:1;height:32px;border:0;border-radius:8px;background:transparent;color:#C9D3E3;font-size:14px}.seg button.on{background:#22314C;color:#fff;font-weight:600}
 .mstep{display:flex;align-items:center;gap:8px}.mstep button{width:34px;height:34px;border-radius:999px;border:1px solid #22314C;background:transparent;color:#fff;font-size:18px}.mstep span{min-width:150px;text-align:center;font-size:15px}
-.ctab{margin-top:6px}.ctr{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--nc,2),86px);gap:2px 10px;align-items:center;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid #22314C;color:inherit;padding:9px 0;font-size:14px}.ctr .s{opacity:.6;font-size:12px;margin-top:2px}.ctr .n{text-align:right;font-variant-numeric:tabular-nums}.ctr .z{opacity:.45}.ctr.th{border-top:0;font-size:12px;color:#7FA9D6;padding:2px 0 6px}.ctr.tot{font-weight:600;border-top:1px solid #7FA9D6}
+.ctab{margin-top:6px}.ctr{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--nc,2),86px);gap:2px 10px;align-items:center;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid #22314C;color:inherit;padding:9px 0;font-size:14px}.ctr .s{opacity:.6;font-size:12px;margin-top:2px}.ctr .s2{font-size:13px;color:#C3CBDA;margin-top:2px}.ctr .n{text-align:right;font-variant-numeric:tabular-nums}.ctr .z{opacity:.45}.ctr.th{border-top:0;font-size:12px;color:#7FA9D6;padding:2px 0 6px}.ctr.tot{font-weight:600;border-top:1px solid #7FA9D6}
 .pend{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid #22314C;color:inherit;padding:9px 0;font-size:14px}.pend .s{grid-column:1;opacity:.6;font-size:12px}.pend .a{grid-row:1 / span 2;grid-column:2;align-self:center;font-variant-numeric:tabular-nums}
 .chip.on{background:#7FA9D6;color:#0F1726;border-color:#7FA9D6}#pushBox:empty{display:none}
 .plbl{margin-top:8px;font-size:13px;color:#9AA5BA;font-weight:600}
@@ -1863,11 +1863,28 @@ function setFMode(m) {
 function mLabel(k) { var MN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; return MN[+k.slice(5) - 1] + ' ' + k.slice(0, 4); }
 function shortD(d) { return MON[+d.slice(5, 7) - 1] + ' ' + (+d.slice(8)) + ', ' + d.slice(0, 4); }
 function daysSince(d, t) { return Math.round((new Date(t + 'T12:00:00') - new Date(d + 'T12:00:00')) / 864e5); }
-var LVW = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
-function caseLine(c) {   // "John Doe, two-level ACDF"
-  var lv = c.n > 0 && /ACDF|fusion|ALIF|Lateral|TLIF|replacement|decompression|360/i.test(c.t) ? (LVW[c.n] || c.n) + '-level ' : '';
-  var t = lv && !/^[A-Z0-9]{2,}\b/.test(c.t) ? c.t.charAt(0).toLowerCase() + c.t.slice(1) : c.t;
-  return (c.pn ? pName(c.pn) + ', ' : '') + (lv ? lv.toLowerCase() : '') + t;
+function tCase(p) {   // Title Case, keeping levels (L4-5) and acronyms (ACDF, ALIF) upper case
+  var small = /^(and|or|of|with|to|the|a|an|for|in|on|at|by)$/;
+  return String(p || '').replace(/\s+/g, ' ').trim().toLowerCase().split(' ').map(function (w, i) {
+    if (/^[ctls]\d{1,2}([-\/][ctls]?\d{1,2})?,?$/.test(w)) return w.toUpperCase();
+    if (/^(acdf|alif|tlif|llif|xlif|olif|plif|cdr|tdr|si|scs|ptp|360,?)$/.test(w.replace(/[(),]/g, ''))) return w.toUpperCase();
+    if (i && small.test(w)) return w;
+    return w.replace(/(^|[-\/(])([a-z])/g, function (a, x, y) { return x + y.toUpperCase(); });
+  }).join(' ');
+}
+function surgLine(c) {   // "2-Level 360, ALIF" / "1-Level ACDF" / the booked procedure when the type is unknown
+  var t = c.t;
+  if (/^(Other|Unclassified)$/.test(t)) {
+    var p = tCase(c.pr);
+    if (!p) return 'Procedure Not Recorded';
+    return p.length > 70 ? p.slice(0, 68) + '…' : p;
+  }
+  var known = c.d >= APPR_FROM;
+  if (t === '360 lumbar fusion') t = known ? '360, ALIF' : '360';
+  else if (t === '360 lumbar fusion (lateral)') t = known ? '360, Lateral' : '360';
+  else if (t === 'Lateral (LLIF/XLIF)') t = 'Lateral';
+  var lv = c.n > 0 && /ACDF|fusion|ALIF|Lateral|TLIF|replacement|decompression|360/i.test(c.t) ? c.n + '-Level ' : '';
+  return lv + tCase(t);
 }
 function caseTable(box, list, cols, empty) {   // a small table of cases; tap a row to open that day
   if (!list.length) { box.appendChild(el('div', 'note', empty || 'No cases.')); return; }
@@ -1876,7 +1893,7 @@ function caseTable(box, list, cols, empty) {   // a small table of cases; tap a 
   cols.forEach(function (c) { hd.appendChild(el('span', 'n', c[0])); }); t.appendChild(hd);
   var all = list.slice().sort(function (x, y) { return x.d < y.d ? -1 : 1; }), cap = caseTable.open ? 1e9 : 8;
   all.slice(0, cap).forEach(function (c) {
-    var r = el('button', 'ctr'), w = el('span'); w.appendChild(el('div', null, caseLine(c))); w.appendChild(el('div', 's', c.py || c.ins)); r.appendChild(w);
+    var r = el('button', 'ctr'), w = el('span'); w.appendChild(el('div', null, surgLine(c))); if (c.pn) w.appendChild(el('div', 's2', pName(c.pn))); w.appendChild(el('div', 's', c.py || c.ins)); r.appendChild(w);
     cols.forEach(function (k) { var v = k[1](c); r.appendChild(el('span', 'n' + (v ? '' : ' z'), v ? money(v) : '–')); });
     r.onclick = function () { setTab('cases'); goDay(c.d); }; t.appendChild(r);
   });
