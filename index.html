@@ -95,6 +95,7 @@ textarea:focus{outline:2px solid #9EC5E0;border-color:transparent}
 .lg{display:flex;gap:14px;font-size:12px;color:#828A9A;margin-top:8px}.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .hb{display:grid;grid-template-columns:minmax(96px,40%) 1fr auto;align-items:center;gap:8px;padding:5px 0;font-size:14px}
 .hb .k{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hb .track{height:14px}.hb .fill{height:100%;background:#9EC5E0;border-radius:0 4px 4px 0}
+.hb .k .sub{font-size:12px;opacity:.6;overflow:hidden;text-overflow:ellipsis}
 .hb .c{text-align:right;font-variant-numeric:tabular-nums}
 .out{background:#0C1019;border-radius:14px;padding:14px;margin-bottom:12px}
 .out label{font-weight:700;display:block}
@@ -1855,11 +1856,11 @@ function renderFin() {
   tile(tiles, money(paSum), 'Expected PA/IDR');
   tile(tiles, money(ncm * nv), 'Expected neuromonitoring');
   tile(tiles, String(ncm) + ' of ' + sel.length, 'Commercial cases');
-  var fs = {}; sel.forEach(function (c) { if (c.f > 0) fs[c.t] = (fs[c.t] || 0) + c.f; });
-  hbars(card('Expected pro fees by case type', 'Estimates from your 2024–2026 collections. Medicare, self-pay and WC/auto are not estimated.'),
-    Object.keys(fs).map(function (k) { return { k: k, v: fs[k] }; }).sort(function (a, b) { return b.v - a.v; }), 'No estimates in this period yet.', money);
-  var fp = {}; sel.forEach(function (c) { if (c.f > 0) fp[c.ins] = (fp[c.ins] || 0) + c.f; });
-  hbars(card('Expected pro fees by payer'), Object.keys(fp).map(function (k) { return { k: k, v: fp[k] }; }).sort(function (a, b) { return b.v - a.v; }), 'No estimates in this period yet.', money);
+  function grp(key) { var o = {}; sel.forEach(function (c) { if (c.f > 0) { var g = o[key(c)] = o[key(c)] || { v: 0, n: 0 }; g.v += c.f; g.n++; } });
+    return Object.keys(o).map(function (k) { var g = o[k]; return { k: k, sub: g.n === 1 ? '1 case' : g.n + ' cases, ' + money(g.v / g.n) + ' each', v: g.v }; }).sort(function (a, b) { return b.v - a.v; }); }
+  hbars(card('Expected pro fees by case type', 'Totals for ' + finLabel() + '. Each case is priced from what insurers paid you per CPT in 2024–2026. Medicare, self-pay and WC/auto are not estimated.'),
+    grp(function (c) { return c.t; }), 'No estimates in this period yet.', money);
+  hbars(card('Expected pro fees by payer', 'Totals for ' + finLabel() + '.'), grp(function (c) { return c.ins; }), 'No estimates in this period yet.', money);
   hbars(card('Expected value by case type', 'Pro fee plus ' + money(pv) + ' PA/IDR and ' + money(nv) + ' neuromonitoring per commercial case. Change those two values on the Neuromonitoring tab of your case log.'),
     (function () { var o = {}; sel.forEach(function (c) { o[c.t] = (o[c.t] || 0) + c.f + (c.cm ? nv + pv : 0); }); return Object.keys(o).map(function (k) { return { k: k, v: o[k] }; }).sort(function (a, b) { return b.v - a.v; }); })(), 'No cases in this period yet.', money);
 }
@@ -1933,7 +1934,7 @@ function hbars(box, rows, emptyMsg, fmt) {
   var max = Math.max.apply(null, [0].concat(rows.map(function (r) { return r.v; })));
   if (!rows.length || !max) { box.appendChild(el('div', 'note', emptyMsg || 'Nothing in this period yet.')); return; }
   rows.forEach(function (r) {
-    var row = el('div', 'hb'); row.appendChild(el('div', 'k', r.k));
+    var row = el('div', 'hb'), kk = el('div', 'k', r.k); if (r.sub) kk.appendChild(el('div', 'sub', r.sub)); row.appendChild(kk);
     var tr = el('div', 'track'), f = el('div', 'fill'); f.style.width = (r.v ? Math.max(2, r.v / max * 100) : 0) + '%';
     tr.appendChild(f); row.appendChild(tr); row.appendChild(el('div', 'c', fmt ? fmt(r.v) : String(r.v))); box.appendChild(row);
   });
