@@ -409,6 +409,15 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .card.v2,.tile,.pend,.ctr,.hb,.sk{transition:transform .12s ease}
 .card.v2:active,button.ctr:active,.tile.tap:active,.pend:active{transform:scale(.98)}
 @media (prefers-reduced-motion:reduce){.hd .who,.hd .day,.tabs button svg,.card.v2,.tile,.pend,.ctr{transition:none}}
+/* ---- Accent: aqua marks what needs your attention ---- */
+.cd .cc.red:not(:empty){box-shadow:inset 0 0 0 20px #3DB8D4;color:#0F1726}
+.calkey b.r{background:#3DB8D4}
+.card.v2.k-rate::before{background:#3DB8D4}
+.card.v2.k-rate{background:#14212D}
+.pill.p-rate{border-color:#3DB8D4!important;box-shadow:inset 0 0 0 1px #2C7F93!important;color:#93DCEC!important;background:transparent!important}
+.fact .fh{color:#93DCEC}
+.nck{color:#93DCEC}
+.nc{border-left-color:#3DB8D4!important}
 </style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -623,7 +632,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795292659466';
+var BUILD = '1795293070034';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
