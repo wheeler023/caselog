@@ -598,6 +598,17 @@ function boot() {
   });
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
+// Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
+var BUILD = '1795271013659';
+function checkUpdate() {
+  fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
+    v = (v || '').trim(); if (!v || v === BUILD) return;
+    if (document.body && document.body.classList.contains('incase')) return;
+    location.reload();
+  }).catch(function () {});
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(); });
+setTimeout(checkUpdate, 4000);
 </script>
 <script type="text/plain" id="appjs">
 var INIT = window.__INIT;
@@ -1770,7 +1781,7 @@ function closeCase() { document.body.classList.remove('incase');
   if (isDirty && !saving) { save(false, function () { $('sheet').classList.remove('on'); afterClose(); }); return; }
   if (!saving) { $('sheet').classList.remove('on'); afterClose(); }
 }
-function afterClose() { if (rmode && smode) { render(); return; } if (rmode) { cases = cases.filter(function (c) { return c.status === 'Needs confirmation'; }); render(); } }
+function afterClose() { if (backToFin) { backToFin = false; setTab('fin'); return; } if (rmode && smode) { render(); return; } if (rmode) { cases = cases.filter(function (c) { return c.status === 'Needs confirmation'; }); render(); } }
 function openRating() {
   smode = false; $('rTitle').textContent = 'Needs rating'; $('sbox').style.display = 'none';
   dayCases = cases; rmode = true; cases = []; $('rList').innerHTML = ''; $('rList').appendChild(el('div', 'empty', 'Loading…')); $('rCount').textContent = '';
@@ -1834,7 +1845,7 @@ function setTab(t) {
   $('vFin').style.display = t === 'fin' ? '' : 'none'; $('vAsk').style.display = t === 'ask' ? '' : 'none'; $('tAsk').className = t === 'ask' ? 'on' : ''; $('vImp').style.display = t === 'imp' ? '' : 'none'; $('vPhotos').style.display = t === 'photos' ? '' : 'none'; $('tPhotos').className = t === 'photos' ? 'on' : '';
   $('tCases').className = t === 'cases' ? 'on' : ''; $('tStats').className = t === 'stats' ? 'on' : ''; $('tFin').className = t === 'fin' ? 'on' : ''; $('tImp').className = t === 'imp' ? 'on' : '';
   window.scrollTo(0, 0);
-  if (t !== 'fin') hideMoney();
+  if (t !== 'fin' && !backToFin) hideMoney();   // a trip from Billing into a case and back keeps the amounts showing
   if (t === 'stats') { per = 'sel'; selY = +INIT.today.slice(0, 4); selM = +INIT.today.slice(5, 7); loadStats(); } else if (t === 'fin') { renderFin(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else if (t === 'ask') drawAsk(); else go(day);
 }
 // ---- Finance tab: amounts are not drawn until you tap Show amounts; leaving the tab hides them again ----
@@ -1886,6 +1897,10 @@ function surgLine(c) {   // "2-Level 360, ALIF" / "1-Level ACDF" / the booked pr
   var lv = c.n > 0 && /ACDF|fusion|ALIF|Lateral|TLIF|replacement|decompression|360/i.test(c.t) ? c.n + '-Level ' : '';
   return lv + tCase(t);
 }
+var backToFin = false;
+function openFromFin(c) {   // billing → that patient's case record; closing it brings you back here
+  backToFin = true; pendingOpen = c.id; setTab('cases'); go(c.d);
+}
 function caseTable(box, list, cols, empty) {   // a small table of cases; tap a row to open that day
   if (!list.length) { box.appendChild(el('div', 'note', empty || 'No cases.')); return; }
   var t = el('div', 'ctab'), hd = el('div', 'ctr th'); hd.appendChild(el('span', null, 'Case'));
@@ -1895,7 +1910,7 @@ function caseTable(box, list, cols, empty) {   // a small table of cases; tap a 
   all.slice(0, cap).forEach(function (c) {
     var r = el('button', 'ctr'), w = el('span'); w.appendChild(el('div', null, surgLine(c))); if (c.pn) w.appendChild(el('div', 's2', pName(c.pn))); w.appendChild(el('div', 's', c.py || c.ins)); r.appendChild(w);
     cols.forEach(function (k) { var v = k[1](c); r.appendChild(el('span', 'n' + (v ? '' : ' z'), v ? money(v) : '–')); });
-    r.onclick = function () { setTab('cases'); goDay(c.d); }; t.appendChild(r);
+    r.onclick = function () { openFromFin(c); }; t.appendChild(r);
   });
   if (all.length > cap) { var mb = el('button', 'lnk', 'Show all ' + all.length); mb.onclick = function () { caseTable.open = true; renderFin(); }; t.appendChild(mb); }
   var tr = el('div', 'ctr tot'); tr.appendChild(el('span', null, 'Total, ' + list.length + (list.length === 1 ? ' case' : ' cases')));
@@ -1925,7 +1940,7 @@ function renderBilling(b) {   // real money only: what has paid, what hasn't, sp
   tile(tiles, pfPaid.length + ' of ' + done.length, 'Pro fee paid', function () { bilOpen = bilOpen === 'pf' ? '' : 'pf'; renderFin(); });
   tile(tiles, com.length ? paPaid.length + ' of ' + com.length : '–', 'SUSA paid (commercial)', function () { bilOpen = bilOpen === 'pa' ? '' : 'pa'; renderFin(); });
   if (bilOpen) {
-    var oc = card(bilOpen === 'col' ? 'Collected' : bilOpen === 'pf' ? 'Pro fees paid' : 'SUSA PA paid', 'Actual payments for ' + mLabel(bilM) + ' cases. Tap a case to open its day.');
+    var oc = card(bilOpen === 'col' ? 'Collected' : bilOpen === 'pf' ? 'Pro fees paid' : 'SUSA PA paid', 'Actual payments for ' + mLabel(bilM) + ' cases. Tap a case to open its record.');
     caseTable(oc, bilOpen === 'col' ? anyPaid : bilOpen === 'pf' ? pfPaid : paPaid, bilOpen === 'pa' ? [['SUSA', function (c) { return c.sp; }]] : bilOpen === 'pf' ? [['Pro fee', function (c) { return c.pp; }]] : [['Pro fee', function (c) { return c.pp; }], ['SUSA', function (c) { return c.sp; }]], 'Nothing paid yet for this month.');
     var cl = el('button', 'lnk', 'Close table'); cl.onclick = function () { bilOpen = ''; renderFin(); }; oc.appendChild(cl);
   }
@@ -1947,7 +1962,7 @@ function renderBilling(b) {   // real money only: what has paid, what hasn't, sp
   hbars(card('Pro fee status', pf.thru ? 'Your latest pro fee report runs through ' + shortD(pf.thru) + '.' : ''),
     [{ k: 'Paid', v: pfPaid.length }, { k: 'Billed, not paid', v: pfPend.filter(function (c) { return c.pb; }).length },
      { k: 'Not in a report yet', v: pfPend.filter(function (c) { return !c.pb; }).length }].filter(function (r) { return r.v; }), 'No cases this month.');
-  var pc = card('Pending pro fees', pfPend.length ? 'Cases with no pro fee payment yet. Amounts are your expected pro fee for that case, an estimate.' : '');
+  var pc = card('Pending pro fees', pfPend.length ? 'Cases with no pro fee payment yet. Amounts are your expected pro fee for that case, an estimate. Tap a case to open its record.' : '');
   caseTable(pc, pfPend.map(function (c) { return Object.assign({}, c, { ins: c.ins + ', ' + daysSince(c.d, t) + ' days' + (c.pb ? ', billed' : (pf.thru && c.d > pf.thru ? ', after the latest report' : ', not in a report')) }); }),
     [['Expected', function (c) { return c.f; }]], done.length ? 'Every case this month has a paid pro fee.' : 'No cases this month.');
   if (com.length) caseTable(card('Pending SUSA PA', 'Commercial cases with no SUSA payment yet. Amounts are the expected PA for that case type, an estimate.'), paPend, [['Expected', expPA]], 'Every commercial case this month has a SUSA payment.');

@@ -92,11 +92,25 @@ function boot() {
   });
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
+// Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
+var BUILD = '__BUILD__';
+function checkUpdate() {
+  fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
+    v = (v || '').trim(); if (!v || v === BUILD) return;
+    if (document.body && document.body.classList.contains('incase')) return;
+    location.reload();
+  }).catch(function () {});
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(); });
+setTimeout(checkUpdate, 4000);
 </script>`;
 const marker = '<script>\nvar INIT = __INIT__;';
 if (!h.includes(marker)) throw new Error('script marker missing');
 h = h.replace(marker, shim + '\n<script type="text/plain" id="appjs">\nvar INIT = window.__INIT;');
 h = h.replace('</body>', '<script>boot();</script></body>');
 if (!h.includes('<script>boot();</script>')) throw new Error('body end missing');
+const BUILD = String(Date.now());
+h = h.replace("var BUILD = '__BUILD__';", "var BUILD = '" + BUILD + "';");
+fs.writeFileSync(out + '/version.txt', BUILD + '\n');
 fs.writeFileSync(out + '/index.html', h);
 console.log('built', h.length);
