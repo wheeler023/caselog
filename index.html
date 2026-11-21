@@ -95,7 +95,7 @@ textarea:focus{outline:2px solid #9EC5E0;border-color:transparent}
 .lg{display:flex;gap:14px;font-size:12px;color:#828A9A;margin-top:8px}.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .hb{display:grid;grid-template-columns:minmax(96px,40%) 1fr auto;align-items:center;gap:8px;padding:5px 0;font-size:14px}
 .hb .k{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hb .track{height:14px}.hb .fill{height:100%;background:#9EC5E0;border-radius:0 4px 4px 0}
-.cmp .cr{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:7px 0;border-top:1px solid #22314C;font-size:14px;font-variant-numeric:tabular-nums}.cmp .cr span{white-space:pre-line}.cmp .cr.hd{border-top:0;font-weight:600;color:#7FA9D6}.cmp .cr .k{opacity:.75}
+.cmp .cr{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:7px 0;border-top:1px solid #22314C;font-size:14px;font-variant-numeric:tabular-nums}.cmp .cr span{white-space:pre-line}.cmp .cr.th{border-top:0;font-weight:600;color:#7FA9D6}.cmp .cr .k{opacity:.75}
 .hb .k .sub{font-size:12px;opacity:.6;overflow:hidden;text-overflow:ellipsis}
 .hb .c{text-align:right;font-variant-numeric:tabular-nums}
 .out{background:#0C1019;border-radius:14px;padding:14px;margin-bottom:12px}
@@ -369,6 +369,7 @@ textarea{background:#0F1828;border-color:#22314C}
 #vSet{position:fixed;inset:0;z-index:30;background:#0F1726;overflow:auto}#vSet .hd .askx{float:right;margin-top:-4px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:22px;line-height:1}
 .seg{display:flex;background:#0F1726;border:1px solid #22314C;border-radius:10px;padding:3px;margin:0 0 10px;max-width:260px}.seg button{flex:1;height:32px;border:0;border-radius:8px;background:transparent;color:#C9D3E3;font-size:14px}.seg button.on{background:#22314C;color:#fff;font-weight:600}
 .mstep{display:flex;align-items:center;gap:8px}.mstep button{width:34px;height:34px;border-radius:999px;border:1px solid #22314C;background:transparent;color:#fff;font-size:18px}.mstep span{min-width:150px;text-align:center;font-size:15px}
+.ctab{margin-top:6px}.ctr{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--nc,2),86px);gap:2px 10px;align-items:center;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid #22314C;color:inherit;padding:9px 0;font-size:14px}.ctr .s{opacity:.6;font-size:12px;margin-top:2px}.ctr .n{text-align:right;font-variant-numeric:tabular-nums}.ctr .z{opacity:.45}.ctr.th{border-top:0;font-size:12px;color:#7FA9D6;padding:2px 0 6px}.ctr.tot{font-weight:600;border-top:1px solid #7FA9D6}
 .pend{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid #22314C;color:inherit;padding:9px 0;font-size:14px}.pend .s{grid-column:1;opacity:.6;font-size:12px}.pend .a{grid-row:1 / span 2;grid-column:2;align-self:center;font-variant-numeric:tabular-nums}
 .chip.on{background:#7FA9D6;color:#0F1726;border-color:#7FA9D6}#pushBox:empty{display:none}
 .plbl{margin-top:8px;font-size:13px;color:#9AA5BA;font-weight:600}
@@ -1858,49 +1859,77 @@ function setFMode(m) {
 function mLabel(k) { var MN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; return MN[+k.slice(5) - 1] + ' ' + k.slice(0, 4); }
 function shortD(d) { return MON[+d.slice(5, 7) - 1] + ' ' + (+d.slice(8)) + ', ' + d.slice(0, 4); }
 function daysSince(d, t) { return Math.round((new Date(t + 'T12:00:00') - new Date(d + 'T12:00:00')) / 864e5); }
-function renderBilling(b) {   // real money only: what has paid, what hasn't, and how old it is
+function caseTable(box, list, cols, empty) {   // a small table of cases; tap a row to open that day
+  if (!list.length) { box.appendChild(el('div', 'note', empty || 'No cases.')); return; }
+  var t = el('div', 'ctab'), hd = el('div', 'ctr th'); hd.appendChild(el('span', null, 'Case'));
+  t.style.setProperty('--nc', String(cols.length));
+  cols.forEach(function (c) { hd.appendChild(el('span', 'n', c[0])); }); t.appendChild(hd);
+  var all = list.slice().sort(function (x, y) { return x.d < y.d ? -1 : 1; }), cap = caseTable.open ? 1e9 : 8;
+  all.slice(0, cap).forEach(function (c) {
+    var r = el('button', 'ctr'), w = el('span'); w.appendChild(el('div', null, shortD(c.d).replace(/, \d{4}$/, '') + ', ' + c.t)); w.appendChild(el('div', 's', c.py || c.ins)); r.appendChild(w);
+    cols.forEach(function (k) { var v = k[1](c); r.appendChild(el('span', 'n' + (v ? '' : ' z'), v ? money(v) : '–')); });
+    r.onclick = function () { setTab('cases'); goDay(c.d); }; t.appendChild(r);
+  });
+  if (all.length > cap) { var mb = el('button', 'lnk', 'Show all ' + all.length); mb.onclick = function () { caseTable.open = true; renderFin(); }; t.appendChild(mb); }
+  var tr = el('div', 'ctr tot'); tr.appendChild(el('span', null, 'Total, ' + list.length + (list.length === 1 ? ' case' : ' cases')));
+  cols.forEach(function (k) { tr.appendChild(el('span', 'n', money(list.reduce(function (s, c) { return s + (k[1](c) || 0); }, 0)))); }); t.appendChild(tr);
+  box.appendChild(t);
+}
+var bilOpen = '';
+caseTable.open = false;
+function renderBilling(b) {   // real money only: what has paid, what hasn't, split by source
   var t = stats.today; if (!bilM) bilM = t.slice(0, 7);
   var lbl = $('fLbl'); lbl.innerHTML = '';
   var ms = el('div', 'mstep'), pb = el('button', null, '‹'), nb = el('button', null, '›'); ms.appendChild(pb); ms.appendChild(el('span', null, mLabel(bilM))); ms.appendChild(nb); lbl.appendChild(ms);
-  pb.onclick = function () { bilM = monthKey(bilM + '-01', -1); renderFin(); };
-  nb.onclick = function () { if (bilM < t.slice(0, 7)) { bilM = monthKey(bilM + '-01', 1); renderFin(); } };
+  pb.onclick = function () { bilM = monthKey(bilM + '-01', -1); bilOpen = ''; caseTable.open = false; renderFin(); };
+  nb.onclick = function () { if (bilM < t.slice(0, 7)) { bilM = monthKey(bilM + '-01', 1); bilOpen = ''; renderFin(); } };
   nb.disabled = bilM >= t.slice(0, 7);
-  var pf = stats.pf || {}, pv = (stats.neuro && stats.neuro.pa) || 0;
+  var pf = stats.pf || {}, pv = (stats.neuro && stats.neuro.pa) || 0, nv = (stats.neuro && stats.neuro.value) || 0;
   var isDone = function (c) { return /Performed|Needs confirmation/.test(c.s) && c.d <= t; };
   var done = stats.cases.filter(function (c) { return isDone(c) && c.d.slice(0, 7) === bilM; });
-  var paid = done.filter(function (c) { return c.pp > 0; }), pend = done.filter(function (c) { return !(c.pp > 0); });
-  var com = done.filter(function (c) { return c.cm; }), spPaid = com.filter(function (c) { return c.sp > 0; });
   var sum = function (a, f) { return a.reduce(function (s, c) { return s + (f(c) || 0); }, 0); };
-  var col = sum(done, function (c) { return c.pp; }) + sum(done, function (c) { return c.sp; });
-  var still = sum(pend, function (c) { return c.f; }) + sum(com.filter(function (c) { return !(c.sp > 0); }), function (c) { return c.pv != null ? c.pv : pv; });
+  var pfPaid = done.filter(function (c) { return c.pp > 0; }), pfPend = done.filter(function (c) { return !(c.pp > 0); });
+  var com = done.filter(function (c) { return c.cm; }), paPaid = com.filter(function (c) { return c.sp > 0; }), paPend = com.filter(function (c) { return !(c.sp > 0); });
+  var expPA = function (c) { return c.pv != null ? c.pv : pv; };
+  var anyPaid = done.filter(function (c) { return c.pp > 0 || c.sp > 0; });
   var tiles = el('div', 'tiles'); b.appendChild(tiles);
   tile(tiles, String(done.length), 'Cases done');
-  tile(tiles, money(col), 'Collected');
-  tile(tiles, paid.length + ' of ' + done.length, 'Pro fee paid');
-  tile(tiles, String(pend.length), 'Pro fee pending');
-  tile(tiles, com.length ? spPaid.length + ' of ' + com.length : '–', 'SUSA paid (commercial)');
-  tile(tiles, money(still), 'Still expected');
-  if (!pf.thru) b.appendChild(el('div', 'note', 'No pro fee report yet. Save your billing pivot in Drive under Surgery Schedule / Pro Fee Reports. The app reads it within 10 minutes.'));
-  var later = pend.filter(function (c) { return !c.pb && pf.thru && c.d > pf.thru; }).length;
-  hbars(card('Pro fee status', pf.thru ? 'Your latest report runs through ' + shortD(pf.thru) + '.' : ''),
-    [{ k: 'Paid', v: paid.length }, { k: 'Billed, not paid', v: pend.filter(function (c) { return c.pb; }).length },
-     { k: 'Not in a report yet', v: pend.filter(function (c) { return !c.pb; }).length }].filter(function (r) { return r.v; }), 'No cases this month.');
-  var bp = {}; paid.forEach(function (c) { var k = c.py || c.ins; bp[k] = (bp[k] || 0) + c.pp; });
-  hbars(card('Pro fees collected by payer'), Object.keys(bp).map(function (k) { return { k: k, v: bp[k] }; }).sort(function (x, y) { return y.v - x.v; }), 'Nothing paid for this month yet.', money);
-  var pc = card('Pending cases', pend.length ? 'Tap a case to open that day.' : '');
-  if (!pend.length) pc.appendChild(el('div', 'note', done.length ? 'Every case this month has a paid pro fee.' : 'No cases this month.'));
-  pend.slice().sort(function (x, y) { return x.d < y.d ? -1 : 1; }).forEach(function (c) {
-    var r = el('button', 'pend'); r.appendChild(el('span', null, shortD(c.d) + ', ' + c.t));
-    r.appendChild(el('span', 'a', c.f ? money(c.f) : '–'));
-    r.appendChild(el('span', 's', c.ins + ', ' + daysSince(c.d, t) + ' days' + (c.pb ? ', billed' : (pf.thru && c.d > pf.thru ? ', after the latest report' : ', not in a report'))));
-    r.onclick = function () { setTab('cases'); goDay(c.d); }; pc.appendChild(r);
+  tile(tiles, money(sum(done, function (c) { return c.pp; }) + sum(done, function (c) { return c.sp; })), 'Collected', function () { bilOpen = bilOpen === 'col' ? '' : 'col'; renderFin(); });
+  tile(tiles, pfPaid.length + ' of ' + done.length, 'Pro fee paid', function () { bilOpen = bilOpen === 'pf' ? '' : 'pf'; renderFin(); });
+  tile(tiles, com.length ? paPaid.length + ' of ' + com.length : '–', 'SUSA paid (commercial)', function () { bilOpen = bilOpen === 'pa' ? '' : 'pa'; renderFin(); });
+  if (bilOpen) {
+    var oc = card(bilOpen === 'col' ? 'Collected' : bilOpen === 'pf' ? 'Pro fees paid' : 'SUSA PA paid', 'Actual payments for ' + mLabel(bilM) + ' cases. Tap a case to open its day.');
+    caseTable(oc, bilOpen === 'col' ? anyPaid : bilOpen === 'pf' ? pfPaid : paPaid, bilOpen === 'pa' ? [['SUSA', function (c) { return c.sp; }]] : bilOpen === 'pf' ? [['Pro fee', function (c) { return c.pp; }]] : [['Pro fee', function (c) { return c.pp; }], ['SUSA', function (c) { return c.sp; }]], 'Nothing paid yet for this month.');
+    var cl = el('button', 'lnk', 'Close table'); cl.onclick = function () { bilOpen = ''; renderFin(); }; oc.appendChild(cl);
+  }
+  var mc = card('Money by source', 'Collected is money received. Still expected uses your estimates for cases not paid yet.');
+  var mt = el('div', 'ctab'), mh = el('div', 'ctr th'); ['', 'Collected', 'Still expected'].forEach(function (h, i) { mh.appendChild(el('span', i ? 'n' : null, h)); }); mt.appendChild(mh);
+  [['Pro fees', sum(done, function (c) { return c.pp; }), sum(pfPend, function (c) { return c.f; }), pfPaid.length + ' paid, ' + pfPend.length + ' pending', 'pf'],
+   ['SUSA / IDR PA', sum(done, function (c) { return c.sp; }), sum(paPend, expPA), paPaid.length + ' paid, ' + paPend.length + ' pending (commercial only)', 'pa'],
+   ['Neuromonitoring', null, com.length * nv, 'Paid from the group pool, not per case. Estimate only.', '']].forEach(function (r) {
+    var row = el(r[4] ? 'button' : 'div', 'ctr'), w = el('span'); w.appendChild(el('div', null, r[0])); w.appendChild(el('div', 's', r[3])); row.appendChild(w);
+    row.appendChild(el('span', 'n' + (r[1] ? '' : ' z'), r[1] == null ? 'n/a' : money(r[1]))); row.appendChild(el('span', 'n', money(r[2])));
+    if (r[4]) row.onclick = function () { bilOpen = bilOpen === r[4] ? '' : r[4]; renderFin(); };
+    mt.appendChild(row);
   });
+  var tt = el('div', 'ctr tot'); tt.appendChild(el('span', null, 'Total'));
+  tt.appendChild(el('span', 'n', money(sum(done, function (c) { return c.pp; }) + sum(done, function (c) { return c.sp; }))));
+  tt.appendChild(el('span', 'n', money(sum(pfPend, function (c) { return c.f; }) + sum(paPend, expPA) + com.length * nv))); mt.appendChild(tt);
+  mc.appendChild(mt);
+  if (!pf.thru) b.appendChild(el('div', 'note', 'No pro fee report yet. Save your billing pivot in Drive under Surgery Schedule / Pro Fee Reports. The app reads it within 10 minutes.'));
+  hbars(card('Pro fee status', pf.thru ? 'Your latest pro fee report runs through ' + shortD(pf.thru) + '.' : ''),
+    [{ k: 'Paid', v: pfPaid.length }, { k: 'Billed, not paid', v: pfPend.filter(function (c) { return c.pb; }).length },
+     { k: 'Not in a report yet', v: pfPend.filter(function (c) { return !c.pb; }).length }].filter(function (r) { return r.v; }), 'No cases this month.');
+  var pc = card('Pending pro fees', pfPend.length ? 'Cases with no pro fee payment yet. Amounts are your expected pro fee for that case, an estimate.' : '');
+  caseTable(pc, pfPend.map(function (c) { return Object.assign({}, c, { ins: c.ins + ', ' + daysSince(c.d, t) + ' days' + (c.pb ? ', billed' : (pf.thru && c.d > pf.thru ? ', after the latest report' : ', not in a report')) }); }),
+    [['Expected', function (c) { return c.f; }]], done.length ? 'Every case this month has a paid pro fee.' : 'No cases this month.');
+  if (com.length) caseTable(card('Pending SUSA PA', 'Commercial cases with no SUSA payment yet. Amounts are the expected PA for that case type, an estimate.'), paPend, [['Expected', expPA]], 'Every commercial case this month has a SUSA payment.');
   var y1 = monthKey(t, -11) + '-01', ar = stats.cases.filter(function (c) { return isDone(c) && c.d >= y1 && !(c.pp > 0) && c.f > 0; });
   var B = [['0 to 30 days', 0, 30], ['31 to 60 days', 31, 60], ['61 to 90 days', 61, 90], ['91 to 180 days', 91, 180], ['Over 180 days', 181, 1e9]];
-  hbars(card('Unpaid pro fees by age', 'Last 12 months, cases with an expected pro fee and no payment yet. Shown as expected dollars.'),
+  hbars(card('Unpaid pro fees by age', 'Last 12 months. Cases with no pro fee payment yet, shown as expected dollars.'),
     B.map(function (g) { var a = ar.filter(function (c) { var n = daysSince(c.d, t); return n >= g[1] && n <= g[2]; }); return { k: g[0], sub: a.length + (a.length === 1 ? ' case' : ' cases'), v: sum(a, function (c) { return c.f; }) }; }).filter(function (r) { return r.v; }),
     'Nothing unpaid in the last 12 months.', money);
-  if (pf.imported) b.appendChild(el('div', 'note', 'Last report imported ' + shortD(pf.imported) + '.' + (pf.unmatched ? ' ' + pf.unmatched + ' report line' + (pf.unmatched === 1 ? '' : 's') + ' did not match a case.' : '')));
+  if (pf.imported) b.appendChild(el('div', 'note', 'Last pro fee report imported ' + shortD(pf.imported) + '.' + (pf.unmatched ? ' ' + pf.unmatched + ' report line' + (pf.unmatched === 1 ? '' : 's') + ' did not match a case.' : '')));
 }
 function renderFin() {
   if ($('fLbl')) $('fLbl').textContent = finLabel();
@@ -2083,7 +2112,7 @@ function apprCard(sel) {   // ALIF vs lateral, from December 1, 2026 on (earlier
     return { k: g[0], n: cs.length, sub: cs.length ? w360 + ' with posterior' : '', lv: lv, rt: median(mins), pl: median(perLv), ph: hrs ? fee / hrs : null, tn: mins.length };
   });
   if (!rows[0].n && !rows[1].n) { c.appendChild(el('div', 'note', stats.today < APPR_FROM ? 'Starts with your December 1, 2026 cases.' : 'No ALIF or lateral cases in this period.')); return; }
-  var tb = el('div', 'cmp'), hd = el('div', 'cr hd'); ['', 'ALIF', 'Lateral'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
+  var tb = el('div', 'cmp'), hd = el('div', 'cr th'); ['', 'ALIF', 'Lateral'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
   [['Cases', function (r) { return r.n + (r.sub ? '\n' + r.sub : ''); }], ['Levels', function (r) { return String(r.lv); }],
    ['Median room time', function (r) { return r.rt == null ? '–' : dur(r.rt); }], ['Room time per level', function (r) { return r.pl == null ? '–' : dur(r.pl); }],
    ['Expected pro fee per OR hour', function (r) { return r.ph == null ? '–' : money(r.ph); }]].forEach(function (m) {
