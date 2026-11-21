@@ -418,6 +418,20 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .fact .fh{color:#93DCEC}
 .nck{color:#93DCEC}
 .nc{border-left-color:#3DB8D4!important}
+/* ---- Calendar: case types under each date ---- */
+.cd{min-height:58px;justify-content:flex-start}
+.cd .tl{display:flex;flex-direction:column;gap:1px;width:100%;padding:0 2px 0 3px;box-sizing:border-box;margin-top:1px}
+.cd .tl i{font-style:normal;font-size:9.5px;line-height:1.2;font-weight:600;color:#CFE0F2;text-align:left;white-space:nowrap;overflow:hidden;border-left:2px solid #5E6B82;padding-left:3px}
+.cd .tl i.ty-acdf{border-left-color:#7FA9D6}
+.cd .tl i.more{border-left-color:transparent;color:#8C97AB}
+.cd.out .tl i{opacity:.5}
+.cd .tl i.ty-micro,.cd .tl i.ty-lam,.cd .tl i.ty-clam,.cd .tl i.ty-cyst{border-left-color:#C9A86A}
+.cd .tl i.ty-alif,.cd .tl i.ty-llif,.cd .tl i.ty-360,.cd .tl i.ty-360lat,.cd .tl i.ty-tlif,.cd .tl i.ty-plf,.cd .tl i.ty-tfusion,.cd .tl i.ty-pcf{border-left-color:#B48EF0}
+.cd .tl i.ty-cdr,.cd .tl i.ty-hybrid{border-left-color:#5FBF7F}
+.cd .tl i.ty-new{border-left-color:#8C97AB;color:#8C97AB}
+.cd.nr .cn{box-shadow:inset 0 0 0 2px #3DB8D4;color:#E8F6FA}
+.calkey b.r{width:10px;height:10px;border-radius:50%;background:transparent;box-shadow:inset 0 0 0 2px #3DB8D4}
+.calkey b.t{width:2px;height:11px;border-radius:0}
 </style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -632,7 +646,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795293070034';
+var BUILD = '1795293384995';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -716,7 +730,13 @@ function drawWeek(isoDay) {   // month calendar (kept the old name so every call
     if (i === 35 && d.getMonth() + 1 !== mm) break;   // 5-week months: drop the empty 6th row
     var cls = 'cd' + (d.getMonth() + 1 !== mm ? ' out' : '') + (k === isoDay ? ' on' : '') + (k === INIT.today ? ' td' : '');
     var b = el('button', cls); b.appendChild(el('span', 'cn', String(d.getDate())));
-    var c = el('span', 'cc' + (x && x.u ? ' red' : ''), x && x.n ? String(x.n) : ''); b.appendChild(c);
+    if (x && x.t && x.t.length) {   // what's on that day, one short line per case
+      if (x.u) b.classList.add('nr');
+      var tl = el('span', 'tl'), cap = x.t.length > 4 ? 3 : 4;
+      x.t.slice(0, cap).forEach(function (s) { var i = el('i', 'ty-' + s.toLowerCase().replace(/[^a-z0-9]/g, ''), s); tl.appendChild(i); });
+      if (x.t.length > cap) tl.appendChild(el('i', 'more', '+' + (x.t.length - cap)));
+      b.appendChild(tl);
+    } else { var c = el('span', 'cc' + (x && x.u ? ' red' : ''), x && x.n ? String(x.n) : ''); b.appendChild(c); }
     var wo = woBlock(k).length > 0, eo = edOff(k);
     if (wo || eo) { var om = el('span', 'om'); if (wo) om.appendChild(el('i')); if (eo) om.appendChild(el('i', 'eo')); b.appendChild(om); }
     b.setAttribute('aria-label', label(k) + (x && x.n ? ', ' + x.n + ' case' + (x.n === 1 ? '' : 's') : '') + (x && x.u ? ', ' + x.u + ' to rate' : '') + (wo ? ', you’re out' : '') + (eo ? ', Dr. Edwards off' : ''));
@@ -725,8 +745,10 @@ function drawWeek(isoDay) {   // month calendar (kept the old name so every call
   }
   box.appendChild(g);
   var key = el('div', 'calkey');   // what the calendar marks mean
-  [['', 'Cases'], ['r', 'Needs rating'], ['o', 'You’re out'], ['e', 'Edwards off']].forEach(function (k) { var sp = el('span'); sp.appendChild(el('b', k[0])); sp.appendChild(document.createTextNode(k[1])); key.appendChild(sp); });
-  box.appendChild(key);
+  [['#7FA9D6', 'Cervical'], ['#B48EF0', 'Fusion'], ['#C9A86A', 'Decompression'], ['#5FBF7F', 'Disc replacement']].forEach(function (k) { var sp = el('span'), bb = el('b', 't'); bb.style.background = k[0]; sp.appendChild(bb); sp.appendChild(document.createTextNode(k[1])); key.appendChild(sp); });
+  var key2 = el('div', 'calkey');
+  [['r', 'Needs rating'], ['o', 'You’re out'], ['e', 'Edwards off']].forEach(function (k) { var sp = el('span'); sp.appendChild(el('b', k[0])); sp.appendChild(document.createTextNode(k[1])); key2.appendChild(sp); });
+  box.appendChild(key); box.appendChild(key2);
   if (!w) google.script.run.withSuccessHandler(function (r) {
     storeMonth(r);
     if (gridStart(viewMon) === r.start) drawWeek(day);
