@@ -1859,6 +1859,12 @@ function setFMode(m) {
 function mLabel(k) { var MN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; return MN[+k.slice(5) - 1] + ' ' + k.slice(0, 4); }
 function shortD(d) { return MON[+d.slice(5, 7) - 1] + ' ' + (+d.slice(8)) + ', ' + d.slice(0, 4); }
 function daysSince(d, t) { return Math.round((new Date(t + 'T12:00:00') - new Date(d + 'T12:00:00')) / 864e5); }
+var LVW = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+function caseLine(c) {   // "John Doe, two-level ACDF"
+  var lv = c.n > 0 && /ACDF|fusion|ALIF|Lateral|TLIF|replacement|decompression|360/i.test(c.t) ? (LVW[c.n] || c.n) + '-level ' : '';
+  var t = lv && !/^[A-Z0-9]{2,}\b/.test(c.t) ? c.t.charAt(0).toLowerCase() + c.t.slice(1) : c.t;
+  return (c.pn ? pName(c.pn) + ', ' : '') + (lv ? lv.toLowerCase() : '') + t;
+}
 function caseTable(box, list, cols, empty) {   // a small table of cases; tap a row to open that day
   if (!list.length) { box.appendChild(el('div', 'note', empty || 'No cases.')); return; }
   var t = el('div', 'ctab'), hd = el('div', 'ctr th'); hd.appendChild(el('span', null, 'Case'));
@@ -1866,7 +1872,7 @@ function caseTable(box, list, cols, empty) {   // a small table of cases; tap a 
   cols.forEach(function (c) { hd.appendChild(el('span', 'n', c[0])); }); t.appendChild(hd);
   var all = list.slice().sort(function (x, y) { return x.d < y.d ? -1 : 1; }), cap = caseTable.open ? 1e9 : 8;
   all.slice(0, cap).forEach(function (c) {
-    var r = el('button', 'ctr'), w = el('span'); w.appendChild(el('div', null, shortD(c.d).replace(/, \d{4}$/, '') + ', ' + c.t)); w.appendChild(el('div', 's', c.py || c.ins)); r.appendChild(w);
+    var r = el('button', 'ctr'), w = el('span'); w.appendChild(el('div', null, caseLine(c))); w.appendChild(el('div', 's', c.py || c.ins)); r.appendChild(w);
     cols.forEach(function (k) { var v = k[1](c); r.appendChild(el('span', 'n' + (v ? '' : ' z'), v ? money(v) : '–')); });
     r.onclick = function () { setTab('cases'); goDay(c.d); }; t.appendChild(r);
   });
