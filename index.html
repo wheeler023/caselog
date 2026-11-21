@@ -96,6 +96,10 @@ textarea:focus{outline:2px solid #9EC5E0;border-color:transparent}
 .hb{display:grid;grid-template-columns:minmax(96px,40%) 1fr 84px;align-items:center;gap:8px;padding:5px 0;font-size:14px}
 .hb .k{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hb .track{height:10px;background:#1C2A44;border-radius:999px;overflow:hidden}.hb .fill{height:100%;background:#7FA9D6;border-radius:999px;min-width:5px}
 .cmp .cr{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:7px 0;border-top:1px solid #22314C;font-size:14px;font-variant-numeric:tabular-nums}.cmp .cr span{white-space:pre-line}.cmp .cr.th{border-top:0;font-weight:600;color:#7FA9D6}.cmp .cr .k{opacity:.75}
+.skel{display:flex;flex-direction:column;gap:12px;padding:4px 0}.sk{border:1px solid #22314C;border-radius:14px;background:#131E33;padding:16px;display:flex;flex-direction:column;gap:10px}
+.sk i{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,#1B2840 0%,#26375A 50%,#1B2840 100%);background-size:200% 100%;animation:skw 1.3s ease-in-out infinite}
+.sk .l1{width:55%;height:14px}.sk .l2{width:80%}.sk .l3{width:35%}.sk.case{min-height:74px}
+@keyframes skw{0%{background-position:100% 0}100%{background-position:-100% 0}}@media (prefers-reduced-motion:reduce){.sk i{animation:none}}
 .hb .k .sub{font-size:12px;opacity:.6;overflow:hidden;text-overflow:ellipsis}
 .hb .c{text-align:right;font-variant-numeric:tabular-nums}
 .out{background:#0C1019;border-radius:14px;padding:14px;margin-bottom:12px}
@@ -600,7 +604,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795282233027';
+var BUILD = '1795284346283';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -638,6 +642,11 @@ function goDay(d) {
 }
 brandRow('who', '');
 
+function skel(kind) {   // gray outlines in the shape of what's coming, instead of the word Loading
+  var w = el('div', 'skel'), n = kind === 'case' ? 3 : 4;
+  for (var i = 0; i < n; i++) { var c = el('div', 'sk ' + kind); c.appendChild(el('i', 'l1')); c.appendChild(el('i', 'l2')); if (kind !== 'case') c.appendChild(el('i', 'l3')); w.appendChild(c); }
+  return w;
+}
 function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function toast(t) { var e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(function () { e.classList.remove('on'); }, 2200); }
 function parse(iso) { var p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
@@ -832,7 +841,7 @@ function go(isoDay) {
   drawWeek(isoDay);
   var list = $('list');
   if (dayCache[isoDay]) { cases = dayCache[isoDay]; render(); }
-  else { list.innerHTML = ''; list.appendChild(el('div', 'empty', 'Loading…')); }
+  else { list.innerHTML = ''; list.appendChild(skel('case')); }
   if (!refreshed && INIT.first && isoDay === INIT.first.day) { refreshed = true; refreshAll(isoDay); prefetchNear(isoDay); return; }   // first screen came with the page
   google.script.run.withSuccessHandler(function (r) {
     show(r); prefetchNear(r.day);
@@ -921,7 +930,7 @@ function openRecap(mk) {
   $('rcTitle').textContent = MONF[+mk.slice(5, 7) - 1] + ' ' + mk.slice(0, 4);
   $('recap').classList.add('on'); var b = $('rcBody'); b.innerHTML = '';
   if (!stats) {
-    b.appendChild(el('div', 'empty', 'Loading…'));
+    b.appendChild(skel('skx'));
     google.script.run.withSuccessHandler(function (r) { stats = r; MS = null; openRecap(mk); }).wdStats(); return;
   }
   cardTarget = 'rcBody';
@@ -950,7 +959,7 @@ var gal = null, galType = '', galLv = '';
 var galOpen = {};
 function loadGallery() {
   var b = $('pBody');
-  if (gal) drawGallery(); else { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Loading…')); }
+  if (gal) drawGallery(); else { b.innerHTML = ''; b.appendChild(skel('skx')); }
   google.script.run.withSuccessHandler(function (r) { gal = r || []; drawGallery(); })
     .withFailureHandler(function (e) { if (!gal) { b.innerHTML = ''; b.appendChild(el('div', 'empty', /Unknown request/.test(e.message) ? 'Photos are almost ready. They’ll show here once the latest update is installed.' : 'Could not load: ' + e.message)); } }).wdGallery();
 }
@@ -1785,7 +1794,7 @@ function closeCase() { document.body.classList.remove('incase');
 function afterClose() { if (backToFin) { backToFin = false; setTab('fin'); return; } if (rmode && smode) { render(); return; } if (rmode) { cases = cases.filter(function (c) { return c.status === 'Needs confirmation'; }); render(); } }
 function openRating() {
   smode = false; $('rTitle').textContent = 'Needs rating'; $('sbox').style.display = 'none';
-  dayCases = cases; rmode = true; cases = []; $('rList').innerHTML = ''; $('rList').appendChild(el('div', 'empty', 'Loading…')); $('rCount').textContent = '';
+  dayCases = cases; rmode = true; cases = []; $('rList').innerHTML = ''; $('rList').appendChild(skel('case')); $('rCount').textContent = '';
   $('rsheet').classList.add('on');
   google.script.run.withSuccessHandler(function (l) { if (!rmode) return; cases = l || []; render(); })
     .withFailureHandler(function (e) { $('rList').innerHTML = ''; $('rList').appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdNeedsRating();
@@ -1972,6 +1981,10 @@ function renderBilling(b) {   // real money only: what has paid, what hasn't, sp
   hbars(card('Unpaid pro fees by age', 'Last 12 months. Cases with no pro fee payment yet, shown as expected dollars.'),
     B.map(function (g) { var a = ar.filter(function (c) { var n = daysSince(c.d, t); return n >= g[1] && n <= g[2]; }); return { k: g[0], sub: a.length + (a.length === 1 ? ' case' : ' cases'), v: sum(a, function (c) { return c.f; }) }; }).filter(function (r) { return r.v; }),
     'Nothing unpaid in the last 12 months.', money);
+  var byP = {}; ar.forEach(function (c) { var k = c.ins || 'Unknown'; var g = byP[k] = byP[k] || { v: 0, n: 0, days: 0 }; g.v += c.f; g.n++; g.days += daysSince(c.d, t); });
+  hbars(card('Unpaid pro fees by insurer', 'Last 12 months, shown as expected dollars, with how long those cases have waited since surgery.'),
+    Object.keys(byP).map(function (k) { var g = byP[k]; return { k: k, sub: g.n + (g.n === 1 ? ' case' : ' cases') + ', avg ' + Math.round(g.days / g.n) + ' days', v: g.v }; }).sort(function (x, y) { return y.v - x.v; }),
+    'Nothing unpaid in the last 12 months.', money);
   if (pf.imported) b.appendChild(el('div', 'note', 'Last pro fee report imported ' + shortD(pf.imported) + '.' + (pf.unmatched ? ' ' + pf.unmatched + ' report line' + (pf.unmatched === 1 ? '' : 's') + ' did not match a case.' : '')));
 }
 function renderFin() {
@@ -1987,7 +2000,7 @@ function renderFin() {
     });
   }
   if (!stats) {
-    b.appendChild(el('div', 'empty', 'Loading…'));
+    b.appendChild(skel('skx'));
     google.script.run.withSuccessHandler(function (r) { stats = r; if (r) renderFin(); else { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'No data yet.')); } })
       .withFailureHandler(function (e) { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdStats();
     return;
@@ -2022,7 +2035,7 @@ function renderFin() {
 function loadStats() {
   var b = $('sBody');
   if (stats) { drawPicker(); renderStats(); }   // fetched in the background when the app opened: draw now, refresh quietly
-  else { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Loading…')); }
+  else { b.innerHTML = ''; b.appendChild(skel('skx')); }
   google.script.run.withSuccessHandler(function (r) {
     stats = r; if (!selY && per === 'sel' && !loadStats.done) { selY = +r.today.slice(0, 4); selM = +r.today.slice(5, 7); }
     loadStats.done = true; drawPicker(); renderStats();
@@ -2109,7 +2122,7 @@ function setIPer(p) {
 function renderImp() {
   cardTarget = 'iBody'; var b = $('iBody'); b.innerHTML = '';
   if (!stats) {
-    b.appendChild(el('div', 'empty', 'Loading…'));
+    b.appendChild(skel('skx'));
     google.script.run.withSuccessHandler(function (r) { stats = r; renderImp(); })
       .withFailureHandler(function (e) { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdStats();
     return;
