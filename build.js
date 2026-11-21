@@ -8,7 +8,7 @@ let h = ctx.H;
 const head = `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B1033"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="robots" content="noindex, nofollow"><title>Wheeler MD</title><meta name="apple-mobile-web-app-title" content="Wheeler MD">
+<meta name="robots" content="noindex, nofollow"><title>Wheelhouse</title><meta name="apple-mobile-web-app-title" content="Wheelhouse">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">`;
 if (!h.includes('<base target="_top">')) throw new Error('head marker missing');
 h = h.replace('<base target="_top">', '<base target="_top">' + head);
@@ -33,7 +33,7 @@ function needPairing() {
   splash('This phone isn’t set up yet.<br>Paste the setup link you were sent:' +
     '<input id="pairIn" placeholder="https://wheeler023.github.io/caselog/#pair=…" style="width:100%;max-width:340px;margin-top:6px;padding:10px;border-radius:10px;border:1.5px solid #555C6B;background:transparent;color:#fff;font:13px monospace">' +
     '<div><button onclick="pastePair()">Paste</button> <button onclick="usePair()">Use link</button></div>' +
-    '<div style="font-size:13px;color:#828A9A;margin-top:8px">Dr. Wheeler: open your Case Log in Google and tap <b>Set up phone app</b>.</div>');
+    '<div style="font-size:13px;color:#828A9A;margin-top:8px">Dr. Wheeler: open Wheelhouse in Google and tap <b>Set up phone app</b>.</div>');
 }
 function usePair() {
   var v = (document.getElementById('pairIn').value || '').trim(), m = v.match(/pair=([a-f0-9]{48,})/);
