@@ -367,6 +367,9 @@ textarea{background:#0F1828;border-color:#22314C}
 .finveil{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 82px);z-index:20;border:1px solid #3A5A80;background:#17253F;color:#E6EBF3;font-weight:700;font-size:14px;padding:11px 20px;border-radius:999px;box-shadow:0 10px 26px rgba(0,0,0,.45)}
 .hd .gear{float:right;margin-top:-2px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;display:flex;align-items:center;justify-content:center;padding:0}.hd .gear svg{width:19px;height:19px}
 #vSet{position:fixed;inset:0;z-index:30;background:#0F1726;overflow:auto}#vSet .hd .askx{float:right;margin-top:-4px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:22px;line-height:1}
+.seg{display:flex;background:#0F1726;border:1px solid #22314C;border-radius:10px;padding:3px;margin:0 0 10px;max-width:260px}.seg button{flex:1;height:32px;border:0;border-radius:8px;background:transparent;color:#C9D3E3;font-size:14px}.seg button.on{background:#22314C;color:#fff;font-weight:600}
+.mstep{display:flex;align-items:center;gap:8px}.mstep button{width:34px;height:34px;border-radius:999px;border:1px solid #22314C;background:transparent;color:#fff;font-size:18px}.mstep span{min-width:150px;text-align:center;font-size:15px}
+.pend{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid #22314C;color:inherit;padding:9px 0;font-size:14px}.pend .s{grid-column:1;opacity:.6;font-size:12px}.pend .a{grid-row:1 / span 2;grid-column:2;align-self:center;font-variant-numeric:tabular-nums}
 .chip.on{background:#7FA9D6;color:#0F1726;border-color:#7FA9D6}#pushBox:empty{display:none}
 .plbl{margin-top:8px;font-size:13px;color:#9AA5BA;font-weight:600}
 #outCard{order:1}#sumCard{order:2}#opCard{order:3}#imgCard{order:4}#vidCard{order:5}#cxCard{order:6}#notesCard{order:7}#roleScrub,#roleCirc{order:8}#moneyCard{order:9}#detCard{order:10}#cxBtn{order:11}
@@ -410,6 +413,7 @@ textarea{background:#0F1828;border-color:#22314C}
 </div>
 <div id="vFin" style="display:none">
  <div class="hd"><button class="gear" onclick="openSettings()" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><div class="who" id="who3"></div><div class="day">Finances</div>
+  <div class="seg" id="fmode"><button class="on" data-m="exp" onclick="setFMode('exp')">Expected</button><button data-m="bill" onclick="setFMode('bill')">Billing</button></div>
   <div class="chips" id="fchips"><button class="chip on" data-p="month" onclick="setFPer('month')">Month</button><button class="chip" data-p="ytd" onclick="setFPer('ytd')">YTD</button><button class="chip" data-p="12m" onclick="setFPer('12m')">12 mo</button><button class="chip" data-p="all" onclick="setFPer('all')">All time</button></div>
   <div class="plbl" id="fLbl"></div></div>
  <div class="sp" id="fBody"></div>
@@ -1569,6 +1573,7 @@ function renderMoney(m) {
   var tot = (m.fee || 0) + (m.neuro || 0) + (m.pa || 0);
   addRow(b, 'Expected case value', tot ? money(tot) : 'No estimate');
   addRow(b, 'Expected pro fee', m.fee ? money(m.fee) : 'No estimate' + (m.group ? ' (' + m.group + ')' : ''));
+  addRow(b, 'Pro fee paid', m.pfPaid && m.pfPaid.paid > 0 ? money(m.pfPaid.paid) + (m.pfPaid.payers.length ? ' (' + m.pfPaid.payers.join(', ') + ')' : '') : m.pfPaid ? 'Billed, not paid yet' : 'Not in a report yet');
   if (m.group) addRow(b, 'Payer group', m.group);
   if (m.expected) addRow(b, 'Billed CPTs', m.expected);
   addRow(b, 'Expected PA/IDR', m.commercial ? money(m.pa) + (m.paGroup ? ' (' + m.paGroup + ' average)' : '') : 'Not counted (not commercial)');
@@ -1843,6 +1848,60 @@ function finLabel() {   // says exactly which dates the Finance numbers cover
   if (finPer === '12m') { var k = monthKey(t, -11); return MN[+k.slice(5) - 1] + ' ' + k.slice(0, 4) + ' to ' + MN[m - 1] + ' ' + y; }
   return 'All time';
 }
+var finMode = 'exp', bilM = '';
+function setFMode(m) {
+  finMode = m; var ch = $('fmode').children;
+  for (var i = 0; i < ch.length; i++) ch[i].className = ch[i].getAttribute('data-m') === m ? 'on' : '';
+  $('fchips').style.display = m === 'bill' ? 'none' : '';
+  renderFin();
+}
+function mLabel(k) { var MN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; return MN[+k.slice(5) - 1] + ' ' + k.slice(0, 4); }
+function shortD(d) { return MON[+d.slice(5, 7) - 1] + ' ' + (+d.slice(8)) + ', ' + d.slice(0, 4); }
+function daysSince(d, t) { return Math.round((new Date(t + 'T12:00:00') - new Date(d + 'T12:00:00')) / 864e5); }
+function renderBilling(b) {   // real money only: what has paid, what hasn't, and how old it is
+  var t = stats.today; if (!bilM) bilM = t.slice(0, 7);
+  var lbl = $('fLbl'); lbl.innerHTML = '';
+  var ms = el('div', 'mstep'), pb = el('button', null, '‹'), nb = el('button', null, '›'); ms.appendChild(pb); ms.appendChild(el('span', null, mLabel(bilM))); ms.appendChild(nb); lbl.appendChild(ms);
+  pb.onclick = function () { bilM = monthKey(bilM + '-01', -1); renderFin(); };
+  nb.onclick = function () { if (bilM < t.slice(0, 7)) { bilM = monthKey(bilM + '-01', 1); renderFin(); } };
+  nb.disabled = bilM >= t.slice(0, 7);
+  var pf = stats.pf || {}, pv = (stats.neuro && stats.neuro.pa) || 0;
+  var isDone = function (c) { return /Performed|Needs confirmation/.test(c.s) && c.d <= t; };
+  var done = stats.cases.filter(function (c) { return isDone(c) && c.d.slice(0, 7) === bilM; });
+  var paid = done.filter(function (c) { return c.pp > 0; }), pend = done.filter(function (c) { return !(c.pp > 0); });
+  var com = done.filter(function (c) { return c.cm; }), spPaid = com.filter(function (c) { return c.sp > 0; });
+  var sum = function (a, f) { return a.reduce(function (s, c) { return s + (f(c) || 0); }, 0); };
+  var col = sum(done, function (c) { return c.pp; }) + sum(done, function (c) { return c.sp; });
+  var still = sum(pend, function (c) { return c.f; }) + sum(com.filter(function (c) { return !(c.sp > 0); }), function (c) { return c.pv != null ? c.pv : pv; });
+  var tiles = el('div', 'tiles'); b.appendChild(tiles);
+  tile(tiles, String(done.length), 'Cases done');
+  tile(tiles, money(col), 'Collected');
+  tile(tiles, paid.length + ' of ' + done.length, 'Pro fee paid');
+  tile(tiles, String(pend.length), 'Pro fee pending');
+  tile(tiles, com.length ? spPaid.length + ' of ' + com.length : '–', 'SUSA paid (commercial)');
+  tile(tiles, money(still), 'Still expected');
+  if (!pf.thru) b.appendChild(el('div', 'note', 'No pro fee report yet. Save your billing pivot in Drive under Surgery Schedule / Pro Fee Reports. The app reads it within 10 minutes.'));
+  var later = pend.filter(function (c) { return !c.pb && pf.thru && c.d > pf.thru; }).length;
+  hbars(card('Pro fee status', pf.thru ? 'Your latest report runs through ' + shortD(pf.thru) + '.' : ''),
+    [{ k: 'Paid', v: paid.length }, { k: 'Billed, not paid', v: pend.filter(function (c) { return c.pb; }).length },
+     { k: 'Not in a report yet', v: pend.filter(function (c) { return !c.pb; }).length }].filter(function (r) { return r.v; }), 'No cases this month.');
+  var bp = {}; paid.forEach(function (c) { var k = c.py || c.ins; bp[k] = (bp[k] || 0) + c.pp; });
+  hbars(card('Pro fees collected by payer'), Object.keys(bp).map(function (k) { return { k: k, v: bp[k] }; }).sort(function (x, y) { return y.v - x.v; }), 'Nothing paid for this month yet.', money);
+  var pc = card('Pending cases', pend.length ? 'Tap a case to open that day.' : '');
+  if (!pend.length) pc.appendChild(el('div', 'note', done.length ? 'Every case this month has a paid pro fee.' : 'No cases this month.'));
+  pend.slice().sort(function (x, y) { return x.d < y.d ? -1 : 1; }).forEach(function (c) {
+    var r = el('button', 'pend'); r.appendChild(el('span', null, shortD(c.d) + ', ' + c.t));
+    r.appendChild(el('span', 'a', c.f ? money(c.f) : '–'));
+    r.appendChild(el('span', 's', c.ins + ', ' + daysSince(c.d, t) + ' days' + (c.pb ? ', billed' : (pf.thru && c.d > pf.thru ? ', after the latest report' : ', not in a report'))));
+    r.onclick = function () { setTab('cases'); goDay(c.d); }; pc.appendChild(r);
+  });
+  var y1 = monthKey(t, -11) + '-01', ar = stats.cases.filter(function (c) { return isDone(c) && c.d >= y1 && !(c.pp > 0) && c.f > 0; });
+  var B = [['0 to 30 days', 0, 30], ['31 to 60 days', 31, 60], ['61 to 90 days', 61, 90], ['91 to 180 days', 91, 180], ['Over 180 days', 181, 1e9]];
+  hbars(card('Unpaid pro fees by age', 'Last 12 months, cases with an expected pro fee and no payment yet. Shown as expected dollars.'),
+    B.map(function (g) { var a = ar.filter(function (c) { var n = daysSince(c.d, t); return n >= g[1] && n <= g[2]; }); return { k: g[0], sub: a.length + (a.length === 1 ? ' case' : ' cases'), v: sum(a, function (c) { return c.f; }) }; }).filter(function (r) { return r.v; }),
+    'Nothing unpaid in the last 12 months.', money);
+  if (pf.imported) b.appendChild(el('div', 'note', 'Last report imported ' + shortD(pf.imported) + '.' + (pf.unmatched ? ' ' + pf.unmatched + ' report line' + (pf.unmatched === 1 ? '' : 's') + ' did not match a case.' : '')));
+}
 function renderFin() {
   if ($('fLbl')) $('fLbl').textContent = finLabel();
   var b = $('fBody'); b.innerHTML = '';
@@ -1860,6 +1919,7 @@ function renderFin() {
     return;
   }
   cardTarget = 'fBody';
+  if (finMode === 'bill') { renderBilling(b); return; }
   var savedPer = per; per = finPer;
   var sel = stats.cases.filter(function (c) { return counted(c) && inPer(c); });
   var pay = (stats.pay || []).filter(function (p) { return inPer({ d: p.d }); });
