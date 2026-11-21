@@ -361,7 +361,7 @@ textarea{background:#0F1828;border-color:#22314C}
 .cxc{background:#18243B;border-color:#2D3D5A}
 #sheet .body{display:flex;flex-direction:column}
 #sheet .out,#sheet .notes{background:#131E33;border:1px solid #22314C;border-radius:14px}
-.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}
+.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}.plbl{margin-top:8px;font-size:13px;color:#9AA5BA;font-weight:600}
 #outCard{order:1}#sumCard{order:2}#opCard{order:3}#imgCard{order:4}#vidCard{order:5}#cxCard{order:6}#notesCard{order:7}#roleScrub,#roleCirc{order:8}#moneyCard{order:9}#detCard{order:10}#cxBtn{order:11}
 #sheet .body>*{flex:none}
 #notes{min-height:96px;height:96px;overflow:hidden;resize:none}
@@ -403,7 +403,8 @@ textarea{background:#0F1828;border-color:#22314C}
 </div>
 <div id="vFin" style="display:none">
  <div class="hd"><div class="who" id="who3"></div><div class="day">Finances</div>
-  <div class="chips" id="fchips"><button class="chip" data-p="month" onclick="setFPer('month')">Month</button><button class="chip" data-p="ytd" onclick="setFPer('ytd')">YTD</button><button class="chip on" data-p="12m" onclick="setFPer('12m')">12 mo</button><button class="chip" data-p="all" onclick="setFPer('all')">All time</button></div></div>
+  <div class="chips" id="fchips"><button class="chip on" data-p="month" onclick="setFPer('month')">Month</button><button class="chip" data-p="ytd" onclick="setFPer('ytd')">YTD</button><button class="chip" data-p="12m" onclick="setFPer('12m')">12 mo</button><button class="chip" data-p="all" onclick="setFPer('all')">All time</button></div>
+  <div class="plbl" id="fLbl"></div></div>
  <div class="sp" id="fBody"></div>
  <div class="sp" id="pushBox" style="padding-top:0"></div>
  <div class="sp" id="teamBox" style="padding-top:0"></div>
@@ -1777,14 +1778,23 @@ function setTab(t) {
   if (t === 'stats') { per = 'sel'; selY = +INIT.today.slice(0, 4); selM = +INIT.today.slice(5, 7); loadStats(); } else if (t === 'fin') { renderFin(); drawTeam(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else if (t === 'ask') drawAsk(); else go(day);
 }
 // ---- Finance tab: amounts are not drawn until you tap Show amounts; leaving the tab hides them again ----
-var finShown = false, finPer = '12m', inPerFin = function () { return true; };
+var finShown = false, finPer = 'month', inPerFin = function () { return true; };
 function hideMoney() { finShown = false; $('fBody').innerHTML = ''; }
 function setFPer(p) {
   finPer = p; var ch = $('fchips').children;
   for (var i = 0; i < ch.length; i++) ch[i].className = ch[i].getAttribute('data-p') === p ? 'chip on' : 'chip';
   renderFin();
 }
+function finLabel() {   // says exactly which dates the Finance numbers cover
+  var t = (stats && stats.today) || INIT.today, y = +t.slice(0, 4), m = +t.slice(5, 7);
+  var MN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  if (finPer === 'month') return MN[m - 1] + ' ' + y;
+  if (finPer === 'ytd') return 'January 1 to ' + MN[m - 1] + ' ' + (+t.slice(8)) + ', ' + y;
+  if (finPer === '12m') { var k = monthKey(t, -11); return MN[+k.slice(5) - 1] + ' ' + k.slice(0, 4) + ' to ' + MN[m - 1] + ' ' + y; }
+  return 'All time';
+}
 function renderFin() {
+  if ($('fLbl')) $('fLbl').textContent = finLabel();
   var b = $('fBody'); b.innerHTML = '';
   if (!finShown) {
     var w = el('div', 'veil');
@@ -1847,7 +1857,12 @@ function drawPicker() {
   stats.cases.forEach(function (c) { var y = +c.d.slice(0, 4); if (y < lo) lo = y; if (y > hi) hi = y; });
   if (!selY && selY !== 0) selY = ty;
   var ys = $('yrs'); ys.innerHTML = '';
-  for (var y = lo; y <= hi; y++) (function (y) { var b = el('button', y === selY ? 'chip on' : 'chip', String(y)); b.onclick = function () { setSel(y, selY === y ? selM : 0); }; ys.appendChild(b); })(y);
+  var cut = ty - 1, old = selY && selY < cut;   // the last two years up front; older ones behind "Earlier"
+  for (var y = lo; y <= hi; y++) (function (y) {
+    if (y < cut && !drawPicker.more && y !== selY) return;
+    var b = el('button', y === selY ? 'chip on' : 'chip', String(y)); b.onclick = function () { setSel(y, selY === y ? selM : 0); }; ys.appendChild(b);
+  })(y);
+  if (lo < cut) { var e = el('button', 'chip', drawPicker.more ? 'Fewer' : 'Earlier…'); e.onclick = function () { drawPicker.more = !drawPicker.more; drawPicker(); }; ys.insertBefore(e, ys.firstChild); }
   var a = el('button', selY ? 'chip' : 'chip on', 'All time'); a.onclick = function () { setSel(0, 0); }; ys.appendChild(a);
   var ms = $('mos'); ms.innerHTML = ''; ms.style.display = selY ? '' : 'none';
   if (selY) {
