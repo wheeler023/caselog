@@ -604,7 +604,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795284346283';
+var BUILD = '1795287278474';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -785,7 +785,7 @@ function drawTeam() {   // Settings: the reminder and who else has the app
       out.appendChild(el('div', 'note', 'Send this link only to ' + who + '. They open it in Chrome on their phone, then tap ⋮ and Install app. Anyone who opens the link gets access, so if it goes to the wrong person or a phone is lost, tap Remove and make a new one.'));
       var r = el('div', 'garow'), l = el('input'); l.value = link; l.readOnly = true; r.appendChild(l);
       var sh = el('button', null, navigator.share ? 'Send' : 'Copy');
-      sh.onclick = function () { if (navigator.share) navigator.share({ title: 'Case Log', text: 'Your Case Log app link', url: link }).catch(function () {}); else { l.select(); document.execCommand('copy'); sh.textContent = 'Copied'; } };
+      sh.onclick = function () { if (navigator.share) navigator.share({ title: 'Wheelhouse', text: 'Your Wheelhouse app link', url: link }).catch(function () {}); else { l.select(); document.execCommand('copy'); sh.textContent = 'Copied'; } };
       r.appendChild(sh); out.appendChild(r);
       google.script.run.withSuccessHandler(show).wdTeamList();
     }).withFailureHandler(function (e) { add.disabled = false; toast(e.message); }).wdTeamAdd(inp.value);
