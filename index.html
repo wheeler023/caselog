@@ -369,7 +369,7 @@ textarea{background:#0F1828;border-color:#22314C}
 #sheet .body{display:flex;flex-direction:column}
 #sheet .out,#sheet .notes{background:#131E33;border:1px solid #22314C;border-radius:14px}
 .addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}#fBody.veiled>*{filter:blur(7px) grayscale(1);opacity:.5;pointer-events:none;user-select:none;transition:filter .25s,opacity .25s}#fBody>*{transition:filter .25s,opacity .25s}
-.finveil{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 82px);z-index:20;border:1px solid #3A5A80;background:#17253F;color:#E6EBF3;font-weight:700;font-size:14px;padding:11px 20px;border-radius:999px;box-shadow:0 10px 26px rgba(0,0,0,.45)}
+#vFin{touch-action:manipulation}
 .hd .gear{float:right;margin-top:-2px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;display:flex;align-items:center;justify-content:center;padding:0}.hd .gear svg{width:19px;height:19px}
 #vSet{position:fixed;inset:0;z-index:30;background:#0F1726;overflow:auto}#vSet .hd .askx{float:right;margin-top:-4px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:22px;line-height:1}
 .seg{display:flex;background:#0F1726;border:1px solid #22314C;border-radius:10px;padding:3px;margin:0 0 10px;max-width:260px}.seg button{flex:1;height:32px;border:0;border-radius:8px;background:transparent;color:#C9D3E3;font-size:14px}.seg button.on{background:#22314C;color:#fff;font-weight:600}
@@ -600,7 +600,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795280220274';
+var BUILD = '1795280774024';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1978,11 +1978,13 @@ function renderFin() {
   if ($('fLbl')) $('fLbl').textContent = finLabel();
   var b = $('fBody'); b.innerHTML = '';
   b.classList.toggle('veiled', !finShown);   // the page always shows; amounts stay greyed and blurred until you tap
-  var vb = $('finVeil'); if (vb) vb.remove();
-  if (!finShown) {
-    vb = el('button', 'finveil', 'Tap to show amounts'); vb.id = 'finVeil';
-    vb.onclick = function () { finShown = true; renderFin(); };
-    $('vFin').appendChild(vb);
+  if (!renderFin.tap) {   // hidden unlock: three quick taps anywhere on the page
+    renderFin.tap = [];
+    $('vFin').addEventListener('click', function () {
+      if (finShown) return;
+      var now = Date.now(), t = renderFin.tap; t.push(now); while (t.length && now - t[0] > 700) t.shift();
+      if (t.length >= 3) { renderFin.tap = []; finShown = true; renderFin(); }
+    });
   }
   if (!stats) {
     b.appendChild(el('div', 'empty', 'Loading…'));
