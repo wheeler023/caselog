@@ -95,6 +95,7 @@ textarea:focus{outline:2px solid #9EC5E0;border-color:transparent}
 .lg{display:flex;gap:14px;font-size:12px;color:#828A9A;margin-top:8px}.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .hb{display:grid;grid-template-columns:minmax(96px,40%) 1fr auto;align-items:center;gap:8px;padding:5px 0;font-size:14px}
 .hb .k{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hb .track{height:14px}.hb .fill{height:100%;background:#9EC5E0;border-radius:0 4px 4px 0}
+.cmp .cr{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;padding:7px 0;border-top:1px solid #22314C;font-size:14px;font-variant-numeric:tabular-nums}.cmp .cr span{white-space:pre-line}.cmp .cr.hd{border-top:0;font-weight:600;color:#7FA9D6}.cmp .cr .k{opacity:.75}
 .hb .k .sub{font-size:12px;opacity:.6;overflow:hidden;text-overflow:ellipsis}
 .hb .c{text-align:right;font-variant-numeric:tabular-nums}
 .out{background:#0C1019;border-radius:14px;padding:14px;margin-bottom:12px}
@@ -1469,6 +1470,26 @@ function render() {
   tryPendingOpen();
 }
 var VEND = ['NuVasive', 'Medtronic', 'Globus', 'Stryker', 'NEXXT', 'ProDisc', 'Orthofix', 'ATEC', 'SI-BONE', 'Spinal Elements', 'Zimvie'];
+var APPR = [['ALIF', 'ALIF'], ['360 lumbar fusion', 'ALIF + posterior'], ['Lateral (LLIF/XLIF)', 'Lateral'], ['360 lumbar fusion (lateral)', 'Lateral + posterior']];
+function typeRow(box) {   // ALIF and lateral cases: tap to switch; every change asks first
+  var c = cur, isA = APPR.some(function (a) { return a[0] === (c && c.caseType); });
+  if (!c || !isA || c.eapOnly || (INIT.role && INIT.role !== 'owner')) { addRow(box, 'Case type', c ? c.caseType : ''); return; }
+  var r = el('div', 'row'); r.appendChild(el('div', 'k', 'Case type'));
+  var v = el('div', 'v'), b = el('button', 'lnk', c.caseType + ' ✎'); v.appendChild(b); r.appendChild(v); box.appendChild(r);
+  b.onclick = function () {
+    var p = el('div', 'rate scrub'); v.appendChild(p); b.style.display = 'none';
+    APPR.concat([['', 'Cancel']]).forEach(function (a) {
+      var x = el('button', a[0] === c.caseType ? 'on' : '', a[1]); p.appendChild(x);
+      x.onclick = function () {
+        if (!a[0] || a[0] === c.caseType) { p.remove(); b.style.display = ''; return; }
+        if (!confirm('Change case type from ' + c.caseType + ' to ' + a[0] + '?')) return;
+        var prev = c.caseType; c.caseType = a[0]; b.textContent = a[0] + ' ✎'; p.remove(); b.style.display = '';
+        google.script.run.withSuccessHandler(function (t) { c.caseType = t; stats = null; toast('Case type: ' + t); render(); })
+          .withFailureHandler(function (e) { c.caseType = prev; b.textContent = prev + ' ✎'; toast('Not saved: ' + e.message); }).wdCaseType(c.id, a[0]);
+      };
+    });
+  };
+}
 function vendorRow(box) {   // tap the vendor to change it; every change asks first
   if (!cur || cur.eapOnly || (INIT.role && INIT.role !== 'owner')) { if (cur && cur.vendor) addRow(box, 'Vendor', cur.vendor); return; }
   var c = cur, r = el('div', 'row'); r.appendChild(el('div', 'k', 'Vendor'));
@@ -1515,7 +1536,7 @@ function openCase(i) {
   $('cName').textContent = pName(cur.patient);
   $('cSub').textContent = [cur.start, cur.age, cur.sex].filter(Boolean).join(', ');
   var sb = $('cSum'); sb.innerHTML = '';   // what you look at most, at the top
-  addRow(sb, 'Procedure', cur.procedure); addRow(sb, 'Case type', cur.caseType); addRow(sb, 'Levels', cur.levels); addRow(sb, 'Side', cur.side);
+  addRow(sb, 'Procedure', cur.procedure); typeRow(sb); addRow(sb, 'Levels', cur.levels); addRow(sb, 'Side', cur.side);
   vendorRow(sb);
   (cur.implants || []).forEach(function (m, i) { addRow(sb, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
   addRow(sb, 'Start', cur.start); addRow(sb, 'Duration', cur.duration);
@@ -1986,6 +2007,31 @@ function renderImp() {
     lc.appendChild(r);
   });
 }
+var APPR_FROM = '2026-12-01';
+function apprCard(sel) {   // ALIF vs lateral, from December 1, 2026 on (earlier cases can't be told apart)
+  var c = card('ALIF vs lateral', 'From December 1, 2026. Your op note sets which one it was. Room time runs from patient into the OR to into PACU.');
+  var G = [['ALIF', /^(ALIF|360 lumbar fusion)$/], ['Lateral', /lateral|LLIF|XLIF/i]];
+  var rows = G.map(function (g) {
+    var cs = sel.filter(function (x) { return x.d >= APPR_FROM && g[1].test(x.t); });
+    var lv = cs.reduce(function (s, x) { return s + x.n; }, 0), mins = [], perLv = [], fee = 0, hrs = 0;
+    cs.forEach(function (x) {
+      var a = tmin(x.as), z = tmin(x.ae); if (isNaN(a) || isNaN(z) || z <= a) return;
+      mins.push(z - a); if (x.n) perLv.push((z - a) / x.n);
+      if (x.f > 0) { fee += x.f; hrs += (z - a) / 60; }
+    });
+    var w360 = cs.filter(function (x) { return /360/.test(x.t); }).length;
+    return { k: g[0], n: cs.length, sub: cs.length ? w360 + ' with posterior' : '', lv: lv, rt: median(mins), pl: median(perLv), ph: hrs ? fee / hrs : null, tn: mins.length };
+  });
+  if (!rows[0].n && !rows[1].n) { c.appendChild(el('div', 'note', stats.today < APPR_FROM ? 'Starts with your December 1, 2026 cases.' : 'No ALIF or lateral cases in this period.')); return; }
+  var tb = el('div', 'cmp'), hd = el('div', 'cr hd'); ['', 'ALIF', 'Lateral'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
+  [['Cases', function (r) { return r.n + (r.sub ? '\n' + r.sub : ''); }], ['Levels', function (r) { return String(r.lv); }],
+   ['Median room time', function (r) { return r.rt == null ? '–' : dur(r.rt); }], ['Room time per level', function (r) { return r.pl == null ? '–' : dur(r.pl); }],
+   ['Expected pro fee per OR hour', function (r) { return r.ph == null ? '–' : money(r.ph); }]].forEach(function (m) {
+    var rr = el('div', 'cr'); rr.appendChild(el('span', 'k', m[0])); rows.forEach(function (r) { rr.appendChild(el('span', null, m[1](r))); }); tb.appendChild(rr);
+  });
+  c.appendChild(tb);
+  var miss = rows[0].n + rows[1].n - rows[0].tn - rows[1].tn; if (miss > 0) c.appendChild(el('div', 'note', miss + ' case' + (miss === 1 ? '' : 's') + ' still waiting on room times from Dr. Edwards.'));
+}
 function renderStats() {
   cardTarget = 'sBody';
   var b = $('sBody'); b.innerHTML = ''; if (!stats) return;
@@ -2043,6 +2089,7 @@ function renderStats() {
   mc.appendChild(lg); mc.appendChild(info);
 
   hbars(card('By case type'), tally(sel, function (c) { return c.t; }));
+  apprCard(sel);
   var msl = milestones().filter(function (m) { return inPer({ d: m.d }); }).slice(-10).reverse();
   if (msl.length) { var mcd = card('Milestones'); msl.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(el('span', 'mi', '🏆')); r.appendChild(el('span', null, m.t + ', ' + MON[+m.d.slice(5, 7) - 1] + ' ' + (+m.d.slice(8)) + (m.d.slice(0, 4) !== stats.today.slice(0, 4) ? ', ' + m.d.slice(0, 4) : ''))); mcd.appendChild(r); }); }
   hbars(card('By vendor', 'Cases with hardware. Your op note’s vendor when one is filed, otherwise the scheduling order; a vendor you change in the app wins. Tracked since Nov 9, 2026.'),
