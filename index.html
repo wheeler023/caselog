@@ -431,6 +431,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .cd .tl i.ty-new{border-left-color:#8C97AB;color:#8C97AB}
 .calkey b.r{width:10px;height:10px;border-radius:50%;background:transparent;box-shadow:inset 0 0 0 2px #3DB8D4}
 .calkey b.t{width:2px;height:11px;border-radius:0}
+.ctr .n small.gap{display:block;font-size:11.5px;font-weight:400;color:#8C97AB;margin-top:3px;text-align:right;white-space:nowrap}
 </style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -645,7 +646,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795391043717';
+var BUILD = '1795391524786';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1984,6 +1985,12 @@ function caseTable(box, list, cols, empty) {   // a small table of cases; tap a 
 }
 var susaData = null, susaSort = 'big', susaYr = '';
 function susaKind(k) { return /award/i.test(k) && !/additional/i.test(k) ? 'IDR award' : /additional/i.test(k) ? 'Additional payment' : /refund|recoup/i.test(k) ? 'Refund' : 'First payment'; }
+function susaGap(a, b) {   // ' (4 months later)' between surgery and payment
+  var x = new Date(String(a).slice(0, 10) + 'T12:00:00'), y = new Date(String(b).slice(0, 10) + 'T12:00:00'), d = Math.round((y - x) / 864e5);
+  if (!(d >= 0)) return '';
+  if (d < 45) { var w = Math.max(1, Math.round(d / 7)); return w + (w === 1 ? ' week' : ' weeks') + ' later'; }
+  var m = Math.round(d / 30.44); return m + (m === 1 ? ' month' : ' months') + ' later';
+}
 function renderSusa(b) {   // every SUSA payment: who, what surgery, how much, biggest first
   var lbl = $('fLbl'); lbl.textContent = 'SUSA and IDR payments';
   if (!susaData) {
@@ -2026,6 +2033,7 @@ function renderSusa(b) {   // every SUSA payment: who, what surgery, how much, b
     var meta = (g.list[0].payer || g.c.ins) + ', surgery ' + sd(g.c.d || g.list[0].svc) + ', paid ' + sd(g.last) + (g.list.length > 1 ? ', ' + g.list.length + ' payments' : '') + (aw ? ', IDR award' : '');
     w.appendChild(el('div', 's', meta)); r.appendChild(w);
     var a = el('span', 'n' + (aw ? ' aw' : ''), money(g.total)); r.appendChild(a);
+    var gp = susaGap(g.c.d || g.list[0].svc, g.last); if (gp) a.appendChild(el('small', 'gap', gp));
     if (g.id) r.onclick = function () { openFromFin({ id: g.id, d: g.c.d }); };
     t2.appendChild(r);
   });
