@@ -646,7 +646,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795391524786';
+var BUILD = '1795437774747';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1626,7 +1626,13 @@ function openCase(i) {
   renderOutcome(); loadImages(); renderMoney(null); renderScrub(); renderVid();
   if (cur.order) addRow(b, 'Order', 'Open surgery order', cur.order);
   var on = $('opnote'); on.innerHTML = '';
-  if (cur.opnoteUrl) { var a = el('a', 'addimg oplink', 'Open op note'); a.href = cur.opnoteUrl; a.target = '_blank'; a.rel = 'noopener'; on.appendChild(a); }
+  if (cur.opnoteUrl) {
+    var ox = cur.opnotes, list = [{ u: cur.opnoteUrl, l: ox ? ox.first || '' : '' }].concat(ox && ox.more ? ox.more : []);
+    list.forEach(function (o, k) {
+      var lab = list.length === 1 ? 'Open op note' : 'Open ' + (o.l ? o.l.toLowerCase() + ' op note' : 'op note ' + (k + 1));
+      var a = el('a', 'addimg oplink', lab); a.href = o.u; a.target = '_blank'; a.rel = 'noopener'; if (k) a.style.marginTop = '8px'; on.appendChild(a);
+    });
+  }
   else on.appendChild(el('div', 'hint', 'Files itself here after Claude writes it.'));
   $('notes').value = base; $('st').textContent = ''; $('conf').style.display = 'none'; $('saveBtn').disabled = false;
   $('sheet').classList.add('on'); document.body.classList.add('incase'); $('sheet').querySelector('.body').scrollTop = 0; setTimeout(growNotes, 0);
