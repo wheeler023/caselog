@@ -442,6 +442,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .vt.vadd{border:1.5px dashed #3A4A66;background:transparent}
 .vt .spin{position:absolute;left:50%;top:50%;margin:-9px 0 0 -9px}
 .vbar{display:flex;align-items:center;gap:14px;margin-top:12px}.vbar .vgo{flex:1;margin:0}
+.addrow{display:flex;gap:10px}.addrow .addimg{flex:1}
 </style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -544,7 +545,8 @@ body.shrunk .hd .gear{width:32px;height:32px}
    <div class="upstat" id="upStat"></div>
    <div class="thumbs" id="thumbs"></div>
    <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="addImages(this.files)">
-   <button class="addimg" onclick="document.getElementById('imgIn').click()">📷 Add images</button>
+   <input type="file" id="imgCam" accept="image/*" capture="environment" style="display:none" onchange="addImages(this.files)">
+   <div class="addrow"><button class="addimg" onclick="document.getElementById('imgCam').click()">📷 Camera</button><button class="addimg" onclick="document.getElementById('imgIn').click()">🖼️ Gallery</button></div>
   </div>
   <div class="out" id="vidCard">
    <label>Patient update</label>
@@ -656,7 +658,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795438718499';
+var BUILD = '1795439010223';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1489,6 +1491,7 @@ function vidPicker(c, st, to, onSend, onCancel) {
   var bar = el('div', 'vbar'), go = el('button', 'addimg vgo'), no = el('button', 'lnk', 'Cancel'); bar.appendChild(go); bar.appendChild(no); box.appendChild(bar);
   box.appendChild(el('div', 'hint', 'Sends to ' + to + '.'));
   var fin = document.createElement('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.style.display = 'none'; box.appendChild(fin);
+  var fcam = document.createElement('input'); fcam.type = 'file'; fcam.accept = 'image/*'; fcam.setAttribute('capture', 'environment'); fcam.style.display = 'none'; box.appendChild(fcam);
   function label() { go.textContent = sel.length ? 'Send with ' + sel.length + (sel.length === 1 ? ' photo' : ' photos') : 'Send video only'; }
   function draw() {
     grid.innerHTML = '';
@@ -1500,11 +1503,12 @@ function vidPicker(c, st, to, onSend, onCancel) {
       t.onclick = function () { if (!im.id) return; var j = sel.indexOf(im.id); if (j >= 0) sel.splice(j, 1); else sel.push(im.id); draw(); };
       grid.appendChild(t);
     });
-    var add = el('button', 'vt vadd', '＋ New photo'); add.onclick = function () { fin.click(); }; grid.appendChild(add);
+    var cam = el('button', 'vt vadd', '📷 Camera'); cam.onclick = function () { fcam.click(); }; grid.appendChild(cam);
+    var gal = el('button', 'vt vadd', '🖼️ Gallery'); gal.onclick = function () { fin.click(); }; grid.appendChild(gal);
     label();
   }
-  fin.onchange = function () {
-    var files = Array.prototype.slice.call(fin.files || []); fin.value = '';
+  fin.onchange = fcam.onchange = function () {
+    var files = Array.prototype.slice.call(this.files || []); this.value = '';
     (function one() {
       if (!files.length) return;
       shrink(files.shift(), function (data) {
@@ -1772,7 +1776,7 @@ function shrink(file, cb) {
 function upStatus(txt, done) { var u = $('upStat'); if (!u) return; u.textContent = txt || ''; u.className = done ? 'upstat done' : 'upstat'; }
 function addImages(files) {
   var c = cur, list = Array.prototype.slice.call(files || []), total = list.length, k = 0, saved = 0, failed = 0;
-  $('imgIn').value = '';
+  $('imgIn').value = ''; $('imgCam').value = '';
   var next = function () {
     if (!list.length) {
       if (saved || failed) upStatus(failed ? saved + ' saved, ' + failed + ' not saved' : '✓ ' + (saved === 1 ? 'Photo saved' : saved + ' photos saved'), !failed);
