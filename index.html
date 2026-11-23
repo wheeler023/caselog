@@ -432,6 +432,16 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .calkey b.r{width:10px;height:10px;border-radius:50%;background:transparent;box-shadow:inset 0 0 0 2px #3DB8D4}
 .calkey b.t{width:2px;height:11px;border-radius:0}
 .ctr .n small.gap{display:block;font-size:11.5px;font-weight:400;color:#8C97AB;margin-top:3px;text-align:right;white-space:nowrap}
+.vpick .vq{font-weight:600;margin:2px 0 10px;color:#E6ECF5}
+.vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.vt{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:0;padding:0;background:#1C2A44;color:#B9C4D6;font-size:12px;white-space:pre-line;line-height:1.3}
+.vt img{width:100%;height:100%;object-fit:cover;display:block;opacity:.75}
+.vt.on{box-shadow:inset 0 0 0 3px #3DB8D4}.vt.on img{opacity:1}
+.vt .vck{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.8);background:rgba(0,0,0,.25);font-size:12px;font-weight:700;line-height:18px;text-align:center;color:#06222B}
+.vt.on .vck{background:#3DB8D4;border-color:#3DB8D4}
+.vt.vadd{border:1.5px dashed #3A4A66;background:transparent}
+.vt .spin{position:absolute;left:50%;top:50%;margin:-9px 0 0 -9px}
+.vbar{display:flex;align-items:center;gap:14px;margin-top:12px}.vbar .vgo{flex:1;margin:0}
 </style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -646,7 +656,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795437774747';
+var BUILD = '1795438718499';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1423,7 +1433,7 @@ function renderVid() {
   function show(i) {
     if (cur !== c) return;
     $('vidHint').textContent = i.sent ? '✓ Update sent ' + i.sent.at + ' to ' + i.sent.to + '. Record again to send another.'
-      : i.to ? 'Sends to ' + i.to + ' with this procedure’s recovery documents. Keep it under 2 minutes.'
+      : i.to ? 'Sends to ' + i.to + ' with this procedure’s recovery documents. After you record, you can add photos. Keep it under 2 minutes.'
       : 'No email found on the surgery order. A video still saves to this case.';
   }
   if (info) show(info); else { $('vidHint').textContent = 'Checking the order for the patient’s email…'; google.script.run.withSuccessHandler(function (i) { VID.info[c.id] = i || {}; show(VID.info[c.id]); }).withFailureHandler(function () { $('vidHint').textContent = ''; }).wdVidInfo(c.id); }
@@ -1459,9 +1469,60 @@ function vidFail(c, st, e) {
     st.textContent = 'Sending…';
     google.script.run.withSuccessHandler(function (r) {
       if (r && r.at) { VID.info[c.id] = { to: r.to, sent: r }; toast('Update sent'); }
-      if (cur === c) { renderVid(); st.className = 'upstat done'; st.textContent = r && r.at ? '✓ Sent to ' + r.to + (r.docs ? ' with ' + r.docs + ' document' + (r.docs === 1 ? '' : 's') : '') : '✓ Saved to this case'; }
+      if (cur === c) { renderVid(); st.className = 'upstat done'; st.textContent = r && r.at ? '✓ Sent to ' + r.to + vidWith(r) : '✓ Saved to this case'; }
     }).withFailureHandler(function (x) { vidFail(c, st, x); }).wdVidResend(c.id);
   };
+}
+function vidWith(r) {
+  var a = [];
+  if (r.pics) a.push(r.pics + (r.pics === 1 ? ' photo' : ' photos'));
+  if (r.docs) a.push(r.docs + (r.docs === 1 ? ' document' : ' documents'));
+  return a.length ? ' with ' + a.join(' and ') : '';
+}
+/** After recording: the case's photos as tiles. Tap to include; "New photo" takes or picks one and includes it. */
+function vidPicker(c, st, to, onSend, onCancel) {
+  var sel = [], list = [];
+  st.className = 'upstat'; st.innerHTML = '';
+  var box = el('div', 'vpick'); st.appendChild(box);
+  box.appendChild(el('div', 'vq', 'Video ready. Add photos to this update?'));
+  var grid = el('div', 'vgrid'); box.appendChild(grid);
+  var bar = el('div', 'vbar'), go = el('button', 'addimg vgo'), no = el('button', 'lnk', 'Cancel'); bar.appendChild(go); bar.appendChild(no); box.appendChild(bar);
+  box.appendChild(el('div', 'hint', 'Sends to ' + to + '.'));
+  var fin = document.createElement('input'); fin.type = 'file'; fin.accept = 'image/*'; fin.multiple = true; fin.style.display = 'none'; box.appendChild(fin);
+  function label() { go.textContent = sel.length ? 'Send with ' + sel.length + (sel.length === 1 ? ' photo' : ' photos') : 'Send video only'; }
+  function draw() {
+    grid.innerHTML = '';
+    list.forEach(function (im) {
+      var t = el('button', 'vt' + (sel.indexOf(im.id) >= 0 ? ' on' : '') + (im.busy ? ' busy' : '')), img = document.createElement('img');
+      img.src = im.local || ('https://drive.google.com/thumbnail?id=' + im.id + '&sz=w300'); img.alt = ''; t.appendChild(img);
+      var k = sel.indexOf(im.id); t.appendChild(el('span', 'vck', k >= 0 ? String(k + 1) : ''));
+      if (im.busy) t.appendChild(el('span', 'spin'));
+      t.onclick = function () { if (!im.id) return; var j = sel.indexOf(im.id); if (j >= 0) sel.splice(j, 1); else sel.push(im.id); draw(); };
+      grid.appendChild(t);
+    });
+    var add = el('button', 'vt vadd', '＋ New photo'); add.onclick = function () { fin.click(); }; grid.appendChild(add);
+    label();
+  }
+  fin.onchange = function () {
+    var files = Array.prototype.slice.call(fin.files || []); fin.value = '';
+    (function one() {
+      if (!files.length) return;
+      shrink(files.shift(), function (data) {
+        if (!data) { toast('Could not read that photo'); return one(); }
+        var item = { local: data, busy: true }; list.push(item); draw();
+        google.script.run.withSuccessHandler(function (r) {
+          item.id = r.id; item.busy = false; sel.push(r.id); c.images = r.n;
+          if (cur === c) { imgs.push({ id: r.id, local: data }); renderThumbs(); }
+          draw(); one();
+        }).withFailureHandler(function (e) { list.splice(list.indexOf(item), 1); toast('Not saved: ' + e.message); draw(); one(); }).wdAddImage(c.id, data);
+      });
+    })();
+  };
+  go.onclick = function () { if (list.some(function (x) { return x.busy; })) { toast('A photo is still saving'); return; } onSend(sel.slice()); };
+  no.onclick = onCancel;
+  list = (cur === c ? imgs : []).filter(function (x) { return x.id; }).map(function (x) { return { id: x.id, local: x.local }; });
+  draw();
+  if (!list.length) google.script.run.withSuccessHandler(function (l) { if (list.length) return; list = (l || []).map(function (id) { return { id: id }; }); draw(); }).withFailureHandler(function () {}).wdImages(c.id);
 }
 function vidUpload(c, blob) {
   var st = $('vidStat'), tok = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
@@ -1477,19 +1538,18 @@ function vidUpload(c, blob) {
       google.script.run.withSuccessHandler(function () { k++; if (cur === c) st.textContent = 'Uploading video… ' + Math.round(k * 100 / parts.length) + '%'; next(); })
         .withFailureHandler(function (e) { st.textContent = 'Upload failed: ' + e.message; }).wdVidPart(c.id, tok, k, parts[k]);
     })();
-    function countdown() {
-      var info = VID.info[c.id] || {}, n = 5, stop = false;
+    var picked = [];
+    function countdown() {   // video is up: pick photos to go with it, then send
+      var info = VID.info[c.id] || {};
       if (!info.to) return send();
-      st.innerHTML = ''; var msg = el('span'), x = el('button', 'lnk', 'Cancel'); st.appendChild(msg); st.appendChild(document.createTextNode(' ')); st.appendChild(x);
-      x.onclick = function () { stop = true; st.textContent = 'Not sent. Record again when you’re ready.'; };
-      (function tick() { if (stop) return; if (n <= 0) return send(); msg.textContent = 'Sending to ' + info.to + ' in ' + n + '…'; n--; setTimeout(tick, 1000); })();
+      vidPicker(c, st, info.to, function (ids) { picked = ids; send(); }, function () { st.textContent = 'Not sent. Record again when you’re ready.'; });
     }
     function send() {
-      st.textContent = 'Sending…';
+      st.textContent = picked.length ? 'Sending with ' + picked.length + (picked.length === 1 ? ' photo…' : ' photos…') : 'Sending…';
       google.script.run.withSuccessHandler(function (r) {
         if (r && r.at) { VID.info[c.id] = { to: r.to, sent: r }; toast('Update sent'); } else toast('Video saved to the case');
-        if (cur === c) { renderVid(); st.className = 'upstat done'; st.textContent = r && r.at ? '✓ Sent to ' + r.to + (r.docs ? ' with ' + r.docs + ' document' + (r.docs === 1 ? '' : 's') : '') : '✓ Saved to this case'; }
-      }).withFailureHandler(function (e) { vidFail(c, st, e); }).wdVidSend(c.id, tok, parts.length, blob.type);
+        if (cur === c) { renderVid(); st.className = 'upstat done'; st.textContent = r && r.at ? '✓ Sent to ' + r.to + vidWith(r) : '✓ Saved to this case'; }
+      }).withFailureHandler(function (e) { vidFail(c, st, e); }).wdVidSend(c.id, tok, parts.length, blob.type, picked);
     }
   };
   fr.readAsDataURL(blob);
