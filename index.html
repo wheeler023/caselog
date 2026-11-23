@@ -443,6 +443,9 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .vt .spin{position:absolute;left:50%;top:50%;margin:-9px 0 0 -9px}
 .vbar{display:flex;align-items:center;gap:14px;margin-top:12px}.vbar .vgo{flex:1;margin:0}
 .addrow{display:flex;gap:10px}.addrow .addimg{flex:1}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px;margin-right:8px}
+.vt.vadd{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12.5px}
+.vt.vadd .ic{width:24px;height:24px;margin:0}
 </style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -546,13 +549,13 @@ body.shrunk .hd .gear{width:32px;height:32px}
    <div class="thumbs" id="thumbs"></div>
    <input type="file" id="imgIn" accept="image/*" multiple style="display:none" onchange="addImages(this.files)">
    <input type="file" id="imgCam" accept="image/*" capture="environment" style="display:none" onchange="addImages(this.files)">
-   <div class="addrow"><button class="addimg" onclick="document.getElementById('imgCam').click()">📷 Camera</button><button class="addimg" onclick="document.getElementById('imgIn').click()">🖼️ Gallery</button></div>
+   <div class="addrow"><button class="addimg" onclick="document.getElementById('imgCam').click()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>Camera</button><button class="addimg" onclick="document.getElementById('imgIn').click()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg>Gallery</button></div>
   </div>
   <div class="out" id="vidCard">
    <label>Patient update</label>
    <div class="hint" id="vidHint">Checking the order for the patient’s email…</div>
    <div class="upstat" id="vidStat"></div>
-   <button class="addimg" onclick="openRec()">🎥 Record video</button>
+   <button class="addimg" onclick="openRec()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3z"/></svg>Record video</button>
   </div>
   <div class="out" id="roleScrub">
    <label>Primary scrub</label>
@@ -658,7 +661,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795439010223';
+var BUILD = '1795439290506';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1503,8 +1506,8 @@ function vidPicker(c, st, to, onSend, onCancel) {
       t.onclick = function () { if (!im.id) return; var j = sel.indexOf(im.id); if (j >= 0) sel.splice(j, 1); else sel.push(im.id); draw(); };
       grid.appendChild(t);
     });
-    var cam = el('button', 'vt vadd', '📷 Camera'); cam.onclick = function () { fcam.click(); }; grid.appendChild(cam);
-    var gal = el('button', 'vt vadd', '🖼️ Gallery'); gal.onclick = function () { fin.click(); }; grid.appendChild(gal);
+    var cam = el('button', 'vt vadd'); cam.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg><span>Camera</span>'; cam.onclick = function () { fcam.click(); }; grid.appendChild(cam);
+    var gal = el('button', 'vt vadd'); gal.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg><span>Gallery</span>'; gal.onclick = function () { fin.click(); }; grid.appendChild(gal);
     label();
   }
   fin.onchange = fcam.onchange = function () {
