@@ -453,8 +453,25 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .rmTrack i.over{background:#C9A86A}
 .rmTrack b{position:absolute;top:-4px;width:2px;height:16px;margin-left:-1px;background:#E6ECF5;border-radius:1px}
 .rmCmp{font-size:14.5px;color:#C9D3E3}.rmCmp.under{color:#3DB8D4}.rmCmp.over{color:#C9A86A}
+.hd .bell{position:relative;color:#DCE4F2}
+.hd .bell.hot{color:#3DB8D4;border-color:#3DB8D4;animation:bellGlow 2.2s ease-in-out infinite}
+@keyframes bellGlow{0%,100%{box-shadow:0 0 0 0 rgba(61,184,212,.0)}50%{box-shadow:0 0 0 5px rgba(61,184,212,.22)}}
+@media (prefers-reduced-motion:reduce){.hd .bell.hot{animation:none}}
+.hd .bell .bdg{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#3DB8D4;color:#06222B;font-size:11px;font-weight:800;line-height:18px;text-align:center;display:none}
+.hd .bell.hot .bdg{display:block}
+.chh{font-size:12px;font-weight:700;letter-spacing:.4px;color:#8C97AB;margin:16px 4px 8px}
+.chr{display:block;width:100%;text-align:left;background:#121D33;border:1px solid #22314D;border-radius:12px;padding:12px 14px;margin-bottom:8px;color:#E6ECF5;font:inherit}
+.chr.fresh{border-color:#2F6E80;background:#12243A}
+.chr:active{transform:scale(.99)}
+.cht{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.chk{font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px}
+.k-add{background:rgba(61,184,212,.16);color:#3DB8D4}.k-mov{background:rgba(127,169,214,.18);color:#9EC2E8}
+.k-cx{background:rgba(238,97,79,.16);color:#F08A7C}.k-pp{background:rgba(201,168,106,.18);color:#D9BC84}.k-rm{background:rgba(140,151,171,.16);color:#AEB8C9}
+.cha{font-size:12px;color:#8C97AB}
+.chw{font-size:15.5px;font-weight:600}.chd{font-size:13.5px;color:#9AA6BA;margin-top:3px}
+.chlist{padding:4px 16px 40px}
 </style></head><body>
-<div id="vCases"><div class="hd"><div class="who" id="who"></div>
+<div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
 <div class="nav"><button class="t" onclick="go(INIT.today)" aria-label="Back to today">Today</button><button onclick="stepCal(-1)" aria-label="Previous month">‹</button><button onclick="stepCal(1)" aria-label="Next month">›</button><button class="ask" id="askBtn" onclick="openAsk()" aria-label="Ask about your numbers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M9 10h.01M12 10h.01M15 10h.01"/></svg></button><button class="srch" onclick="openSearch()" aria-label="Search cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></div></div>
 <input type="date" id="pick" style="display:none"></div>
@@ -514,6 +531,10 @@ body.shrunk .hd .gear{width:32px;height:32px}
  <div class="sh"><button onclick="closeRating()">‹ Back</button><div class="ttl"><b id="rTitle">Needs rating</b><span id="rCount"></span></div></div>
  <div class="sbox" id="sbox"><input type="search" id="q" placeholder="Name, procedure, level, CPT, note…" autocomplete="off" oninput="searchSoon()" enterkeyhint="search"><div class="chips mos" id="sYrs"></div><div class="chips mos" id="sMos"></div><div class="chips skeys" id="sKeys"></div></div>
  <div class="body"><div class="list" id="rList"></div></div>
+</div>
+<div class="sheet" id="chsheet">
+ <div class="sh"><button onclick="closeChanges()">‹ Back</button><div class="ttl"><b>Schedule changes</b><span id="chSub"></span></div></div>
+ <div class="body"><div class="chlist" id="chList"></div></div>
 </div>
 <div class="sheet" id="sheet">
  <div class="sh"><button onclick="closeCase()">‹ Back</button><div class="ttl"><b id="cName"></b><span id="cSub"></span></div></div>
@@ -657,6 +678,7 @@ function start(init) {
 function freshen(f) {   // drop the fresh opening data into the screens already showing
   if (f.role !== window.__INIT.role) return location.reload();
   try { if (f.notice) showNotice(f.notice); } catch (e) {}
+  try { if (typeof drawBell === 'function') drawBell(f.chg); } catch (e) {}
   try { if (f.month) storeMonth(f.month); if (f.todo) drawTodo(f.todo); if (f.first) show(f.first); drawWeek(day); } catch (e) { console.warn(e); }
 }
 function boot() {
@@ -672,7 +694,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795471149255';
+var BUILD = '1795476329780';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1201,7 +1223,44 @@ function showNewCases(list) {   // "New surgery scheduled" cards; X each one, or
   }
   draw();
 }
-setTimeout(function () { showNewCases(INIT.newCases); }, 600);
+// ---- Schedule changes: the bell at the top. It glows when something was added, moved, cancelled or postponed since you last looked ----
+function drawBell(n) {
+  var b = $('bell'); if (!b || TEAM) return; b.style.display = '';
+  n = +n || 0; $('bellN').textContent = n > 9 ? '9+' : n ? String(n) : '';
+  b.classList.toggle('hot', n > 0); b.setAttribute('aria-label', n ? n + ' schedule change' + (n === 1 ? '' : 's') : 'Schedule changes');
+}
+var CHK = { add: ['Added', 'k-add'], moved: ['Rescheduled', 'k-mov'], cancelled: ['Cancelled', 'k-cx'], postponed: ['Postponed', 'k-pp'], removed: ['Off the calendar', 'k-rm'] };
+function agoTxt(t) {
+  var m = Math.round((Date.now() - t) / 60000); if (m < 60) return m <= 1 ? 'just now' : m + ' min ago';
+  var h = Math.round(m / 60); if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
+  var d = Math.round(h / 24); return d === 1 ? 'yesterday' : d + ' days ago';
+}
+function openChanges() {
+  var L = $('chList'); L.innerHTML = ''; L.appendChild(skel('case')); $('chSub').textContent = '';
+  $('chsheet').classList.add('on');
+  google.script.run.withSuccessHandler(function (r) {
+    L.innerHTML = ''; drawBell(0);
+    var list = (r && r.list) || [], seen = (r && r.seen) || 0, fresh = list.filter(function (x) { return x.at > seen; });
+    $('chSub').textContent = fresh.length ? fresh.length + ' new since you last looked' : 'Nothing new since you last looked';
+    if (!list.length) { L.appendChild(el('div', 'empty', 'No schedule changes in the last 45 days.')); return; }
+    var lastHead = '';
+    list.forEach(function (x) {
+      var head = x.at > seen ? 'New' : 'Earlier';
+      if (head !== lastHead) { L.appendChild(el('div', 'chh', head)); lastHead = head; }
+      var k = CHK[x.k] || ['Changed', 'k-rm'], row = el('button', 'chr' + (x.at > seen ? ' fresh' : ''));
+      var top = el('div', 'cht'); top.appendChild(el('span', 'chk ' + k[1], k[0])); top.appendChild(el('span', 'cha', agoTxt(x.at))); row.appendChild(top);
+      row.appendChild(el('div', 'chw', x.what + (x.who ? ', ' + x.who : '')));
+      row.appendChild(el('div', 'chd', (x.k === 'moved' && x.from ? 'From ' + x.from + ' to ' : x.k === 'add' ? '' : x.k === 'moved' ? 'Now ' : 'Was ') + (x.when || '')));
+      row.onclick = function () { closeChanges(); if (x.d && typeof goDay === 'function') goDay(x.d); };
+      L.appendChild(row);
+    });
+  }).withFailureHandler(function (e) { L.innerHTML = ''; L.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdChanges(true);
+}
+function closeChanges() { $('chsheet').classList.remove('on'); }
+function bellCheck() { if (TEAM) return; google.script.run.withSuccessHandler(drawBell).withFailureHandler(function () {}).wdChangeCount(); }
+drawBell(INIT.chg);
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') bellCheck(); });
+setInterval(function () { if (document.visibilityState === 'visible') bellCheck(); }, 5 * 60000);
 // ---- Dr. Edwards: room times, finish forecast, days off; your time off back to him ----
 function bookedMin(s) {   // "3h 30m", "3 HOURS", "1.5HOURS", "90 min" -> minutes
   s = String(s || ''); var h = s.match(/(\d+(?:\.\d+)?)\s*h/i), m = s.match(/(\d+)\s*m(?:in|\b|$)/i);
