@@ -446,6 +446,13 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px;margin-right:8px}
 .vt.vadd{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12.5px}
 .vt.vadd .ic{width:24px;height:24px;margin:0}
+.rmBig{font-size:30px;font-weight:700;letter-spacing:-.5px;color:#E6ECF5;margin:2px 0 2px}
+.rmSub{color:#8C97AB;font-size:14px}
+.rmTrack{position:relative;height:8px;border-radius:5px;background:#1C2A44;margin:14px 0 10px}
+.rmTrack i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:#3DB8D4}
+.rmTrack i.over{background:#C9A86A}
+.rmTrack b{position:absolute;top:-4px;width:2px;height:16px;margin-left:-1px;background:#E6ECF5;border-radius:1px}
+.rmCmp{font-size:14.5px;color:#C9D3E3}.rmCmp.under{color:#3DB8D4}.rmCmp.over{color:#C9A86A}
 </style></head><body>
 <div id="vCases"><div class="hd"><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -575,6 +582,10 @@ body.shrunk .hd .gear{width:32px;height:32px}
    <label>Patient and order</label>
    <div class="box" id="cInfo"></div>
   </div>
+  <div class="out" id="roomCard">
+   <label>Room time</label>
+   <div id="room"></div>
+  </div>
   <button class="cx" id="cxBtn" onclick="cancelTap()">Surgery was cancelled</button>
  </div>
 </div>
@@ -661,7 +672,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795439290506';
+var BUILD = '1795464912119';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1192,6 +1203,32 @@ function showNewCases(list) {   // "New surgery scheduled" cards; X each one, or
 }
 setTimeout(function () { showNewCases(INIT.newCases); }, 600);
 // ---- Dr. Edwards: room times, finish forecast, days off; your time off back to him ----
+function bookedMin(s) {   // "3h 30m", "3 HOURS", "1.5HOURS", "90 min" -> minutes
+  s = String(s || ''); var h = s.match(/(\d+(?:\.\d+)?)\s*h/i), m = s.match(/(\d+)\s*m(?:in|\b|$)/i);
+  var t = (h ? Math.round(parseFloat(h[1]) * 60) : 0) + (m ? +m[1] : 0);
+  return t || 0;
+}
+function clockMin(t) { var x = String(t || '').match(/^(\d{1,2}):(\d{2})/); return x ? +x[1] * 60 + +x[2] : null; }
+/** Bottom of the case: patient in the OR to patient in PACU, against the time it was booked for. */
+function renderRoom() {
+  var box = $('room'), card = $('roomCard'); box.innerHTML = '';
+  var E = cur.eap || {}, a = E.a || hm(cur.inOr), b = E.b || hm(cur.pacuIn), am = E.am;
+  if (!am && clockMin(cur.inOr) != null && clockMin(cur.pacuIn) != null) { am = clockMin(cur.pacuIn) - clockMin(cur.inOr); if (am < 0) am += 1440; }
+  var bk = bookedMin(cur.duration) || (E.len || 0);
+  if (!a) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  if (!b) { box.appendChild(el('div', 'rmBig', 'In progress')); box.appendChild(el('div', 'rmSub', 'In the room since ' + a + (bk ? '. Booked for ' + dur(bk) + '.' : '.'))); return; }
+  box.appendChild(el('div', 'rmBig', dur(am)));
+  box.appendChild(el('div', 'rmSub', 'In the OR ' + a + ', to PACU ' + b + '.'));
+  if (!bk) return;
+  var d = am - bk, line = Math.abs(d) <= 5 ? 'Right on the ' + dur(bk) + ' it was booked for.'
+    : d < 0 ? dur(-d) + ' under the ' + dur(bk) + ' it was booked for.' : dur(d) + ' over the ' + dur(bk) + ' it was booked for.';
+  var tr = el('div', 'rmTrack'), f = el('i', d > 5 ? 'over' : ''), mx = Math.max(am, bk);
+  f.style.width = Math.round(am / mx * 100) + '%'; tr.appendChild(f);
+  var mk = el('b'); mk.style.left = Math.round(bk / mx * 100) + '%'; tr.appendChild(mk);
+  box.appendChild(tr);
+  box.appendChild(el('div', 'rmCmp' + (d > 5 ? ' over' : d < -5 ? ' under' : ''), line));
+}
 function dur(m) { m = Math.round(+m || 0); if (!m) return ''; var h = Math.floor(m / 60), r = m % 60; return h ? h + 'h' + (r ? ' ' + r + 'm' : '') : r + 'm'; }
 function hm(t) { if (!t) return ''; var p = String(t).split(':'), h = +p[0]; return (h % 12 || 12) + ':' + p[1] + (h < 12 ? ' AM' : ' PM'); }
 var WO = null;
@@ -1684,13 +1721,12 @@ function openCase(i) {
   vendorRow(sb);
   (cur.implants || []).forEach(function (m, i) { addRow(sb, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
   addRow(sb, 'Start', cur.start); addRow(sb, 'Duration', cur.duration);
-  if (cur.eap && cur.eap.a) addRow(sb, 'Room time', 'In OR ' + cur.eap.a + (cur.eap.b ? ', PACU ' + cur.eap.b + ' (' + dur(cur.eap.am) + ')' : ', in progress'));
   var b = $('cInfo'); b.innerHTML = '';
   addRow(b, 'DOB', cur.dob); addRow(b, 'Age', cur.age); addRow(b, 'Sex', cur.sex); phoneRow(b, cur.phone);
   addRow(b, 'Insurance', cur.insurance); addRow(b, 'CPT', cur.cpt); addRow(b, 'Diagnosis', cur.dx);
   addRow(b, 'Assistant', cur.assistant); addRow(b, 'Anesthesia', cur.anesthesia); addRow(b, 'Stay', cur.stay);
   addRow(b, 'Position', cur.position); addRow(b, 'Facility', cur.facility); addRow(b, 'Status', cur.status);
-  renderOutcome(); loadImages(); renderMoney(null); renderScrub(); renderVid();
+  renderOutcome(); loadImages(); renderMoney(null); renderScrub(); renderVid(); renderRoom();
   if (cur.order) addRow(b, 'Order', 'Open surgery order', cur.order);
   var on = $('opnote'); on.innerHTML = '';
   if (cur.opnoteUrl) {
