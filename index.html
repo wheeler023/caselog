@@ -694,7 +694,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795476329780';
+var BUILD = '1795477910656';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1225,7 +1225,7 @@ function showNewCases(list) {   // "New surgery scheduled" cards; X each one, or
 }
 // ---- Schedule changes: the bell at the top. It glows when something was added, moved, cancelled or postponed since you last looked ----
 function drawBell(n) {
-  var b = $('bell'); if (!b || TEAM) return; b.style.display = '';
+  var b = $('bell'); if (!b) return; b.style.display = '';
   n = +n || 0; $('bellN').textContent = n > 9 ? '9+' : n ? String(n) : '';
   b.classList.toggle('hot', n > 0); b.setAttribute('aria-label', n ? n + ' schedule change' + (n === 1 ? '' : 's') : 'Schedule changes');
 }
@@ -1257,7 +1257,7 @@ function openChanges() {
   }).withFailureHandler(function (e) { L.innerHTML = ''; L.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdChanges(true);
 }
 function closeChanges() { $('chsheet').classList.remove('on'); }
-function bellCheck() { if (TEAM) return; google.script.run.withSuccessHandler(drawBell).withFailureHandler(function () {}).wdChangeCount(); }
+function bellCheck() { google.script.run.withSuccessHandler(drawBell).withFailureHandler(function () {}).wdChangeCount(); }
 drawBell(INIT.chg);
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') bellCheck(); });
 setInterval(function () { if (document.visibilityState === 'visible') bellCheck(); }, 5 * 60000);
