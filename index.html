@@ -470,6 +470,10 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .cha{font-size:12px;color:#8C97AB}
 .chw{font-size:15.5px;font-weight:600}.chd{font-size:13.5px;color:#9AA6BA;margin-top:3px}
 .chlist{padding:4px 16px 40px}
+.pnote{margin:10px 0 12px}.pnote .pnl{font-size:13px;font-weight:600;color:#C9D3E3;margin-bottom:6px}.pnote .pnl span{font-weight:400;color:#8C97AB}
+.pnote textarea{width:100%;box-sizing:border-box;background:#0F1A2E;border:1px solid #2D3D5A;border-radius:10px;color:#E6ECF5;font:inherit;font-size:15px;padding:10px 12px;resize:vertical;min-height:72px}
+.pnote textarea:focus{outline:none;border-color:#D9A15A}
+.pnote .pnh{font-size:12px;color:#8C97AB;margin-top:5px}
 </style></head><body>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -582,6 +586,9 @@ body.shrunk .hd .gear{width:32px;height:32px}
   <div class="out" id="vidCard">
    <label>Patient update</label>
    <div class="hint" id="vidHint">Checking the order for the patient’s email…</div>
+   <div class="pnote"><div class="pnl">Note to the patient <span>(optional)</span></div>
+    <textarea id="vidNote" rows="3" maxlength="800" placeholder="Anything they must not miss. Example: Start your blood thinner the morning after surgery." oninput="noteDirty()" onblur="noteSave()"></textarea>
+    <div class="pnh" id="vidNoteH">Shows in a box at the top of the email and the recovery plan.</div></div>
    <div class="upstat" id="vidStat"></div>
    <button class="addimg" onclick="openRec()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3z"/></svg>Record video</button>
   </div>
@@ -694,7 +701,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795477910656';
+var BUILD = '1795527140307';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1528,11 +1535,23 @@ function keyCard() {
 }
 // ---- Patient update video: record, it uploads, then emails itself to the patient after 5 seconds ----
 var VID = { info: {}, stream: null, rec: null, chunks: [], t0: 0, timer: null };
+var NOTE = { t: null, c: null };
+function noteDirty() { $('vidNoteH').textContent = 'Saves when you tap away.'; clearTimeout(NOTE.t); NOTE.t = setTimeout(noteSave, 1500); }
+function noteSave() {
+  clearTimeout(NOTE.t); var c = cur; if (!c) return;
+  var v = $('vidNote').value, i = VID.info[c.id] || (VID.info[c.id] = {});
+  if ((i.note || '') === v.trim()) { $('vidNoteH').textContent = v.trim() ? '✓ Saved. It goes out with the next update.' : 'Shows in a box at the top of the email and the recovery plan.'; return; }
+  $('vidNoteH').textContent = 'Saving…';
+  google.script.run.withSuccessHandler(function (t) { i.note = t; if (cur === c) $('vidNoteH').textContent = t ? '✓ Saved. It goes out with the next update.' : 'Note removed.'; })
+    .withFailureHandler(function (e) { if (cur === c) $('vidNoteH').textContent = 'Not saved: ' + e.message; }).wdPatientNote(c.id, v);
+}
 function renderVid() {
   var c = cur, fut = c && (c.date || day) > INIT.today; $('vidCard').style.display = fut ? 'none' : ''; if (fut) return;
   var info = VID.info[c.id]; $('vidStat').textContent = ''; $('vidStat').className = 'upstat';
+  $('vidNote').value = info && info.note || ''; $('vidNoteH').textContent = 'Shows in a box at the top of the email and the recovery plan.';
   function show(i) {
     if (cur !== c) return;
+    if (document.activeElement !== $('vidNote')) $('vidNote').value = i.note || '';
     $('vidHint').textContent = i.sent ? '✓ Update sent ' + i.sent.at + ' to ' + i.sent.to + '. Record again to send another.'
       : i.to ? 'Sends to ' + i.to + ' with this procedure’s recovery documents. After you record, you can add photos. Keep it under 2 minutes.'
       : 'No email found on the surgery order. A video still saves to this case.';
