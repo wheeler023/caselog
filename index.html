@@ -480,6 +480,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .edrow input{background:#0F1A2E;border:1px solid #2D3D5A;border-radius:10px;color:#E6ECF5;font:inherit;font-size:15px;height:42px;padding:0 10px;color-scheme:dark}
 .eddel{display:block;width:100%;margin-top:10px;background:transparent;border:1px solid #6B2A2A;color:#F08A7C;border-radius:10px;height:42px;font:inherit;font-size:15px}
 .eddel.sure{background:#5A1F1F;color:#FFFFFF;border-color:#A33}
+.chclr{margin:8px 0 4px}.chch{text-align:center;margin-bottom:6px}
 </style></head><body>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -717,7 +718,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795527585090';
+var BUILD = '1795572471582';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1262,9 +1263,18 @@ function openChanges() {
   var L = $('chList'); L.innerHTML = ''; L.appendChild(skel('case')); $('chSub').textContent = '';
   $('chsheet').classList.add('on');
   google.script.run.withSuccessHandler(function (r) {
-    L.innerHTML = ''; drawBell(0);
+    L.innerHTML = '';
     var list = (r && r.list) || [], seen = (r && r.seen) || 0, fresh = list.filter(function (x) { return x.at > seen; });
-    $('chSub').textContent = fresh.length ? fresh.length + ' new since you last looked' : 'Nothing new since you last looked';
+    drawBell(fresh.length);
+    $('chSub').textContent = fresh.length ? fresh.length + ' new' : 'Nothing new';
+    if (fresh.length) {
+      var clr = el('button', 'addimg chclr', 'Clear alerts');
+      clr.onclick = function () {
+        clr.disabled = true;
+        google.script.run.withSuccessHandler(function () { drawBell(0); openChanges(); }).withFailureHandler(function (e) { clr.disabled = false; toast('Not cleared: ' + e.message); }).wdChangesClear();
+      };
+      L.appendChild(clr); L.appendChild(el('div', 'hint chch', 'Clears on this phone only.'));
+    }
     if (!list.length) { L.appendChild(el('div', 'empty', 'No schedule changes in the last 45 days.')); return; }
     var lastHead = '';
     list.forEach(function (x) {
@@ -1277,7 +1287,7 @@ function openChanges() {
       row.onclick = function () { closeChanges(); if (x.d && typeof goDay === 'function') goDay(x.d); };
       L.appendChild(row);
     });
-  }).withFailureHandler(function (e) { L.innerHTML = ''; L.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdChanges(true);
+  }).withFailureHandler(function (e) { L.innerHTML = ''; L.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdChanges(false);
 }
 function closeChanges() { $('chsheet').classList.remove('on'); }
 function bellCheck() { google.script.run.withSuccessHandler(drawBell).withFailureHandler(function () {}).wdChangeCount(); }
