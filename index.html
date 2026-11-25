@@ -481,7 +481,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .eddel{display:block;width:100%;margin-top:10px;background:transparent;border:1px solid #6B2A2A;color:#F08A7C;border-radius:10px;height:42px;font:inherit;font-size:15px}
 .eddel.sure{background:#5A1F1F;color:#FFFFFF;border-color:#A33}
 .chclr{margin:8px 0 4px}.chch{text-align:center;margin-bottom:6px}
-.tdw{margin-bottom:10px}.tdw .chr{margin-bottom:4px}.tdx{display:block;margin:0 auto 6px;font-size:13px;color:#8C97AB}
+.tdrow{position:relative;cursor:pointer}.tdrow .cht{padding-right:34px}.tdx{position:absolute;top:6px;right:6px;width:34px;height:34px;border:0;border-radius:17px;background:transparent;color:#8C97AB;font-size:24px;line-height:32px;padding:0}.tdx:active{background:#22314D}
 #sheet .lockbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#12243A;border:1px solid #2F6E80;border-radius:12px;padding:10px 14px;margin:0 0 12px;color:#C9D3E3;font-size:14px}
 #sheet .lockbar button{background:transparent;border:1px solid #3DB8D4;color:#3DB8D4;border-radius:9px;height:34px;padding:0 16px;font:inherit;font-size:14px;font-weight:600}
 #sheet.fut #outCard,#sheet.fut #cxCard,#sheet.fut #notesCard,#sheet.fut #opCard,#sheet.fut #vidCard{display:none !important}
@@ -733,7 +733,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795573938800';
+var BUILD = '1795574300277';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -816,18 +816,18 @@ function openTodo() {
   if (t.note.length) {
     L.appendChild(el('div', 'chh', 'Op note missing'));
     t.note.forEach(function (x) {
-      var row = el('button', 'chr');
+      var row = el('div', 'chr tdrow'); row.setAttribute('role', 'button'); row.tabIndex = 0;
       var top = el('div', 'cht'); top.appendChild(el('span', 'chk k-pp', 'Op note')); top.appendChild(el('span', 'cha', x.when || '')); row.appendChild(top);
       row.appendChild(el('div', 'chw', (x.what || 'Surgery') + (x.name ? ', ' + x.name : '')));
       row.appendChild(el('div', 'chd', 'Tap to open the case.'));
       row.onclick = function () { closeTodo(); pendingOpen = x.id; setTab('cases'); go(x.day); };
-      var dm = el('button', 'lnk tdx', 'Dismiss, don’t remind me about this one');
+      var dm = el('button', 'tdx', '×'); dm.setAttribute('aria-label', 'Dismiss this reminder');
       dm.onclick = function (ev) {
-        ev.stopPropagation(); dm.disabled = true; dm.textContent = 'Dismissing…';
-        google.script.run.withSuccessHandler(function (nt) { drawTodo(nt); openTodo(); if (!nt.rate.length && !nt.note.length && !nt.inbox) closeTodo(); })
-          .withFailureHandler(function (e) { dm.disabled = false; dm.textContent = 'Not dismissed: ' + e.message; }).wdTodoDismiss(x.id);
+        ev.stopPropagation(); dm.disabled = true; row.style.opacity = '.4';
+        google.script.run.withSuccessHandler(function (nt) { drawTodo(nt); openTodo(); if (!nt.rate.length && !nt.note.length && !nt.inbox) closeTodo(); toast('Dismissed'); })
+          .withFailureHandler(function (e) { dm.disabled = false; row.style.opacity = ''; toast('Not dismissed: ' + e.message); }).wdTodoDismiss(x.id);
       };
-      var wrap = el('div', 'tdw'); wrap.appendChild(row); wrap.appendChild(dm); L.appendChild(wrap);
+      row.appendChild(dm); L.appendChild(row);
     });
   }
   if (t.inbox) {
