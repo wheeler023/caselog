@@ -371,6 +371,7 @@ textarea{background:#0F1828;border-color:#22314C}
 .nck{color:#C9A86A;font-weight:600}.ncw{color:#F3F5FA}.ncd{color:#A9B3C6}.ncx{color:#8C97AB}
 .nca{background:#22314C;color:#DCE4F2}
 .cxc{background:#18243B;border-color:#2D3D5A}
+#cxOther{width:100%;margin-top:10px;box-sizing:border-box;background:#0C1019;border:1px solid #2D3D5A;border-radius:12px;padding:10px 12px;color:#E6ECF5;font:inherit;font-size:15px;resize:vertical}#cxOther:read-only{border-color:transparent;background:transparent;padding-left:0}#cxCard #cxOther{min-height:0;height:64px;max-height:none}
 #sheet .body{display:flex;flex-direction:column}
 #sheet .out,#sheet .notes{background:#131E33;border:1px solid #22314C;border-radius:14px}
 .addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}#fBody.veiled>*{pointer-events:none;user-select:none}#fBody.veiled .tile .n,#fBody.veiled .hb .c,#fBody.veiled .ctr .n,#fBody.veiled .cmp .cr span:not(.k){filter:blur(9px);opacity:.8}#fBody.veiled .tile .l,#fBody.veiled .note,#fBody.veiled .hb .k,#fBody.veiled .ctr span:not(.n),#fBody.veiled .cmp .k{filter:blur(3px);opacity:.75}#fBody.veiled .fill{visibility:hidden}#fBody.veiled .fint .er span:not(:first-child){filter:blur(9px);opacity:.8}
@@ -643,6 +644,7 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
    <label>Complications</label>
    <div class="hint">Tap any that happened. Leave blank if none.</div>
    <div class="cxs" id="cxs"></div>
+   <textarea id="cxOther" rows="2" oninput="cxOtherDirty()" onblur="cxOtherSave()" placeholder="Anything else? Type or dictate it here."></textarea>
   </div>
   <div class="notes" id="notesCard">
    <label for="notes">Notes</label>
@@ -794,7 +796,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795627106947';
+var BUILD = '1795627362464';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -2310,28 +2312,45 @@ function applyLock() {
   sh.classList.toggle('fut', fut); sh.classList.toggle('locked', lock);
   $('lockBar').style.display = lock ? '' : 'none';
   $('lockTx').textContent = c.status === 'Cancelled' ? 'Closed out as cancelled.' : 'This case is closed.';
-  ['notes', 'vidNote'].forEach(function (k) { var t = $(k); if (t) { t.readOnly = lock; } });
+  ['notes', 'vidNote', 'cxOther'].forEach(function (k) { var t = $(k); if (t) { t.readOnly = lock; } });
+  $('cxOther').style.display = lock && !$('cxOther').value.trim() ? 'none' : '';
   $('notes').placeholder = lock ? 'No notes.' : 'Dictate or type notes…';
   $('vidNote').placeholder = lock ? '' : 'Anything they must not miss. Example: Start your blood thinner the morning after surgery.';
   var pn = $('vidNote').closest('.pnote'); if (pn) pn.style.display = lock && !$('vidNote').value.trim() ? 'none' : '';
 
   try { if (typeof growNotes === 'function') growNotes(); } catch (e) {}
   var nb = $('cxs').querySelector('.cxnone'); if (nb) nb.remove();
-  if (lock && !$('cxs').querySelector('.cxc.on')) $('cxs').appendChild(el('span', 'cxnone', 'None reported.'));
+  if (lock && !$('cxs').querySelector('.cxc.on') && !$('cxOther').value.trim()) $('cxs').appendChild(el('span', 'cxnone', 'None reported.'));
 }
 function unlockCase() { if (!cur) return; UNLOCK[cur.id] = 1; applyLock(); toast('Editing unlocked for this case'); }
+function cxParts(v) {   // "Dural tear, Other: free text" -> flags and the free text
+  var all = String(v || '').split(/\s*,\s*/).filter(Boolean), o = '';
+  var flags = all.filter(function (x) { if (/^Other:/.test(x)) { o = x.replace(/^Other:\s*/, ''); return false; } return true; });
+  return { flags: flags, other: o };
+}
+function cxOtherDirty() { clearTimeout(cxTimer); cxTimer = setTimeout(cxOtherSave, 1500); }
+function cxOtherSave() {
+  clearTimeout(cxTimer); var c = cur; if (!c) return;
+  var t = $('cxOther').value.trim(), P = cxParts(c.cx);
+  if (t === P.other) return;
+  c.cx = P.flags.concat(t ? ['Other: ' + t] : []).join(', ');
+  google.script.run.withSuccessHandler(function (v) { c.cx = v; toast('Saved'); render(); })
+    .withFailureHandler(function (e) { toast('Not saved: ' + e.message); }).wdComplications(c.id, P.flags, t);
+}
 function renderCx() {
   var box = $('cxs'); box.innerHTML = '';
-  var have = (cur.cx || '').split(/\s*,\s*/).filter(Boolean);
+  var P = cxParts(cur.cx), have = P.flags, ta = $('cxOther');
+  if (document.activeElement !== ta) ta.value = P.other;
+  ta.disabled = isFuture(cur);
   (INIT.cx || []).forEach(function (name) {
     var on = have.indexOf(name) >= 0, bt = el('button', on ? 'cxc on' : 'cxc', name);
     if (isFuture(cur) && !on) { bt.disabled = true; box.appendChild(bt); return; }
     bt.setAttribute('aria-pressed', on ? 'true' : 'false');
     bt.onclick = function () {
       var next = on ? have.filter(function (x) { return x !== name; }) : have.concat([name]), c = cur;
-      c.cx = next.join(', '); renderCx();
+      var oth = cxParts(c.cx).other; c.cx = next.concat(oth ? ['Other: ' + oth] : []).join(', '); renderCx();
       google.script.run.withSuccessHandler(function (v) { c.cx = v; if (cur === c) renderCx(); toast(v ? 'Saved' : 'Cleared'); render(); })
-        .withFailureHandler(function (e) { toast('Not saved: ' + e.message); }).wdComplications(c.id, next);
+        .withFailureHandler(function (e) { toast('Not saved: ' + e.message); }).wdComplications(c.id, next, cxParts(c.cx).other);
     };
     box.appendChild(bt);
   });
