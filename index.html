@@ -506,6 +506,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:inherit}.effc .chd{font-size:13px;color:#8C97AB;margin:-4px 0 8px}
 .effopt{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;width:100%;text-align:left;background:#121D33;border:1px solid #22314D;border-radius:12px;padding:14px;margin-top:10px;font-family:inherit;color:#E6ECF5;cursor:pointer}.effopt b{font-size:16px}.effopt span{grid-column:1;font-size:13px;color:#8C97AB;margin-top:4px;line-height:1.35}.effopt i{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-size:22px;color:#3DB8D4;padding-left:10px}.effopt:active{transform:scale(.99)}
 .mbtn{background:none;border:0;padding:0;font-family:inherit;cursor:pointer}.eff .er.sc3{grid-template-columns:2fr 1fr 1fr}
+.fint .er{grid-template-columns:2fr .7fr 1.1fr 1.2fr}.fint .er>span:not(:first-child){text-align:right}.fint button.er{width:100%;background:none;border:0;border-top:1px solid #1F2328;color:inherit;font:inherit;text-align:left;cursor:pointer}.fint .er.ft{font-weight:700;border-top:1px solid #3A4658}
 </style></head><body>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -752,7 +753,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795575535305';
+var BUILD = '1795575808742';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -2615,19 +2616,72 @@ function renderFin() {
   var paSum = sel.reduce(function (s, c) { return s + (c.cm ? (c.pv != null ? c.pv : pv) : 0); }, 0);
   var total = fee + ncm * nv + paSum;
   var tiles = el('div', 'tiles'); b.appendChild(tiles);
-  tile(tiles, money(total), 'Expected total');
+  tile(tiles, money(total), 'Expected total', function () { finBreakdown(sel, nv, pv, null); });
   tile(tiles, sel.length ? money(total / sel.length) : '–', 'Per case');
   tile(tiles, money(fee), 'Expected pro fees');
   tile(tiles, money(paSum), 'Expected PA/IDR');
   tile(tiles, money(ncm * nv), 'Expected neuromonitoring');
   tile(tiles, String(ncm) + ' of ' + sel.length, 'Commercial cases');
-  function grp(key) { var o = {}; sel.forEach(function (c) { if (c.f > 0) { var g = o[key(c)] = o[key(c)] || { v: 0, n: 0 }; g.v += c.f; g.n++; } });
-    return Object.keys(o).map(function (k) { var g = o[k]; return { k: k, sub: g.n === 1 ? '1 case' : g.n + ' cases, ' + money(g.v / g.n) + ' each', v: g.v }; }).sort(function (a, b) { return b.v - a.v; }); }
-  hbars(card('Expected pro fees by case type', 'Totals for ' + finLabel() + '. Each case is priced from what insurers paid you per CPT in 2024–2026. Medicare, self-pay and WC/auto are not estimated.'),
-    grp(function (c) { return c.t; }), 'No estimates in this period yet.', money);
-  hbars(card('Expected pro fees by payer', 'Totals for ' + finLabel() + '.'), grp(function (c) { return c.ins; }), 'No estimates in this period yet.', money);
-  hbars(card('Expected value by case type', 'Pro fee plus ' + money(pv) + ' PA/IDR and ' + money(nv) + ' neuromonitoring per commercial case. Change those two values on the Neuromonitoring tab of your case log.'),
-    (function () { var o = {}; sel.forEach(function (c) { o[c.t] = (o[c.t] || 0) + c.f + (c.cm ? nv + pv : 0); }); return Object.keys(o).map(function (k) { return { k: k, v: o[k] }; }).sort(function (a, b) { return b.v - a.v; }); })(), 'No cases in this period yet.', money);
+  finTable(sel, nv, pv, total);
+}
+function finRows(sel, nv, pv) {   // per case type: cases, and the average pro fee, PA/IDR and neuro per case behind the total
+  var o = {};
+  sel.forEach(function (c) {
+    var g = o[c.t] = o[c.t] || { k: c.t, pg: c.pg, n: 0, cm: 0, fee: 0, pa: 0, nr: 0, list: [] };
+    var paV = c.cm ? (c.pv != null ? c.pv : pv) : 0, nrV = c.cm ? nv : 0;
+    g.n++; if (c.cm) g.cm++; g.fee += c.f || 0; g.pa += paV; g.nr += nrV; g.list.push(c);
+  });
+  return Object.keys(o).map(function (k) { var g = o[k]; g.tot = g.fee + g.pa + g.nr; return g; }).sort(function (a, b) { return b.tot - a.tot; });
+}
+function finTable(sel, nv, pv, total) {
+  var c = card('How the expected total adds up', 'Tap a row to see its cases.');
+  var rows = finRows(sel, nv, pv);
+  if (!rows.length) { c.appendChild(el('div', 'note', 'No cases in this period yet.')); return; }
+  var tb = el('div', 'eff fint'), hd = el('div', 'er eh');
+  ['Case type', 'Cases', 'Per case', 'Total'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); tb.appendChild(hd);
+  rows.forEach(function (g) {
+    var r = el('button', 'er tap'); r.appendChild(el('span', null, g.k));
+    r.appendChild(el('span', null, String(g.n))); r.appendChild(el('span', null, money(g.tot / g.n))); r.appendChild(el('span', 'bk', money(g.tot)));
+    r.onclick = function () { finBreakdown(g.list, nv, pv, g); }; tb.appendChild(r);
+  });
+  var ft = el('div', 'er ft'); ft.appendChild(el('span', null, 'Total')); ft.appendChild(el('span', null, String(sel.length)));
+  ft.appendChild(el('span', null, money(total / sel.length))); ft.appendChild(el('span', 'bk', money(total))); tb.appendChild(ft);
+  c.appendChild(tb);
+  var pm = stats.paModel;
+  c.appendChild(el('div', 'note', 'Per case = pro fee + PA/IDR + neuromonitoring, averaged over the cases in that row. Neuromonitoring is a flat ' + money(nv) + ' per commercial case. ' +
+    'PA/IDR is learned by procedure from SUSA payments matched to your cases' + (pm && pm.reports ? ' (' + pm.reports + ' report' + (pm.reports === 1 ? '' : 's') + ' so far)' : '') + ', so it shifts a little with each new report. Medicare, self-pay and WC/auto get no PA/IDR or neuromonitoring.'));
+  if (pm && pm.by) {
+    var lc = card('PA/IDR per case, by procedure', 'What the model expects one commercial case to bring in from SUSA. Groups with few paid cases lean toward your overall average of ' + money(pm.base) + ' until more data comes in.');
+    hbars(lc, Object.keys(pm.by).map(function (k) { var n = (pm.n || {})[k] || 0; return { k: k, sub: n + ' paid case' + (n === 1 ? '' : 's') + ' so far', v: pm.by[k] }; }).sort(function (a, b) { return b.v - a.v; }), 'No SUSA data yet.', money);
+  }
+}
+function finBreakdown(list, nv, pv, g) {
+  if (!finShown) return;   // amounts stay hidden until the page is unlocked
+  var B = openDrill(g ? g.k : 'Expected total', finLabel());
+  if (!g) {   // the whole period: the same table, as a list of rows
+    var rows = finRows(list, nv, pv), t = rows.reduce(function (s, r) { return s + r.tot; }, 0);
+    rows.forEach(function (r) {
+      var b = el('button', 'chr'); var top = el('div', 'cht'); top.appendChild(el('span', 'cha', r.n + (r.n === 1 ? ' case' : ' cases') + ' × ' + money(r.tot / r.n))); top.appendChild(el('span', 'cha', money(r.tot))); b.appendChild(top);
+      b.appendChild(el('div', 'chw', r.k));
+      b.appendChild(el('div', 'chd', 'Pro fee ' + money(r.fee) + ' · PA/IDR ' + money(r.pa) + ' · Neuro ' + money(r.nr)));
+      b.onclick = function () { finBreakdown(r.list, nv, pv, r); }; B.appendChild(b);
+    });
+    B.appendChild(el('div', 'note', 'Total ' + money(t) + '. Tap a row to see its cases.'));
+    return;
+  }
+  var tl = el('div', 'tiles');
+  tile(tl, money(g.fee / g.n), 'Pro fee per case'); tile(tl, g.cm ? money(g.pa / g.cm) : '–', 'PA/IDR per commercial case'); tile(tl, g.cm ? money(nv) : '–', 'Neuro per commercial case');
+  B.appendChild(tl);
+  var pm = stats.paModel, n = pm && pm.n && g.pg ? pm.n[g.pg] : null;
+  B.appendChild(el('div', 'note', g.n + ' case' + (g.n === 1 ? '' : 's') + ', ' + g.cm + ' commercial. ' + g.n + ' × ' + money(g.tot / g.n) + ' = ' + money(g.tot) + '.' + (n != null ? ' PA/IDR for ' + g.pg + ' is based on ' + n + ' paid case' + (n === 1 ? '' : 's') + ' so far.' : '')));
+  g.list.slice().sort(function (a, b) { return a.d < b.d ? 1 : -1; }).forEach(function (c) {
+    var paV = c.cm ? (c.pv != null ? c.pv : pv) : 0, nrV = c.cm ? nv : 0, r = el('button', 'chr');
+    var top = el('div', 'cht'); top.appendChild(el('span', 'cha', shortD(c.d))); top.appendChild(el('span', 'cha', money((c.f || 0) + paV + nrV))); r.appendChild(top);
+    r.appendChild(el('div', 'chw', (c.pn ? pName(c.pn) + ', ' : '') + c.ins));
+    r.appendChild(el('div', 'chd', 'Pro fee ' + (c.f ? money(c.f) : 'not estimated') + (c.cm ? ' · PA/IDR ' + money(paV) + ' · Neuro ' + money(nrV) : ' · not commercial')));
+    r.onclick = function () { closeDrill(); pendingOpen = c.id; setTab('cases'); go(c.d); };
+    B.appendChild(r);
+  });
 }
 function loadStats() {
   var b = $('sBody');
