@@ -491,6 +491,18 @@ body.shrunk .hd .gear{width:32px;height:32px}
 #sheet.locked textarea{border-color:transparent !important;background:transparent !important;resize:none;padding-left:0;padding-right:0}
 #sheet.locked .cxnone{color:#8C97AB;font-size:14px}
 #sheet.locked #imgCard.empty{display:none}#sheet.locked textarea{min-height:0 !important}
+#rng{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#rng::-webkit-scrollbar{display:none}#rng .chip{white-space:nowrap;flex:none}
+#rng .chip.cal .ic{width:15px;height:15px;margin-right:6px;vertical-align:-2px}
+.rngc{display:flex;gap:8px;align-items:flex-end;margin:8px 0 4px}.rngc label{flex:1;display:flex;flex-direction:column;gap:4px;font-size:12px;color:#8C97AB;font-family:-apple-system,system-ui,'Segoe UI',Roboto,sans-serif}
+.rngc input{background:#0F1A2E;border:1px solid #2D3D5A;border-radius:10px;color:#E6ECF5;font:inherit;font-size:14px;height:40px;padding:0 8px;color-scheme:dark}
+.rngc button{height:40px;border-radius:10px;border:1px solid #3DB8D4;background:transparent;color:#3DB8D4;font:inherit;font-weight:600;padding:0 14px}
+.hb.tap{cursor:pointer;border-radius:8px}.hb.tap:active{background:#1C2A44}
+.tiles.t3{grid-template-columns:repeat(3,1fr)}
+.card2.tapc{cursor:pointer}.card2.tapc:active{transform:scale(.99)}.more2{color:#3DB8D4;font-size:14px;margin-top:10px}
+.effc{background:#121D33;border:1px solid #22314D;border-radius:12px;padding:12px 14px;margin-bottom:8px}.effc.few{opacity:.6}
+.effc .eh2{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}.effc .eh2 b{font-size:15.5px;color:#E6ECF5}.effc .eh2 span{font-size:12.5px;color:#8C97AB}
+.effc .eg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.effc .eg div{display:flex;flex-direction:column;gap:2px}.effc .eg .l{font-size:11.5px;color:#8C97AB}.effc .eg .v{font-size:15px;color:#E6ECF5;font-weight:600}
+.effc .eg .v.over{color:#D9BC84}.effc .eg .v.under{color:#3DB8D4}
 </style></head><body>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -503,9 +515,9 @@ body.shrunk .hd .gear{width:32px;height:32px}
 <div class="list" id="list"></div></div>
 <div id="vStats" style="display:none">
  <div class="hd"><div class="who" id="who2"></div>
-  <div class="pnav"><button onclick="stepMonth(-1)" aria-label="Previous month">‹</button><div class="day" id="perLbl">Surgical volume</div><button onclick="stepMonth(1)" aria-label="Next month">›</button></div>
-  <div class="chips yrs" id="yrs"></div>
-  <div class="chips mos" id="mos"></div>
+  <div class="day" id="perLbl">Surgical volume</div>
+  <div class="chips" id="rng"></div>
+  <div class="rngc" id="rngC" style="display:none"><label>From<input type="date" id="rF"></label><label>To<input type="date" id="rT"></label><button onclick="applyCustom()">Show</button></div>
   <label class="tg"><input type="checkbox" id="inclU" onchange="inclUnrated=this.checked;renderStats()"> Include past cases I haven't rated</label></div>
  <div class="sp" id="sBody"></div>
 </div>
@@ -552,6 +564,10 @@ body.shrunk .hd .gear{width:32px;height:32px}
  <div class="sh"><button onclick="closeRating()">‹ Back</button><div class="ttl"><b id="rTitle">Needs rating</b><span id="rCount"></span></div></div>
  <div class="sbox" id="sbox"><input type="search" id="q" placeholder="Name, procedure, level, CPT, note…" autocomplete="off" oninput="searchSoon()" enterkeyhint="search"><div class="chips mos" id="sYrs"></div><div class="chips mos" id="sMos"></div><div class="chips skeys" id="sKeys"></div></div>
  <div class="body"><div class="list" id="rList"></div></div>
+</div>
+<div class="sheet" id="dsheet">
+ <div class="sh"><button onclick="closeDrill()">‹ Back</button><div class="ttl"><b id="dTitle"></b><span id="dSub"></span></div></div>
+ <div class="body"><div class="chlist" id="dList"></div></div>
 </div>
 <div class="sheet" id="tdsheet">
  <div class="sh"><button onclick="closeTodo()">‹ Back</button><div class="ttl"><b>To do</b><span id="tdSub"></span></div></div>
@@ -733,7 +749,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795574300277';
+var BUILD = '1795574801639';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1457,35 +1473,60 @@ function finEl(k) {
   return null;
 }
 var EFF = null;
-function eapEff() {
-  var c = card('Booked vs actual', 'From Dr. Edwards’ room times, last 180 days. Actual runs from patient into the OR to into PACU. Turnover runs from PACU to the next patient into the OR.');
+function eapEff() {   // summary on Metrics; tap for the table by procedure
+  var c = card('Booked vs actual', 'Last 180 days, from Dr. Edwards’ room times. Tap for each procedure.');
   function draw(r) {
     var e = r && r.efficiency;
     if (!e || !e.overall) { c.appendChild(el('div', 'note', 'Nothing yet. This fills in from Dr. Edwards’ schedule feed.')); return; }
-    var o = e.overall, top = el('div', 'effo');
-    function stat(l, v) { var s = el('span'); s.appendChild(document.createTextNode(l + ' ')); s.appendChild(el('b', null, v)); top.appendChild(s); }
-    stat('Cases', String(o.cases || 0)); stat('Booked', dur(o.bookedMedianMin)); stat('Actual', dur(o.actualMedianMin));
-    if (o.within15MinPct != null) stat('Within 15 min', Math.round(o.within15MinPct) + '%');
-    if (o.turnoverMedianMin != null) stat('Turnover', dur(o.turnoverMedianMin));
-    c.appendChild(top);
-    var fa = r.forecastAccuracy;
-    if (fa && fa.daysMeasured) c.appendChild(el('div', 'note', 'Finish forecast: off by ' + Math.round(+fa.averageMissMin || 0) + ' min on average over ' + fa.daysMeasured + ' day' + (fa.daysMeasured === 1 ? '' : 's') + (fa.biasMin ? ', usually ' + (fa.biasMin > 0 ? 'finishing later' : 'finishing earlier') + ' than forecast' : '') + (fa.withinLikelyRangePct != null ? '; ' + Math.round(fa.withinLikelyRangePct) + '% landed in the likely range' : '') + '.'));
-    var t = el('div', 'eff'), hd = el('div', 'er eh');
-    ['Procedure', 'Cases', 'Booked', 'Actual', '±', 'Book as'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); t.appendChild(hd);
-    (e.byProcedure || []).forEach(function (p) {
-      var r2 = el('div', 'er' + (p.fewCases ? ' few' : '')), ou = Math.round(+p.avgOverUnderMin || 0);
-      r2.appendChild(el('span', null, p.procedure || p.group || p.name || p.key || ''));
-      r2.appendChild(el('span', null, String(p.cases || 0)));
-      r2.appendChild(el('span', null, dur(p.bookedMedianMin)));
-      r2.appendChild(el('span', null, dur(p.actualMedianMin)));
-      r2.appendChild(el('span', null, (ou > 0 ? '+' : ou < 0 ? '−' : '') + Math.abs(ou) + 'm'));
-      r2.appendChild(el('span', 'bk', p.fewCases || !p.actualMedianMin ? '' : dur(Math.ceil(p.actualMedianMin / 15) * 15)));
-      t.appendChild(r2);
-    });
-    c.appendChild(t);
-    c.appendChild(el('div', 'note', 'Book as: the actual median rounded up to the next 15 minutes. Grey rows have fewer than 5 cases.'));
+    var o = e.overall, tl = el('div', 'tiles t3');
+    tile(tl, dur(o.bookedMedianMin), 'Booked (median)'); tile(tl, dur(o.actualMedianMin), 'Actual (median)');
+    tile(tl, o.within15MinPct != null ? Math.round(o.within15MinPct) + '%' : '–', 'Within 15 min');
+    c.appendChild(tl); c.classList.add('tapc'); c.onclick = function () { effDetail(r); };
+    c.appendChild(el('div', 'more2', 'See by procedure ›'));
   }
   if (EFF) draw(EFF); else google.script.run.withSuccessHandler(function (r) { EFF = r || {}; draw(EFF); }).withFailureHandler(function () { draw(null); }).wdEap();
+}
+function effDetail(r) {
+  var e = r.efficiency, o = e.overall, B = openDrill('Booked vs actual', 'Last 180 days');
+  var top = el('div', 'effo');
+  function stat(l, v) { var sp = el('span'); sp.appendChild(document.createTextNode(l + ' ')); sp.appendChild(el('b', null, v)); top.appendChild(sp); }
+  stat('Cases', String(o.cases || 0)); if (o.turnoverMedianMin != null) stat('Turnover', dur(o.turnoverMedianMin));
+  B.appendChild(top);
+  (e.byProcedure || []).forEach(function (p) {
+    var ou = Math.round(+p.avgOverUnderMin || 0), row = el('div', 'effc' + (p.fewCases ? ' few' : ''));
+    var h = el('div', 'eh2'); h.appendChild(el('b', null, p.procedure || p.group || p.name || p.key || '')); h.appendChild(el('span', null, (p.cases || 0) + (p.cases === 1 ? ' case' : ' cases'))); row.appendChild(h);
+    var g = el('div', 'eg');
+    [['Booked', dur(p.bookedMedianMin)], ['Actual', dur(p.actualMedianMin)], ['Over/under', (ou > 0 ? '+' : ou < 0 ? '−' : '') + Math.abs(ou) + 'm'], ['Book as', p.fewCases || !p.actualMedianMin ? '–' : dur(Math.ceil(p.actualMedianMin / 15) * 15)]]
+      .forEach(function (x) { var cell = el('div'); cell.appendChild(el('span', 'l', x[0])); cell.appendChild(el('span', 'v' + (x[0] === 'Over/under' ? (ou > 5 ? ' over' : ou < -5 ? ' under' : '') : ''), x[1])); g.appendChild(cell); });
+    row.appendChild(g); B.appendChild(row);
+  });
+  var fa = r.forecastAccuracy;
+  if (fa && fa.daysMeasured) B.appendChild(el('div', 'note', 'Finish-time forecast was off by ' + Math.round(+fa.averageMissMin || 0) + ' min on average over ' + fa.daysMeasured + ' day' + (fa.daysMeasured === 1 ? '' : 's') + '.'));
+  B.appendChild(el('div', 'note', 'Actual runs from patient into the OR to into PACU. Book as is the actual median rounded up to the next 15 minutes. Faded rows have fewer than 5 cases.'));
+}
+// ---- Drill-down: any bar on Metrics opens the cases behind it ----
+function openDrill(title, sub) { $('dTitle').textContent = title; $('dSub').textContent = sub || ''; var B = $('dList'); B.innerHTML = ''; $('dsheet').classList.add('on'); B.scrollTop = 0; return B; }
+function closeDrill() { $('dsheet').classList.remove('on'); }
+function drillCases(title, list, from) {
+  var B = openDrill(title, (from ? from + ', ' : '') + list.length + (list.length === 1 ? ' case' : ' cases'));
+  list.slice().sort(function (a, b) { return a.d < b.d ? 1 : -1; }).forEach(function (c) {
+    var r = el('button', 'chr');
+    var top = el('div', 'cht'); top.appendChild(el('span', 'cha', shortD(c.d))); if (c.df) top.appendChild(el('span', 'cha', 'Difficulty ' + c.df)); r.appendChild(top);
+    r.appendChild(el('div', 'chw', [c.n ? c.n + '-Level' : '', c.t].filter(Boolean).join(' ') + (c.pn ? ', ' + pName(c.pn) : '')));
+    if (c.ins) r.appendChild(el('div', 'chd', c.ins));
+    r.onclick = function () { closeDrill(); pendingOpen = c.id; setTab('cases'); go(c.d); };
+    B.appendChild(r);
+  });
+}
+function drillBars(title, note, list, keyFn, empty, fmt, sortFn) {
+  var rows = tally(list, keyFn); if (sortFn) rows.sort(sortFn);
+  var box = card(title, note);
+  hbars(box, rows, empty, fmt);
+  var hbs = box.querySelectorAll('.hb');
+  rows.forEach(function (r, i) {
+    var row = hbs[i]; if (!row) return; row.classList.add('tap');
+    row.onclick = function () { drillCases(r.k, list.filter(function (c) { var k = keyFn(c); return Array.isArray(k) ? k.indexOf(r.k) >= 0 : k === r.k; }), title); };
+  });
 }
 // ---- Primary scrub: one tap on the case, compared on Metrics ----
 var ROLE = {
@@ -2200,7 +2241,7 @@ function closeRating() {
   rmode = false; cases = dayCases; $('rsheet').classList.remove('on'); stats = null; dayCache = {};
   if ($('vStats').style.display !== 'none') loadStats();
 }
-var stats = null, per = 'sel', inclUnrated = false, selY = 0, selM = 0;   // selY 0 = all time; selM 0 = whole year
+var stats = null, per = 'sel', inclUnrated = false, selY = 0, selM = 0, RNG = null, RKEY = 'year';   // RNG {f,t}: the dates shown on Metrics
 var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 brandRow('who2', '');
 brandRow('who3', '');
@@ -2230,7 +2271,7 @@ function setTab(t) {
   $('tCases').className = t === 'cases' ? 'on' : ''; $('tStats').className = t === 'stats' ? 'on' : ''; $('tFin').className = t === 'fin' ? 'on' : ''; $('tImp').className = t === 'imp' ? 'on' : '';
   window.scrollTo(0, 0);
   if (t !== 'fin' && !backToFin) hideMoney();   // a trip from Billing into a case and back keeps the amounts showing
-  if (t === 'stats') { per = 'sel'; selY = +INIT.today.slice(0, 4); selM = +INIT.today.slice(5, 7); loadStats(); } else if (t === 'fin') { renderFin(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else if (t === 'ask') drawAsk(); else go(day);
+  if (t === 'stats') { if (!RNG) presetRange('year'); loadStats(); } else if (t === 'fin') { renderFin(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else if (t === 'ask') drawAsk(); else go(day);
 }
 // ---- Finance tab: amounts are not drawn until you tap Show amounts; leaving the tab hides them again ----
 var finShown = false, finPer = 'month', inPerFin = function () { return true; };
@@ -2471,11 +2512,38 @@ function loadStats() {
   if (stats) { drawPicker(); renderStats(); }   // fetched in the background when the app opened: draw now, refresh quietly
   else { b.innerHTML = ''; b.appendChild(skel('skx')); }
   google.script.run.withSuccessHandler(function (r) {
-    stats = r; if (!selY && per === 'sel' && !loadStats.done) { selY = +r.today.slice(0, 4); selM = +r.today.slice(5, 7); }
+    stats = r; if (!RNG) presetRange('year');
     loadStats.done = true; drawPicker(); renderStats();
   }).withFailureHandler(function (e) { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdStats();
 }
-function setSel(y, m) { selY = y; selM = y ? m : 0; per = 'sel'; drawPicker(); renderStats(); }
+function isoOf(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function lastDay(y, m) { return isoOf(new Date(y, m, 0)); }
+/** Presets for the Metrics dates. selY/selM follow along when the range is exactly one month or one year. */
+function presetRange(k) {
+  var t = (stats && stats.today) || INIT.today, y = +t.slice(0, 4), m = +t.slice(5, 7), f, to;
+  if (k === 'year') { f = y + '-01-01'; to = y + '-12-31'; }
+  else if (k === 'month') { f = t.slice(0, 7) + '-01'; to = lastDay(y, m); }
+  else if (k === 'last') { var py = m === 1 ? y - 1 : y, pm = m === 1 ? 12 : m - 1; f = py + '-' + ('0' + pm).slice(-2) + '-01'; to = lastDay(py, pm); }
+  else if (k === '3m') { var d3 = new Date(y, m - 3, 1); f = isoOf(d3); to = lastDay(y, m); }
+  else if (k === '12m') { var d12 = new Date(y, m - 12, 1); f = isoOf(d12); to = lastDay(y, m); }
+  else if (k === 'lastyear') { f = (y - 1) + '-01-01'; to = (y - 1) + '-12-31'; }
+  else if (k === 'all') { f = '2000-01-01'; to = '2099-12-31'; }
+  setRange(f, to, k);
+}
+function setRange(f, to, k) {
+  if (f > to) { var x = f; f = to; to = x; }
+  RNG = { f: f, t: to }; RKEY = k || 'custom'; per = 'sel';
+  var y1 = +f.slice(0, 4), m1 = +f.slice(5, 7);
+  if (f.slice(8) === '01' && to === lastDay(y1, m1)) { selY = y1; selM = m1; }
+  else if (f.slice(5) === '01-01' && to === y1 + '-12-31') { selY = y1; selM = 0; }
+  else { selY = 0; selM = 0; }
+  if (stats) { drawPicker(); renderStats(); }
+}
+function setSel(y, m) {   // a month bar or older callers
+  if (!y) { presetRange('all'); return; }
+  if (m) setRange(y + '-' + ('0' + m).slice(-2) + '-01', lastDay(y, m), 'pick'); else setRange(y + '-01-01', y + '-12-31', 'pick');
+}
+function applyCustom() { var f = $('rF').value, t = $('rT').value; if (!f || !t) { toast('Pick both dates'); return; } $('rngC').style.display = 'none'; setRange(f, t, 'custom'); }
 function stepMonth(d) {
   if (!selY) { var t = stats.today; setSel(+t.slice(0, 4), +t.slice(5, 7)); return; }
   if (!selM) { setSel(selY + d, 0); return; }
@@ -2484,28 +2552,21 @@ function stepMonth(d) {
 }
 function drawPicker() {
   if (!stats) return;
-  var t = stats.today, ty = +t.slice(0, 4), lo = ty, hi = ty;
-  stats.cases.forEach(function (c) { var y = +c.d.slice(0, 4); if (y < lo) lo = y; if (y > hi) hi = y; });
-  if (!selY && selY !== 0) selY = ty;
-  var ys = $('yrs'); ys.innerHTML = '';
-  var cut = ty - 1, old = selY && selY < cut;   // the last two years up front; older ones behind "Earlier"
-  for (var y = lo; y <= hi; y++) (function (y) {
-    if (y < cut && !drawPicker.more && y !== selY) return;
-    var b = el('button', y === selY ? 'chip on' : 'chip', String(y)); b.onclick = function () { setSel(y, selY === y ? selM : 0); }; ys.appendChild(b);
-  })(y);
-  if (lo < cut) { var e = el('button', 'chip', drawPicker.more ? 'Fewer' : 'Earlier…'); e.onclick = function () { drawPicker.more = !drawPicker.more; drawPicker(); }; ys.insertBefore(e, ys.firstChild); }
-  var a = el('button', selY ? 'chip' : 'chip on', 'All time'); a.onclick = function () { setSel(0, 0); }; ys.appendChild(a);
-  var ms = $('mos'); ms.innerHTML = ''; ms.style.display = selY ? '' : 'none';
-  if (selY) {
-    var w = el('button', selM ? 'chip' : 'chip on', 'Full year'); w.onclick = function () { setSel(selY, 0); }; ms.appendChild(w);
-    MON.forEach(function (n, i) {
-      var fut = selY > ty || (selY === ty && i + 1 > +t.slice(5, 7));
-      var b = el('button', (selM === i + 1 ? 'chip on' : 'chip') + (fut ? ' fut' : ''), n);
-      b.onclick = function () { setSel(selY, i + 1); }; ms.appendChild(b);
-    });
-    var on = ms.querySelector('.chip.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' });
-  }
-  $('perLbl').textContent = !selY ? 'All time' : selM ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][selM - 1] + ' ' + selY : selY + ' full year';
+  var box = $('rng'); box.innerHTML = '';
+  [['year', 'This year'], ['month', 'This month'], ['last', 'Last month'], ['3m', 'Last 3 months'], ['12m', 'Last 12 months'], ['lastyear', 'Last year']].forEach(function (p) {
+    var b = el('button', RKEY === p[0] ? 'chip on' : 'chip', p[1]); b.onclick = function () { $('rngC').style.display = 'none'; presetRange(p[0]); }; box.appendChild(b);
+  });
+  var cb = el('button', RKEY === 'custom' ? 'chip on cal' : 'chip cal');
+  cb.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Pick dates';
+  cb.onclick = function () { var c = $('rngC'), on = c.style.display === 'none'; c.style.display = on ? '' : 'none'; if (on && RNG) { $('rF').value = RNG.f > '2001' ? RNG.f : ''; $('rT').value = RNG.t < '2098' ? RNG.t : ''; } };
+  box.appendChild(cb);
+  var on = box.querySelector('.chip.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+  var lbl;
+  if (!RNG || RKEY === 'all') lbl = 'All time';
+  else if (selY && selM) lbl = MONF[selM - 1] + ' ' + selY;
+  else if (selY) lbl = String(selY);
+  else lbl = shortD(RNG.f) + ' to ' + shortD(RNG.t);
+  $('perLbl').textContent = lbl;
 }
 function monthKey(isoDay, off) {
   var y = +isoDay.slice(0, 4), m = +isoDay.slice(5, 7) - 1 + off;
@@ -2515,6 +2576,7 @@ function monthKey(isoDay, off) {
 function counted(c) { return c.s === 'Performed' || (inclUnrated && c.s === 'Needs confirmation'); }
 function inPer(c) {
   var t = stats.today;
+  if (RNG) return c.d >= RNG.f && c.d <= RNG.t;
   if (per === 'sel') { if (!selY) return true; if (+c.d.slice(0, 4) !== selY) return false; return !selM || +c.d.slice(5, 7) === selM; }
   if (per === 'month') return c.d.slice(0, 7) === t.slice(0, 7);
   if (per === 'ytd') return c.d.slice(0, 4) === t.slice(0, 4) && c.d <= t;
@@ -2621,15 +2683,15 @@ function renderStats() {
   var lv = sel.reduce(function (s, c) { return s + c.n; }, 0), withLv = sel.filter(function (c) { return c.n > 0; }).length;
   var rated = sel.filter(function (c) { return c.df > 0; });
   MS = null;
-  if (per === 'sel' && selY && selM) { var rcb = el('button', 'recapb', MONF[selM - 1] + ' ' + selY + ' recap ›'); rcb.onclick = function () { openRecap(selY + '-' + ('0' + selM).slice(-2)); }; b.appendChild(rcb); }
+  var rcm = selY && selM ? selY + '-' + ('0' + selM).slice(-2) : (RNG && RNG.t < t ? RNG.t.slice(0, 7) : t.slice(0, 7));   // recap: the month shown, else this month
+  var rcb = el('button', 'recapb', MONF[+rcm.slice(5) - 1] + ' ' + rcm.slice(0, 4) + ' recap ›'); rcb.onclick = function () { openRecap(rcm); }; b.appendChild(rcb);
+  var schL = all.filter(function (c) { return c.s === 'Scheduled' && c.d >= t && inPer(c); });
   var tiles = el('div', 'tiles'); b.appendChild(tiles);
-  tile(tiles, String(sel.length), 'Cases completed');
-  tile(tiles, String(lv), 'Levels');
-  tile(tiles, withLv ? (lv / withLv).toFixed(1) : '–', 'Levels per case');
+  tile(tiles, String(sel.length), 'Completed', sel.length ? function () { drillCases('Completed', sel); } : null);
+  tile(tiles, String(schL.length), 'Scheduled', schL.length ? function () { drillCases('Scheduled', schL); } : null);
   tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Avg difficulty (1–5)');
-  var schLbl = per === 'sel' && selY ? (selM ? (selY + '-' + ('0' + selM).slice(-2) === t.slice(0, 7) ? 'Scheduled this month' : 'Scheduled in ' + MON[selM - 1]) : 'Scheduled in ' + selY) : 'Scheduled (all upcoming)';
-  tile(tiles, String(all.filter(function (c) { return c.s === 'Scheduled' && c.d >= t && inPer(c); }).length), schLbl);
-  tile(tiles, String(all.filter(function (c) { return c.s === 'Needs confirmation'; }).length), 'Awaiting your rating', openRating);
+  var nc = all.filter(function (c) { return c.s === 'Needs confirmation'; }).length;
+  tile(tiles, String(nc), 'Awaiting your rating', nc ? openRating : null);
   if (!sel.length) b.appendChild(el('div', 'note', inclUnrated ? 'No cases in this period yet.' : 'No rated cases in this period yet. Rate cases on the Cases tab, or turn on "Include past cases I haven’t rated".'));
 
   var cy = selY || +t.slice(0, 4), py = cy - 1;
@@ -2669,16 +2731,14 @@ function renderStats() {
   [['#9AA1AE', 'Last year'], ['#B9D7EC', 'This year'], ['#D3B98C', 'Scheduled']].forEach(function (p) { var s = el('span'), w = el('span', 'sw'); w.style.boxShadow = 'inset 0 0 0 10px ' + p[0]; s.appendChild(w); s.appendChild(document.createTextNode(p[1])); lg.appendChild(s); });
   mc.appendChild(lg); mc.appendChild(info);
 
-  hbars(card('By case type'), tally(sel, function (c) { return c.t; }));
-  apprCard(sel);
+  drillBars('By case type', '', sel, function (c) { return c.t; });
+  if (sel.some(function (x) { return x.d >= APPR_FROM; })) apprCard(sel);   // ALIF vs lateral: only once December 2026 cases exist
   var msl = milestones().filter(function (m) { return inPer({ d: m.d }); }).slice(-10).reverse();
   if (msl.length) { var mcd = card('Milestones'); msl.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(el('span', 'mi', '🏆')); r.appendChild(el('span', null, m.t + ', ' + MON[+m.d.slice(5, 7) - 1] + ' ' + (+m.d.slice(8)) + (m.d.slice(0, 4) !== stats.today.slice(0, 4) ? ', ' + m.d.slice(0, 4) : ''))); mcd.appendChild(r); }); }
-  hbars(card('By vendor', 'Cases with hardware. Your op note’s vendor when one is filed, otherwise the scheduling order; a vendor you change in the app wins. Tracked since Nov 9, 2026.'),
-    tally(sel.filter(function (c) { return c.v; }), function (c) { return c.v.split(/\s*,\s*/); }), 'No hardware cases since Nov 9 in this period.');
+  drillBars('By vendor', 'Cases with hardware, since Nov 9, 2026.', sel.filter(function (c) { return c.v; }), function (c) { return c.v.split(', '); }, 'No hardware cases since Nov 9, 2026 in this period.');
   var LV = ['1 level', '2 levels', '3 levels', '4+ levels', 'Not stated'];
-  hbars(card('Levels per case'), tally(sel, function (c) { return c.n ? (c.n >= 4 ? LV[3] : LV[c.n - 1]) : LV[4]; }).sort(function (a, b) { return LV.indexOf(a.k) - LV.indexOf(b.k); }));
-  hbars(card('By payer', 'Share of cases in this period.'), tally(sel, function (c) { return c.ins; }), null,
-    function (v) { return v + ' (' + Math.round(100 * v / Math.max(1, sel.length)) + '%)'; });
+  drillBars('Levels per case', '', sel, function (c) { return c.n ? (c.n >= 4 ? LV[3] : LV[c.n - 1]) : LV[4]; }, null, null, function (a, b) { return LV.indexOf(a.k) - LV.indexOf(b.k); });
+  drillBars('By payer', 'Share of cases in this period.', sel, function (c) { return c.ins; }, null, function (v) { return v + ' (' + Math.round(100 * v / Math.max(1, sel.length)) + '%)'; });
   // CPT mix card removed (Nov 2026): case type already says it.
   if (0) hbars(card('CPT mix', 'Expected CPTs; each code counted once per case. Top 15.'), tally(sel, function (c) { return c.cpt; }).slice(0, 15));
   var L = INIT.labels || {};
