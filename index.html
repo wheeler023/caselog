@@ -486,7 +486,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
 <div class="nav"><button class="t" onclick="go(INIT.today)" aria-label="Back to today">Today</button><button onclick="stepCal(-1)" aria-label="Previous month">‹</button><button onclick="stepCal(1)" aria-label="Next month">›</button><button class="ask" id="askBtn" onclick="openAsk()" aria-label="Ask about your numbers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M9 10h.01M12 10h.01M15 10h.01"/></svg></button><button class="srch" onclick="openSearch()" aria-label="Search cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button></div></div>
 <input type="date" id="pick" style="display:none"></div>
-<div class="todo" id="todo" style="display:none" onclick="openRating()"></div>
+<div class="todo" id="todo" style="display:none" onclick="openTodo()"></div>
 <div class="getapp" id="getApp" style="display:none"><span>Install the full-screen phone app</span><button onclick="pairPhone(this)">Set up phone app</button></div>
 <div class="calc" id="cal"></div>
 <div class="dhd2"><span id="dayLbl">Loading…</span><span id="dayCnt"></span></div>
@@ -542,6 +542,10 @@ body.shrunk .hd .gear{width:32px;height:32px}
  <div class="sh"><button onclick="closeRating()">‹ Back</button><div class="ttl"><b id="rTitle">Needs rating</b><span id="rCount"></span></div></div>
  <div class="sbox" id="sbox"><input type="search" id="q" placeholder="Name, procedure, level, CPT, note…" autocomplete="off" oninput="searchSoon()" enterkeyhint="search"><div class="chips mos" id="sYrs"></div><div class="chips mos" id="sMos"></div><div class="chips skeys" id="sKeys"></div></div>
  <div class="body"><div class="list" id="rList"></div></div>
+</div>
+<div class="sheet" id="tdsheet">
+ <div class="sh"><button onclick="closeTodo()">‹ Back</button><div class="ttl"><b>To do</b><span id="tdSub"></span></div></div>
+ <div class="body"><div class="chlist" id="tdList"></div></div>
 </div>
 <div class="sheet" id="chsheet">
  <div class="sh"><button onclick="closeChanges()">‹ Back</button><div class="ttl"><b>Schedule changes</b><span id="chSub"></span></div></div>
@@ -718,7 +722,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795572471582';
+var BUILD = '1795573251185';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -772,7 +776,9 @@ function label(isoDay) {
 }
 function shift(n) { var d = parse(day); d.setDate(d.getDate() + n); go(iso(d)); }
 function loadTodo() { google.script.run.withSuccessHandler(drawTodo).wdTodo(); }
+var TODO = null;
 function drawTodo(t) {
+  TODO = t;
   {
     var b = $('todo'), parts = [];
     if (t.rate.length) parts.push(t.rate.length + ' to rate');
@@ -785,6 +791,36 @@ function drawTodo(t) {
     b.setAttribute('role', 'alert'); b.style.display = '';
   }
 }
+/** The banner: straight to rating when that's all there is; otherwise a list of what's left. */
+function openTodo() {
+  var t = TODO || { rate: [], note: [], inbox: 0 };
+  if (t.rate.length && !t.note.length && !t.inbox) { openRating(); return; }
+  var L = $('tdList'); L.innerHTML = '';
+  var n = t.rate.length + t.note.length + (t.inbox || 0);
+  $('tdSub').textContent = n ? n + ' left' : 'All done';
+  if (t.rate.length) {
+    var rb = el('button', 'addimg chclr', 'Rate ' + t.rate.length + (t.rate.length === 1 ? ' case' : ' cases'));
+    rb.onclick = function () { closeTodo(); openRating(); }; L.appendChild(rb);
+  }
+  if (t.note.length) {
+    L.appendChild(el('div', 'chh', 'Op note missing'));
+    t.note.forEach(function (x) {
+      var row = el('button', 'chr');
+      var top = el('div', 'cht'); top.appendChild(el('span', 'chk k-pp', 'Op note')); top.appendChild(el('span', 'cha', x.when || '')); row.appendChild(top);
+      row.appendChild(el('div', 'chw', (x.what || 'Surgery') + (x.name ? ', ' + x.name : '')));
+      row.appendChild(el('div', 'chd', 'Dictate it, or tell Claude which case a filed note belongs to.'));
+      row.onclick = function () { closeTodo(); goDay(x.day); };
+      L.appendChild(row);
+    });
+  }
+  if (t.inbox) {
+    L.appendChild(el('div', 'chh', 'Op notes waiting for a case'));
+    L.appendChild(el('div', 'chr', t.inbox + (t.inbox === 1 ? ' note is' : ' notes are') + ' in the Op Notes Inbox without a match. Tell Claude which case each belongs to.'));
+  }
+  if (!n) L.appendChild(el('div', 'empty', 'Nothing left from earlier days.'));
+  $('tdsheet').classList.add('on');
+}
+function closeTodo() { $('tdsheet').classList.remove('on'); }
 function storeMonth(r) { var m = {}; r.days.forEach(function (x) { m[x.d] = x; }); weekCache[r.start] = m; }
 var weekCache = {}, viewMon = '';
 function firstOf(isoDay) { return isoDay.slice(0, 8) + '01'; }
