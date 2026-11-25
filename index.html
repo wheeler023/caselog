@@ -792,7 +792,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795576166755';
+var BUILD = '1795576567502';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1166,7 +1166,8 @@ function celebrate(m, more) {
 var msObs = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) {   // scroll a milestone into view: a short sweep
   es.forEach(function (e) {
     if (!e.isIntersecting || e.target.dataset.cel) return; e.target.dataset.cel = '1';
-    e.target.classList.add('glow'); if (e.target.msData) celebrate(e.target.msData, 1);
+    var m = e.target.msData, seen = msSeen() || []; if (!m || seen.indexOf(msKey(m)) >= 0) return;   // each milestone celebrates once, ever, on this phone
+    msSave(seen.concat([msKey(m)])); e.target.classList.add('glow'); celebrate(m, 1);
   });
 }, { threshold: 0.9 }) : null;
 function msWatch(row, m) { row.msData = m; if (msObs) msObs.observe(row); }
