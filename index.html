@@ -503,6 +503,9 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .effc .eh2{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}.effc .eh2 b{font-size:15.5px;color:#E6ECF5}.effc .eh2 span{font-size:12.5px;color:#8C97AB}
 .effc .eg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.effc .eg div{display:flex;flex-direction:column;gap:2px}.effc .eg .l{font-size:11.5px;color:#8C97AB}.effc .eg .v{font-size:15px;color:#E6ECF5;font-weight:600}
 .effc .eg .v.over{color:#D9BC84}.effc .eg .v.under{color:#3DB8D4}
+button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:inherit}.effc .chd{font-size:13px;color:#8C97AB;margin:-4px 0 8px}
+.effopt{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;width:100%;text-align:left;background:#121D33;border:1px solid #22314D;border-radius:12px;padding:14px;margin-top:10px;font-family:inherit;color:#E6ECF5;cursor:pointer}.effopt b{font-size:16px}.effopt span{grid-column:1;font-size:13px;color:#8C97AB;margin-top:4px;line-height:1.35}.effopt i{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-size:22px;color:#3DB8D4;padding-left:10px}.effopt:active{transform:scale(.99)}
+.mbtn{background:none;border:0;padding:0;font-family:inherit;cursor:pointer}.eff .er.sc3{grid-template-columns:2fr 1fr 1fr}
 </style></head><body>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -749,7 +752,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795575236903';
+var BUILD = '1795575535305';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1504,6 +1507,119 @@ function effDetail(r) {
   if (fa && fa.daysMeasured) B.appendChild(el('div', 'note', 'Finish-time forecast was off by ' + Math.round(+fa.averageMissMin || 0) + ' min on average over ' + fa.daysMeasured + ' day' + (fa.daysMeasured === 1 ? '' : 's') + '.'));
   B.appendChild(el('div', 'note', 'Actual runs from patient into the OR to into PACU. Book as is the actual median rounded up to the next 15 minutes. Faded rows have fewer than 5 cases.'));
 }
+// ---- Efficiency: case efficiency (booked vs actual) and team efficiency (turnovers) ----
+function caseEffRows(sel) {   // cases in range with room times: booked, actual, over/under
+  return sel.filter(function (x) { return !isNaN(tmin(x.as)) && !isNaN(tmin(x.ae)); }).map(function (x) {
+    var a = tmin(x.ae) - tmin(x.as); if (a < 0) a += 1440; var b = bookedMin(x.du);
+    return { c: x, act: a, bk: b, ou: b ? a - b : null };
+  });
+}
+function turnovers(sel) {   // same-day gaps from one patient into PACU to the next into the OR, kept with the earlier case
+  var byDay = {}, out = [];
+  sel.forEach(function (x) { if (!isNaN(tmin(x.as)) && !isNaN(tmin(x.ae))) (byDay[x.d] = byDay[x.d] || []).push(x); });
+  Object.keys(byDay).forEach(function (d) {
+    var L = byDay[d].sort(function (p, q) { return tmin(p.as) - tmin(q.as); });
+    for (var i = 0; i + 1 < L.length; i++) { var t = tmin(L[i + 1].as) - tmin(L[i].ae); if (t >= 0 && t <= 120) out.push({ c: L[i], nx: L[i + 1], t: t }); }
+  });
+  return out;
+}
+function perLabel() { var l = $('perLbl'); return l ? l.textContent : ''; }
+function crewOf(x) { var team = (stats && stats.team) || {}, T = team[x.d] || {}; return { sc: x.sc || T.sc || '', ci: x.ci || T.ci || '' }; }
+function effCard(sel) {
+  var c = card('Efficiency', 'Room times from Dr. Edwards. Tap one to dig in.');
+  var cr = caseEffRows(sel), to = turnovers(sel);
+  var acts = cr.map(function (r) { return r.act; }), bks = cr.filter(function (r) { return r.bk; });
+  var within = bks.filter(function (r) { return Math.abs(r.ou) <= 15; }).length;
+  function opt(title, line, fn) {
+    var b = el('button', 'effopt'); b.appendChild(el('b', null, title)); b.appendChild(el('span', null, line)); b.appendChild(el('i', null, '›'));
+    b.onclick = fn; c.appendChild(b);
+  }
+  opt('Case efficiency', cr.length ? cr.length + ' cases · actual median ' + dur(median(acts)) + (bks.length ? ' · ' + Math.round(100 * within / bks.length) + '% within 15 min of booked' : '') : 'Booked vs actual, case by case and by procedure', function () { caseEffDetail(sel, cr); });
+  var best = bestTeams(to)[0];
+  opt('Team efficiency', to.length ? 'Turnover median ' + dur(median(to.map(function (t) { return t.t; }))) + (best && best.ok ? ' · fastest team ' + best.k : '') : 'Turnovers by scrub, circulator and team', function () { teamEffDetail(sel, to); });
+}
+function caseEffDetail(sel, cr) {
+  var B = openDrill('Case efficiency', perLabel());
+  var bks = cr.filter(function (r) { return r.bk; }), tl = el('div', 'tiles t3');
+  tile(tl, bks.length ? dur(median(bks.map(function (r) { return r.bk; }))) : '–', 'Booked (median)');
+  tile(tl, cr.length ? dur(median(cr.map(function (r) { return r.act; }))) : '–', 'Actual (median)');
+  tile(tl, bks.length ? Math.round(100 * bks.filter(function (r) { return Math.abs(r.ou) <= 15; }).length / bks.length) + '%' : '–', 'Within 15 min');
+  B.appendChild(tl);
+  var seg = el('div', 'chips'), body = el('div'); B.appendChild(seg); B.appendChild(body);
+  function show(k) {
+    seg.innerHTML = ''; body.innerHTML = '';
+    [['case', 'By case'], ['proc', 'By procedure']].forEach(function (p) { var b = el('button', k === p[0] ? 'chip on' : 'chip', p[1]); b.onclick = function () { show(p[0]); }; seg.appendChild(b); });
+    if (k === 'case') {
+      if (!cr.length) { body.appendChild(el('div', 'note', 'No room times for cases in this range yet.')); return; }
+      cr.slice().sort(function (a, b) { return a.c.d === b.c.d ? tmin(b.c.as) - tmin(a.c.as) : (a.c.d < b.c.d ? 1 : -1); }).forEach(function (r) {
+        var x = r.c, row = el('button', 'effc tapc');
+        var h = el('div', 'eh2'); h.appendChild(el('b', null, (x.n ? x.n + '-Level ' : '') + x.t)); h.appendChild(el('span', null, shortD(x.d))); row.appendChild(h);
+        if (x.pn) row.appendChild(el('div', 'chd', pName(x.pn)));
+        var g = el('div', 'eg'), ou = r.ou;
+        [['Booked', r.bk ? dur(r.bk) : '–'], ['Actual', dur(r.act)], ['Over/under', ou == null ? '–' : (ou > 0 ? '+' : ou < 0 ? '−' : '') + Math.abs(ou) + 'm'], ['In room', hm(x.as)]].forEach(function (z) {
+          var cell = el('div'); cell.appendChild(el('span', 'l', z[0])); cell.appendChild(el('span', 'v' + (z[0] === 'Over/under' && ou != null ? (ou > 15 ? ' over' : ou < -15 ? ' under' : '') : ''), z[1])); g.appendChild(cell);
+        });
+        row.appendChild(g); row.onclick = function () { closeDrill(); pendingOpen = x.id; setTab('cases'); go(x.d); };
+        body.appendChild(row);
+      });
+      body.appendChild(el('div', 'note', 'Actual runs from patient into the OR to into PACU. Gold is more than 15 min over booked, blue more than 15 min under. Tap a case to open it.'));
+    } else {
+      function draw(r) {
+        var e = r && r.efficiency;
+        if (!e || !e.byProcedure) { body.appendChild(el('div', 'note', 'Nothing yet. This fills in from Dr. Edwards’ schedule feed.')); return; }
+        body.appendChild(el('div', 'note', 'Last 180 days, from Dr. Edwards’ feed.'));
+        e.byProcedure.forEach(function (p) {
+          var ou = Math.round(+p.avgOverUnderMin || 0), row = el('div', 'effc' + (p.fewCases ? ' few' : ''));
+          var h = el('div', 'eh2'); h.appendChild(el('b', null, p.procedure || p.group || p.name || p.key || '')); h.appendChild(el('span', null, (p.cases || 0) + (p.cases === 1 ? ' case' : ' cases'))); row.appendChild(h);
+          var g = el('div', 'eg');
+          [['Booked', dur(p.bookedMedianMin)], ['Actual', dur(p.actualMedianMin)], ['Over/under', (ou > 0 ? '+' : ou < 0 ? '−' : '') + Math.abs(ou) + 'm'], ['Book as', p.fewCases || !p.actualMedianMin ? '–' : dur(Math.ceil(p.actualMedianMin / 15) * 15)]]
+            .forEach(function (z) { var cell = el('div'); cell.appendChild(el('span', 'l', z[0])); cell.appendChild(el('span', 'v' + (z[0] === 'Over/under' ? (ou > 5 ? ' over' : ou < -5 ? ' under' : '') : ''), z[1])); g.appendChild(cell); });
+          row.appendChild(g); body.appendChild(row);
+        });
+        var fa = r.forecastAccuracy;
+        if (fa && fa.daysMeasured) body.appendChild(el('div', 'note', 'Finish-time forecast was off by ' + Math.round(+fa.averageMissMin || 0) + ' min on average over ' + fa.daysMeasured + ' day' + (fa.daysMeasured === 1 ? '' : 's') + '.'));
+        body.appendChild(el('div', 'note', 'Book as is the actual median rounded up to the next 15 minutes. Faded rows have fewer than 5 cases.'));
+      }
+      if (EFF) draw(EFF); else { body.appendChild(el('div', 'note', 'Loading…')); google.script.run.withSuccessHandler(function (r) { EFF = r || {}; body.innerHTML = ''; draw(EFF); }).withFailureHandler(function () { body.innerHTML = ''; draw(null); }).wdEap(); }
+    }
+  }
+  show('case');
+}
+function bestTeams(to) {   // scrub + circulator pairs, fastest median turnover first; 3+ turnovers to be ranked
+  var P = {};
+  to.forEach(function (t) { var w = crewOf(t.c); if (!w.sc || !w.ci || w.sc === 'N/A') return; var k = w.sc + ' + ' + w.ci; (P[k] = P[k] || []).push(t.t); });
+  return Object.keys(P).map(function (k) { return { k: k, n: P[k].length, m: median(P[k]), ok: P[k].length >= 3 }; })
+    .sort(function (a, b) { return (b.ok - a.ok) || (a.m - b.m); });
+}
+function teamEffDetail(sel, to) {
+  var B = openDrill('Team efficiency', perLabel());
+  var tl = el('div', 'tiles t3');
+  tile(tl, to.length ? dur(median(to.map(function (t) { return t.t; }))) : '–', 'Turnover (median)');
+  tile(tl, String(to.length), 'Turnovers measured');
+  tile(tl, to.length ? Math.round(100 * to.filter(function (t) { return t.t <= 30; }).length / to.length) + '%' : '–', 'Under 30 min');
+  B.appendChild(tl);
+  var bt = bestTeams(to), c = el('div', 'card2'); B.appendChild(c);
+  c.appendChild(el('h3', null, 'Best teams')); c.appendChild(el('div', 'note', 'Scrub + circulator pairs, fastest median turnover first. Turnover is credited to the team on the earlier case.'));
+  if (!bt.length) c.appendChild(el('div', 'note', 'No team turnovers in this range yet.'));
+  var tb = el('div', 'eff'), hd = el('div', 'er eh sc3'); ['Team', 'Turnovers', 'Median'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); if (bt.length) { tb.appendChild(hd); c.appendChild(tb); }
+  bt.forEach(function (p, i) {
+    var r = el('div', 'er sc3' + (p.ok ? '' : ' few')); r.appendChild(el('span', null, (p.ok && i === 0 ? '★ ' : '') + p.k)); r.appendChild(el('span', null, String(p.n))); r.appendChild(el('span', 'bk', Math.round(p.m) + 'm')); tb.appendChild(r);
+  });
+  var keep = cardTarget; cardTarget = 'dList';
+  try { roleCard(sel, 'sc', 'By primary scrub', ROLE.scrub.names()); roleCard(sel, 'ci', 'By circulator', ROLE.circ.names()); } finally { cardTarget = keep; }
+  if (to.length) {
+    var lc = el('div', 'card2'); B.appendChild(lc); lc.appendChild(el('h3', null, 'Slowest turnovers')); lc.appendChild(el('div', 'note', 'Tap to open the case before the turnover.'));
+    to.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 8).forEach(function (t) {
+      var w = crewOf(t.c), r = el('button', 'chr');
+      var top = el('div', 'cht'); top.appendChild(el('span', 'cha', shortD(t.c.d))); top.appendChild(el('span', 'cha', Math.round(t.t) + ' min')); r.appendChild(top);
+      r.appendChild(el('div', 'chw', hm(t.c.ae) + ' to ' + hm(t.nx.as) + ', after ' + t.c.t));
+      if (w.sc || w.ci) r.appendChild(el('div', 'chd', [w.sc, w.ci].filter(Boolean).join(' + ')));
+      r.onclick = function () { closeDrill(); pendingOpen = t.c.id; setTab('cases'); go(t.c.d); };
+      lc.appendChild(r);
+    });
+  }
+  B.appendChild(el('div', 'note', 'Turnover runs from one patient into PACU to the next patient into the OR, same day. Gaps over 2 hours are left out. Faded rows have fewer than 3 turnovers.'));
+}
 // ---- Drill-down: any bar on Metrics opens the cases behind it ----
 function openDrill(title, sub) { $('dTitle').textContent = title; $('dSub').textContent = sub || ''; var B = $('dList'); B.innerHTML = ''; $('dsheet').classList.add('on'); B.scrollTop = 0; return B; }
 function closeDrill() { $('dsheet').classList.remove('on'); }
@@ -1518,15 +1634,21 @@ function drillCases(title, list, from) {
     B.appendChild(r);
   });
 }
-function drillBars(title, note, list, keyFn, empty, fmt, sortFn) {
+function drillBars(title, note, list, keyFn, empty, fmt, sortFn, lim) {
   var rows = tally(list, keyFn); if (sortFn) rows.sort(sortFn);
-  var box = card(title, note);
-  hbars(box, rows, empty, fmt);
-  var hbs = box.querySelectorAll('.hb');
-  rows.forEach(function (r, i) {
-    var row = hbs[i]; if (!row) return; row.classList.add('tap');
-    row.onclick = function () { drillCases(r.k, list.filter(function (c) { var k = keyFn(c); return Array.isArray(k) ? k.indexOf(r.k) >= 0 : k === r.k; }), title); };
-  });
+  var box = card(title, note), show = lim && rows.length > lim + 1 ? rows.slice(0, lim) : rows;
+  function wire(b, rs) {
+    var hbs = b.querySelectorAll('.hb');
+    rs.forEach(function (r, i) {
+      var row = hbs[i]; if (!row) return; row.classList.add('tap');
+      row.onclick = function () { drillCases(r.k, list.filter(function (c) { var k = keyFn(c); return Array.isArray(k) ? k.indexOf(r.k) >= 0 : k === r.k; }), title); };
+    });
+  }
+  hbars(box, show, empty, fmt); wire(box, show);
+  if (show.length < rows.length) {
+    var m = el('button', 'more2 mbtn', 'See all ' + rows.length + ' ›'); box.appendChild(m);
+    m.onclick = function () { var B = openDrill(title, rows.length + ' total'), b = el('div', 'card2'); B.appendChild(b); hbars(b, rows, empty, fmt); wire(b, rows); };
+  }
 }
 // ---- Primary scrub: one tap on the case, compared on Metrics ----
 var ROLE = {
@@ -2738,7 +2860,7 @@ function renderStats() {
   drillBars('By vendor', 'Cases with hardware, since Nov 9, 2026.', sel.filter(function (c) { return c.v; }), function (c) { return c.v.split(', '); }, 'No hardware cases since Nov 9, 2026 in this period.');
   var LV = ['1 level', '2 levels', '3 levels', '4+ levels', 'Not stated'];
   drillBars('Levels per case', '', sel, function (c) { return c.n ? (c.n >= 4 ? LV[3] : LV[c.n - 1]) : LV[4]; }, null, null, function (a, b) { return LV.indexOf(a.k) - LV.indexOf(b.k); });
-  drillBars('By payer', 'Share of cases in this period.', sel, function (c) { return c.ins; }, null, function (v) { return v + ' (' + Math.round(100 * v / Math.max(1, sel.length)) + '%)'; });
+  drillBars('By payer', 'Top 5 by share of cases in this period.', sel, function (c) { return c.ins; }, null, function (v) { return v + ' (' + Math.round(100 * v / Math.max(1, sel.length)) + '%)'; }, null, 5);
   // CPT mix card removed (Nov 2026): case type already says it.
   if (0) hbars(card('CPT mix', 'Expected CPTs; each code counted once per case. Top 15.'), tally(sel, function (c) { return c.cpt; }).slice(0, 15));
   var L = INIT.labels || {};
@@ -2747,9 +2869,7 @@ function renderStats() {
   hbars(card('Complications', rated.length ? withX.length + ' of ' + rated.length + ' rated cases (' + Math.round(100 * withX.length / rated.length) + '%) had one or more.' : 'Rated cases only.'),
     (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0 }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
   hbars(card('Difficulty', 'Rated cases only.'), [1, 2, 3, 4, 5].map(function (n) { return { k: n + ' · ' + (L[n] || ''), v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
-  roleCard(sel, 'sc', 'By primary scrub', ROLE.scrub.names());
-  roleCard(sel, 'ci', 'By circulator', ROLE.circ.names());
-  eapEff();
+  effCard(sel);
 }
 go(day);
 </script><script>boot();</script></body></html>
