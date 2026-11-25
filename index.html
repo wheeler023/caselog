@@ -481,6 +481,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .eddel{display:block;width:100%;margin-top:10px;background:transparent;border:1px solid #6B2A2A;color:#F08A7C;border-radius:10px;height:42px;font:inherit;font-size:15px}
 .eddel.sure{background:#5A1F1F;color:#FFFFFF;border-color:#A33}
 .chclr{margin:8px 0 4px}.chch{text-align:center;margin-bottom:6px}
+.tdw{margin-bottom:10px}.tdw .chr{margin-bottom:4px}.tdx{display:block;margin:0 auto 6px;font-size:13px;color:#8C97AB}
 </style></head><body>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -722,7 +723,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795573251185';
+var BUILD = '1795573649149';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -808,9 +809,15 @@ function openTodo() {
       var row = el('button', 'chr');
       var top = el('div', 'cht'); top.appendChild(el('span', 'chk k-pp', 'Op note')); top.appendChild(el('span', 'cha', x.when || '')); row.appendChild(top);
       row.appendChild(el('div', 'chw', (x.what || 'Surgery') + (x.name ? ', ' + x.name : '')));
-      row.appendChild(el('div', 'chd', 'Dictate it, or tell Claude which case a filed note belongs to.'));
-      row.onclick = function () { closeTodo(); goDay(x.day); };
-      L.appendChild(row);
+      row.appendChild(el('div', 'chd', 'Tap to open the case.'));
+      row.onclick = function () { closeTodo(); pendingOpen = x.id; setTab('cases'); go(x.day); };
+      var dm = el('button', 'lnk tdx', 'Dismiss, don’t remind me about this one');
+      dm.onclick = function (ev) {
+        ev.stopPropagation(); dm.disabled = true; dm.textContent = 'Dismissing…';
+        google.script.run.withSuccessHandler(function (nt) { drawTodo(nt); openTodo(); if (!nt.rate.length && !nt.note.length && !nt.inbox) closeTodo(); })
+          .withFailureHandler(function (e) { dm.disabled = false; dm.textContent = 'Not dismissed: ' + e.message; }).wdTodoDismiss(x.id);
+      };
+      var wrap = el('div', 'tdw'); wrap.appendChild(row); wrap.appendChild(dm); L.appendChild(wrap);
     });
   }
   if (t.inbox) {
