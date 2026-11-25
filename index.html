@@ -343,6 +343,7 @@ html,body{background:#0F1726;color:#D7DDEA}
 .card.v2 .cd{font-size:12.5px;color:#7D889D}
 .card.v2 .cn{font-size:16px;font-weight:700;color:#F3F5FA;letter-spacing:.01em}
 .card.v2 .cp{font-size:13.5px;color:#A9B3C6}
+.card.v2 .cp{white-space:normal;overflow:visible;text-overflow:clip;display:block;-webkit-line-clamp:unset;line-height:1.3}   /* the whole surgery, wrapped */
 .card.v2 .ci{font-size:12.5px;font-weight:600;color:#9FBEDF}.card.v2 .ci.lv{color:#C9A86A}
 .pill{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;letter-spacing:.01em}
 .pill.p-sched{background:transparent;box-shadow:inset 0 0 0 1px #35527A;color:#9FBEDF}
@@ -792,7 +793,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795577502571';
+var BUILD = '1795577782210';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
