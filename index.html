@@ -482,6 +482,15 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .eddel.sure{background:#5A1F1F;color:#FFFFFF;border-color:#A33}
 .chclr{margin:8px 0 4px}.chch{text-align:center;margin-bottom:6px}
 .tdw{margin-bottom:10px}.tdw .chr{margin-bottom:4px}.tdx{display:block;margin:0 auto 6px;font-size:13px;color:#8C97AB}
+#sheet .lockbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#12243A;border:1px solid #2F6E80;border-radius:12px;padding:10px 14px;margin:0 0 12px;color:#C9D3E3;font-size:14px}
+#sheet .lockbar button{background:transparent;border:1px solid #3DB8D4;color:#3DB8D4;border-radius:9px;height:34px;padding:0 16px;font:inherit;font-size:14px;font-weight:600}
+#sheet.fut #outCard,#sheet.fut #cxCard,#sheet.fut #notesCard,#sheet.fut #opCard,#sheet.fut #vidCard{display:none !important}
+#sheet.locked .rate,#sheet.locked .cxs{pointer-events:none}
+#sheet.locked .rate button:not(.on),#sheet.locked .cxs .cxc:not(.on){display:none}
+#sheet.locked #clrBtn,#sheet.locked #cxBtn,#sheet.locked #outCard .hint,#sheet.locked #cxCard .hint,#sheet.locked #notesCard .hint,#sheet.locked #notesCard .acts,#sheet.locked #imgCard .hint,#sheet.locked #imgCard .addrow,#sheet.locked #vidCard .addimg,#sheet.locked #vidCard .pnh{display:none !important}
+#sheet.locked textarea{border-color:transparent !important;background:transparent !important;resize:none;padding-left:0;padding-right:0}
+#sheet.locked .cxnone{color:#8C97AB;font-size:14px}
+#sheet.locked #imgCard.empty{display:none}#sheet.locked textarea{min-height:0 !important}
 </style></head><body>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -555,6 +564,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 <div class="sheet" id="sheet">
  <div class="sh"><button onclick="closeCase()">‹ Back</button><div class="ttl"><b id="cName"></b><span id="cSub"></span></div></div>
  <div class="body">
+  <div class="lockbar" id="lockBar"><span id="lockTx">This case is closed.</span><button onclick="unlockCase()">Edit</button></div>
   <div class="out" id="outCard">
    <div class="lh"><label>How did it go?</label><button class="info" id="infoBtn" onclick="toggleLegend()" aria-label="What each rating means" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor"/></svg></button></div>
    <div class="legend" id="legend"></div>
@@ -723,7 +733,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795573649149';
+var BUILD = '1795573938800';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1919,7 +1929,7 @@ function loadImages() {
     .withFailureHandler(function () {}).wdImages(c.id);
 }
 function renderThumbs() {
-  var box = $('thumbs'); box.innerHTML = '';
+  var box = $('thumbs'); box.innerHTML = ''; $('imgCard').classList.toggle('empty', !imgs.length);
   imgs.forEach(function (im, i) {
     var a = el('a', 'th');
     if (im.id) { a.href = 'https://drive.google.com/file/d/' + im.id + '/view'; a.target = '_blank'; a.rel = 'noopener'; }
@@ -2010,7 +2020,29 @@ function renderOutcome() {
   renderCx();
   var lg = $('legend'); lg.innerHTML = '';
   [1, 2, 3, 4, 5].forEach(function (n) { var r = el('div', 'lrow'); r.appendChild(el('b', null, String(n))); r.appendChild(el('span', null, L[n] || '')); lg.appendChild(r); });
+  applyLock();
 }
+/** Before the day of surgery: no rating, notes, complications, op note or patient update.
+ *  After the day, once it's rated, cancelled or performed: read-only until you tap Edit. Today stays open. */
+var UNLOCK = {};
+function applyLock() {
+  var c = cur; if (!c) return;
+  var sh = $('sheet'), d = c.date || day, fut = d > INIT.today, past = d < INIT.today;
+  var done = !!c.difficulty || c.status === 'Cancelled' || (c.status === 'Performed' && c.canRate === false);
+  var lock = past && done && !UNLOCK[c.id];
+  sh.classList.toggle('fut', fut); sh.classList.toggle('locked', lock);
+  $('lockBar').style.display = lock ? '' : 'none';
+  $('lockTx').textContent = c.status === 'Cancelled' ? 'Closed out as cancelled.' : 'This case is closed.';
+  ['notes', 'vidNote'].forEach(function (k) { var t = $(k); if (t) { t.readOnly = lock; } });
+  $('notes').placeholder = lock ? 'No notes.' : 'Dictate or type notes…';
+  $('vidNote').placeholder = lock ? '' : 'Anything they must not miss. Example: Start your blood thinner the morning after surgery.';
+  var pn = $('vidNote').closest('.pnote'); if (pn) pn.style.display = lock && !$('vidNote').value.trim() ? 'none' : '';
+
+  try { if (typeof growNotes === 'function') growNotes(); } catch (e) {}
+  var nb = $('cxs').querySelector('.cxnone'); if (nb) nb.remove();
+  if (lock && !$('cxs').querySelector('.cxc.on')) $('cxs').appendChild(el('span', 'cxnone', 'None reported.'));
+}
+function unlockCase() { if (!cur) return; UNLOCK[cur.id] = 1; applyLock(); toast('Editing unlocked for this case'); }
 function renderCx() {
   var box = $('cxs'); box.innerHTML = '';
   var have = (cur.cx || '').split(/\s*,\s*/).filter(Boolean);
