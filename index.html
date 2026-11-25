@@ -503,6 +503,11 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .tiles.t3{grid-template-columns:repeat(3,1fr)}
 .card2.tapc{cursor:pointer}.card2.tapc:active{transform:scale(.99)}.more2{color:#3DB8D4;font-size:14px;margin-top:10px}
 .effc{background:#121D33;border:1px solid #22314D;border-radius:12px;padding:12px 14px;margin-bottom:8px}.effc.few{opacity:.6}
+.sp-fast{--sp:#2FD67B}.sp-good{--sp:#8CCB9F}.sp-even{--sp:#8C97AB}.sp-over{--sp:#F29A3F}.sp-way{--sp:#D9413A}
+.effc.spr{border-left:5px solid var(--sp);padding-left:12px}.effc.spr .eg .v.ouv{color:var(--sp);font-weight:700}
+.effc.spr .eh2{align-items:center;gap:8px}.effc.spr .eh2 b{margin-right:auto}.sptag{font-style:normal;font-size:11.5px;font-weight:700;color:var(--sp);border:1px solid var(--sp);border-radius:10px;padding:1px 7px;white-space:nowrap}
+.spleg{margin:4px 0 12px}.spbar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:2px}.spbar i{flex:1;background:var(--sp)}
+.splab{display:flex;margin-top:5px}.splab span{flex:1;text-align:center;font-size:10.5px;color:#8C97AB;line-height:1.2}
 .effc .eh2{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}.effc .eh2 b{font-size:15.5px;color:#E6ECF5}.effc .eh2 span{font-size:12.5px;color:#8C97AB}
 .effc .eg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.effc .eg div{display:flex;flex-direction:column;gap:2px}.effc .eg .l{font-size:11.5px;color:#8C97AB}.effc .eg .v{font-size:15px;color:#E6ECF5;font-weight:600}
 .effc .eg .v.over{color:#D9BC84}.effc .eg .v.under{color:#3DB8D4}
@@ -796,7 +801,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795627362464';
+var BUILD = '1795638605180';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1654,6 +1659,18 @@ function effCard(sel) {
   var best = bestTeams(to)[0];
   opt('Team efficiency', to.length ? 'Turnover median ' + dur(median(to.map(function (t) { return t.t; }))) + (best && best.ok ? ' · fastest team ' + best.k : '') : 'Turnovers by scrub, circulator and team', function () { teamEffDetail(sel, to); });
 }
+var SPEC = [['fast', 'Way faster'], ['good', 'Faster'], ['even', 'On time'], ['over', 'A little over'], ['way', 'Way over']];
+function specBand(ou, bk) {   // how far from booked, as a share of the booked time
+  if (ou == null || !bk) return null; var p = ou / bk;
+  return p <= -0.2 ? 0 : p <= -0.07 ? 1 : p < 0.07 ? 2 : p <= 0.2 ? 3 : 4;
+}
+function specLegend() {
+  var w = el('div', 'spleg'), bar = el('div', 'spbar'); SPEC.forEach(function (s) { bar.appendChild(el('i', 'sp-' + s[0])); }); w.appendChild(bar);
+  var lb = el('div', 'splab'); SPEC.forEach(function (s) { lb.appendChild(el('span', null, s[1])); }); w.appendChild(lb);
+  w.appendChild(el('div', 'note', 'Compared with the booked time. Faster or over by more than 20% is the far end; within 7% is on time.'));
+  return w;
+}
+function specMark(row, b) { if (b == null) return; row.classList.add('spr', 'sp-' + SPEC[b][0]); var t = row.querySelector('.eh2'); if (t) t.insertBefore(el('em', 'sptag sp-' + SPEC[b][0], SPEC[b][1]), t.lastChild); }
 function caseEffDetail(sel, cr) {
   var B = openDrill('Case efficiency', perLabel());
   var bks = cr.filter(function (r) { return r.bk; }), tl = el('div', 'tiles t3');
@@ -1661,6 +1678,7 @@ function caseEffDetail(sel, cr) {
   tile(tl, cr.length ? dur(median(cr.map(function (r) { return r.act; }))) : '–', 'Actual (median)');
   tile(tl, bks.length ? Math.round(100 * bks.filter(function (r) { return Math.abs(r.ou) <= 15; }).length / bks.length) + '%' : '–', 'Within 15 min');
   B.appendChild(tl);
+  B.appendChild(specLegend());
   var seg = el('div', 'chips'), body = el('div'); B.appendChild(seg); B.appendChild(body);
   function show(k) {
     seg.innerHTML = ''; body.innerHTML = '';
@@ -1673,12 +1691,12 @@ function caseEffDetail(sel, cr) {
         if (x.pn) row.appendChild(el('div', 'chd', pName(x.pn)));
         var g = el('div', 'eg'), ou = r.ou;
         [['Booked', r.bk ? dur(r.bk) : '–'], ['Actual', dur(r.act)], ['Over/under', ou == null ? '–' : (ou > 0 ? '+' : ou < 0 ? '−' : '') + Math.abs(ou) + 'm'], ['In room', hm(x.as)]].forEach(function (z) {
-          var cell = el('div'); cell.appendChild(el('span', 'l', z[0])); cell.appendChild(el('span', 'v' + (z[0] === 'Over/under' && ou != null ? (ou > 15 ? ' over' : ou < -15 ? ' under' : '') : ''), z[1])); g.appendChild(cell);
+          var cell = el('div'); cell.appendChild(el('span', 'l', z[0])); cell.appendChild(el('span', 'v' + (z[0] === 'Over/under' ? ' ouv' : ''), z[1])); g.appendChild(cell);
         });
-        row.appendChild(g); row.onclick = function () { closeDrill(); pendingOpen = x.id; setTab('cases'); go(x.d); };
+        row.appendChild(g); specMark(row, specBand(ou, r.bk)); row.onclick = function () { closeDrill(); pendingOpen = x.id; setTab('cases'); go(x.d); };
         body.appendChild(row);
       });
-      body.appendChild(el('div', 'note', 'Actual runs from patient into the OR to into PACU. Gold is more than 15 min over booked, blue more than 15 min under. Tap a case to open it.'));
+      body.appendChild(el('div', 'note', 'Actual runs from patient into the OR to into PACU. Tap a case to open it.'));
     } else {
       function draw(r) {
         var e = r && r.efficiency;
@@ -1689,8 +1707,8 @@ function caseEffDetail(sel, cr) {
           var h = el('div', 'eh2'); h.appendChild(el('b', null, p.procedure || p.group || p.name || p.key || '')); h.appendChild(el('span', null, (p.cases || 0) + (p.cases === 1 ? ' case' : ' cases'))); row.appendChild(h);
           var g = el('div', 'eg');
           [['Booked', dur(p.bookedMedianMin)], ['Actual', dur(p.actualMedianMin)], ['Over/under', (ou > 0 ? '+' : ou < 0 ? '−' : '') + Math.abs(ou) + 'm'], ['Book as', p.fewCases || !p.actualMedianMin ? '–' : dur(Math.ceil(p.actualMedianMin / 15) * 15)]]
-            .forEach(function (z) { var cell = el('div'); cell.appendChild(el('span', 'l', z[0])); cell.appendChild(el('span', 'v' + (z[0] === 'Over/under' ? (ou > 5 ? ' over' : ou < -5 ? ' under' : '') : ''), z[1])); g.appendChild(cell); });
-          row.appendChild(g); body.appendChild(row);
+            .forEach(function (z) { var cell = el('div'); cell.appendChild(el('span', 'l', z[0])); cell.appendChild(el('span', 'v' + (z[0] === 'Over/under' ? ' ouv' : ''), z[1])); g.appendChild(cell); });
+          row.appendChild(g); specMark(row, specBand(ou, +p.bookedMedianMin)); body.appendChild(row);
         });
         var fa = r.forecastAccuracy;
         if (fa && fa.daysMeasured) body.appendChild(el('div', 'note', 'Finish-time forecast was off by ' + Math.round(+fa.averageMissMin || 0) + ' min on average over ' + fa.daysMeasured + ' day' + (fa.daysMeasured === 1 ? '' : 's') + '.'));
