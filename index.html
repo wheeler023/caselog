@@ -373,7 +373,8 @@ textarea{background:#0F1828;border-color:#22314C}
 .cxc{background:#18243B;border-color:#2D3D5A}
 #sheet .body{display:flex;flex-direction:column}
 #sheet .out,#sheet .notes{background:#131E33;border:1px solid #22314C;border-radius:14px}
-.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}#fBody.veiled>*{pointer-events:none;user-select:none}#fBody.veiled .tile .n,#fBody.veiled .hb .c,#fBody.veiled .ctr .n,#fBody.veiled .cmp .cr span:not(.k){filter:blur(9px);opacity:.8}#fBody.veiled .tile .l,#fBody.veiled .note,#fBody.veiled .hb .k,#fBody.veiled .ctr span:not(.n),#fBody.veiled .cmp .k{filter:blur(3px);opacity:.75}#fBody.veiled .fill{visibility:hidden}#fBody.veiled .fint .er span:not(:first-child){filter:blur(9px);opacity:.8}#fBody>*{transition:filter .25s,opacity .25s}
+.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}#fBody.veiled>*{pointer-events:none;user-select:none}#fBody.veiled .tile .n,#fBody.veiled .hb .c,#fBody.veiled .ctr .n,#fBody.veiled .cmp .cr span:not(.k){filter:blur(9px);opacity:.8}#fBody.veiled .tile .l,#fBody.veiled .note,#fBody.veiled .hb .k,#fBody.veiled .ctr span:not(.n),#fBody.veiled .cmp .k{filter:blur(3px);opacity:.75}#fBody.veiled .fill{visibility:hidden}#fBody.veiled .fint .er span:not(:first-child){filter:blur(9px);opacity:.8}
+#fBody.veiled>*{filter:blur(7px)}#fBody.veiled>* *{filter:none}#fBody.veiled .tile .n,#fBody.veiled .hb .c,#fBody.veiled .fint .er span:not(:first-child){filter:blur(4px)}   /* every word hidden until triple-tap */#fBody>*{transition:filter .25s,opacity .25s}
 #vFin{touch-action:manipulation}
 .hd .gear{float:right;margin-top:-2px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;display:flex;align-items:center;justify-content:center;padding:0}.hd .gear svg{width:19px;height:19px}
 #vSet{position:fixed;inset:0;z-index:30;background:#0F1726;overflow:auto}#vSet .hd .askx{float:right;margin-top:-4px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:22px;line-height:1}
@@ -793,7 +794,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795577782210';
+var BUILD = '1795612771038';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
