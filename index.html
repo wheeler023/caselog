@@ -372,7 +372,7 @@ textarea{background:#0F1828;border-color:#22314C}
 .cxc{background:#18243B;border-color:#2D3D5A}
 #sheet .body{display:flex;flex-direction:column}
 #sheet .out,#sheet .notes{background:#131E33;border:1px solid #22314C;border-radius:14px}
-.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}#fBody.veiled>*{pointer-events:none;user-select:none}#fBody.veiled .tile .n,#fBody.veiled .hb .c,#fBody.veiled .ctr .n,#fBody.veiled .cmp .cr span:not(.k){filter:blur(9px);opacity:.8}#fBody.veiled .tile .l,#fBody.veiled .note,#fBody.veiled .hb .k,#fBody.veiled .ctr span:not(.n),#fBody.veiled .cmp .k{filter:blur(3px);opacity:.75}#fBody.veiled .fill{visibility:hidden}#fBody>*{transition:filter .25s,opacity .25s}
+.addimg{background:#18243B;border:1px solid #2D3D5A;color:#DCE4F2}.b2{background:#18243B;color:#DCE4F2}.b1{background:#7FA9D6;color:#0F1726}.b1:disabled{background:#22314C;color:#6B7890}.ca.tov{color:#9AA5BA;font-weight:600}#fBody.veiled>*{pointer-events:none;user-select:none}#fBody.veiled .tile .n,#fBody.veiled .hb .c,#fBody.veiled .ctr .n,#fBody.veiled .cmp .cr span:not(.k){filter:blur(9px);opacity:.8}#fBody.veiled .tile .l,#fBody.veiled .note,#fBody.veiled .hb .k,#fBody.veiled .ctr span:not(.n),#fBody.veiled .cmp .k{filter:blur(3px);opacity:.75}#fBody.veiled .fill{visibility:hidden}#fBody.veiled .fint .er span:not(:first-child){filter:blur(9px);opacity:.8}#fBody>*{transition:filter .25s,opacity .25s}
 #vFin{touch-action:manipulation}
 .hd .gear{float:right;margin-top:-2px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;display:flex;align-items:center;justify-content:center;padding:0}.hd .gear svg{width:19px;height:19px}
 #vSet{position:fixed;inset:0;z-index:30;background:#0F1726;overflow:auto}#vSet .hd .askx{float:right;margin-top:-4px;width:38px;height:38px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:22px;line-height:1}
@@ -792,7 +792,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795576567502';
+var BUILD = '1795577147703';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1039,7 +1039,7 @@ function pairPhone(b) {
     })
     .withFailureHandler(function (e) { b.disabled = false; b.textContent = 'Set up phone app'; toast('Could not set up: ' + e.message); }).wdPair();
 }
-setTimeout(function () { if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) { stats = r; MS = null; if ($('vCases').style.display !== 'none' && !$('sheet').classList.contains('on') && !rmode) render(); } }).wdStats(); }, 600);   // Metrics/Finance open instantly
+setTimeout(function () { if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) { stats = r; MS = null; if ($('vCases').style.display !== 'none' && !$('sheet').classList.contains('on') && !rmode) render(); } }).wdStats(); }, 2500);   // Metrics/Finance open instantly
 var nearAsked = {};
 function prefetchNear(d) {   // one trip for the two weeks either side, so tapping nearby days is instant
   var p = d.split('-'), a = new Date(+p[0], +p[1] - 1, +p[2] - 14), b = new Date(+p[0], +p[1] - 1, +p[2] + 14);
@@ -2716,7 +2716,7 @@ function renderFin() {
 function finRows(sel, nv, pv) {   // per case type: cases, and the average pro fee, PA/IDR and neuro per case behind the total
   var o = {};
   sel.forEach(function (c) {
-    var g = o[c.t] = o[c.t] || { k: c.t, pg: c.pg, n: 0, cm: 0, fee: 0, pa: 0, nr: 0, list: [] };
+    var g = o[c.t] = o[c.t] || { k: c.t, pg: (stats.pgMap || {})[c.t], n: 0, cm: 0, fee: 0, pa: 0, nr: 0, list: [] };
     var paV = c.cm ? (c.pv != null ? c.pv : pv) : 0, nrV = c.cm ? nv : 0;
     g.n++; if (c.cm) g.cm++; g.fee += c.f || 0; g.pa += paV; g.nr += nrV; g.list.push(c);
   });
@@ -2953,7 +2953,8 @@ function renderStats() {
   var schL = all.filter(function (c) { return c.s === 'Scheduled' && c.d >= t && inPer(c); });
   var tiles = el('div', 'tiles'); b.appendChild(tiles);
   tile(tiles, String(sel.length), 'Completed', sel.length ? function () { drillCases('Completed', sel); } : null);
-  tile(tiles, String(schL.length), 'Scheduled', schL.length ? function () { drillCases('Scheduled', schL); } : null);
+  var totL = all.filter(function (c) { return inPer(c) && !/Cancelled|Postponed|Removed/.test(c.s); });
+  tile(tiles, String(totL.length), 'Scheduled (total)', totL.length ? function () { drillCases('Scheduled (total)', totL); } : null);
   tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Avg difficulty (1–5)');
   var nc = all.filter(function (c) { return c.s === 'Needs confirmation'; }).length;
   tile(tiles, String(nc), 'Awaiting your rating', nc ? openRating : null);
