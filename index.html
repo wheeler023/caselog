@@ -522,7 +522,7 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
   <div class="day" id="perLbl">Surgical volume</div>
   <div class="chips" id="rng"></div>
   <div class="rngc" id="rngC" style="display:none"><label>From<input type="date" id="rF"></label><label>To<input type="date" id="rT"></label><button onclick="applyCustom()">Show</button></div>
-  <label class="tg"><input type="checkbox" id="inclU" onchange="inclUnrated=this.checked;renderStats()"> Include past cases I haven't rated</label></div>
+</div>
  <div class="sp" id="sBody"></div>
 </div>
 <div id="vImp" style="display:none">
@@ -753,7 +753,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795575808742';
+var BUILD = '1795575874418';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -2868,7 +2868,7 @@ function renderStats() {
   tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Avg difficulty (1–5)');
   var nc = all.filter(function (c) { return c.s === 'Needs confirmation'; }).length;
   tile(tiles, String(nc), 'Awaiting your rating', nc ? openRating : null);
-  if (!sel.length) b.appendChild(el('div', 'note', inclUnrated ? 'No cases in this period yet.' : 'No rated cases in this period yet. Rate cases on the Cases tab, or turn on "Include past cases I haven’t rated".'));
+  if (!sel.length) b.appendChild(el('div', 'note', 'No completed cases in this period yet.'));
 
   var cy = selY || +t.slice(0, 4), py = cy - 1;
   var center = per === 'sel' && selY && selM ? selY + '-' + ('0' + selM).slice(-2) : t.slice(0, 7);
