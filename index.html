@@ -462,7 +462,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 .hd .bell .bdg{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#3DB8D4;color:#06222B;font-size:11px;font-weight:800;line-height:18px;text-align:center;display:none}
 .hd .bell.hot .bdg{display:block}
 .chh{font-size:12px;font-weight:700;letter-spacing:.4px;color:#8C97AB;margin:16px 4px 8px}
-.chr{display:block;width:100%;text-align:left;background:#121D33;border:1px solid #22314D;border-radius:12px;padding:12px 14px;margin-bottom:8px;color:#E6ECF5;font:inherit}
+.chr{touch-action:pan-y;overflow:hidden;display:block;width:100%;text-align:left;background:#121D33;border:1px solid #22314D;border-radius:12px;padding:12px 14px;margin-bottom:8px;color:#E6ECF5;font:inherit}
 .chr.fresh{border-color:#2F6E80;background:#12243A}
 .chr:active{transform:scale(.99)}
 .cht{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
@@ -794,7 +794,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795612771038';
+var BUILD = '1795627106947';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1437,7 +1437,7 @@ function openChanges() {
         clr.disabled = true;
         google.script.run.withSuccessHandler(function () { drawBell(0); openChanges(); }).withFailureHandler(function (e) { clr.disabled = false; toast('Not cleared: ' + e.message); }).wdChangesClear();
       };
-      L.appendChild(clr); L.appendChild(el('div', 'hint chch', 'Clears on this phone only.'));
+      L.appendChild(clr); L.appendChild(el('div', 'hint chch', 'Clears on this phone only. Swipe a change away to dismiss just that one.'));
     }
     if (!list.length) { L.appendChild(el('div', 'empty', 'No schedule changes in the last 45 days.')); return; }
     var lastHead = '';
@@ -1448,12 +1448,34 @@ function openChanges() {
       var top = el('div', 'cht'); top.appendChild(el('span', 'chk ' + k[1], k[0])); top.appendChild(el('span', 'cha', agoTxt(x.at))); row.appendChild(top);
       row.appendChild(el('div', 'chw', x.what + (x.who ? ', ' + x.who : '')));
       row.appendChild(el('div', 'chd', (x.k === 'moved' && x.from ? 'From ' + x.from + ' to ' : x.k === 'add' ? '' : x.k === 'moved' ? 'Now ' : 'Was ') + (x.when || '')));
-      row.onclick = function () { closeChanges(); if (x.d && typeof goDay === 'function') goDay(x.d); };
+      row.onclick = function () { if (row.dataset.sw) return; closeChanges(); if (x.d && typeof goDay === 'function') goDay(x.d); };
+      chSwipe(row, x, x.at > seen);
       L.appendChild(row);
     });
   }).withFailureHandler(function (e) { L.innerHTML = ''; L.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdChanges(false);
 }
 function closeChanges() { $('chsheet').classList.remove('on'); }
+/** Swipe a change left or right to dismiss it on this phone. */
+function chSwipe(row, x, fresh) {
+  var sx = null, sy = 0, dx = 0, on = false;
+  row.addEventListener('pointerdown', function (e) { sx = e.clientX; sy = e.clientY; dx = 0; on = false; row.style.transition = 'none'; });
+  row.addEventListener('pointermove', function (e) {
+    if (sx == null) return; dx = e.clientX - sx;
+    if (!on && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(e.clientY - sy)) { on = true; row.dataset.sw = '1'; try { row.setPointerCapture(e.pointerId); } catch (er) {} }
+    if (on) { row.style.transform = 'translateX(' + dx + 'px)'; row.style.opacity = String(Math.max(.2, 1 - Math.abs(dx) / 260)); }
+  });
+  function end() {
+    if (sx == null) return; sx = null; row.style.transition = 'transform .22s ease, opacity .22s ease, max-height .25s ease .15s, margin .25s ease .15s, padding .25s ease .15s';
+    if (on && Math.abs(dx) > 90) {
+      row.style.transform = 'translateX(' + (dx > 0 ? 120 : -120) + '%)'; row.style.opacity = '0';
+      row.style.maxHeight = row.offsetHeight + 'px'; requestAnimationFrame(function () { row.style.maxHeight = '0'; row.style.marginBottom = '0'; row.style.paddingTop = '0'; row.style.paddingBottom = '0'; row.style.borderWidth = '0'; });
+      setTimeout(function () { row.remove(); }, 450);
+      google.script.run.withSuccessHandler(function (n) { drawBell(n); $('chSub').textContent = n ? n + ' new' : 'Nothing new'; }).withFailureHandler(function (e) { toast('Not dismissed: ' + e.message); openChanges(); }).wdChangeHide(x.id, x.k);
+    } else { row.style.transform = ''; row.style.opacity = ''; }
+    setTimeout(function () { delete row.dataset.sw; }, 50);
+  }
+  row.addEventListener('pointerup', end); row.addEventListener('pointercancel', end);
+}
 function bellCheck() { google.script.run.withSuccessHandler(drawBell).withFailureHandler(function () {}).wdChangeCount(); }
 drawBell(INIT.chg);
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') bellCheck(); });
