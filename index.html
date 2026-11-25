@@ -801,7 +801,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795640054306';
+var BUILD = '1795640274944';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -2110,7 +2110,7 @@ function render() {
     card.appendChild(m);
     var R = el('div', 'cr');
     if (rated) { R.appendChild(el('div', 'cv', String(c.difficulty))); R.appendChild(el('div', 'cu', 'Rating')); }
-    R.appendChild(el('div', 'pill p-' + st, off ? (c.status === 'Removed from calendar' ? 'Removed' : c.status) : rated ? '✓ Rated' : toRate ? 'Rate' : 'Scheduled'));
+    if (!rated || off) R.appendChild(el('div', 'pill p-' + st, off ? (c.status === 'Removed from calendar' ? 'Removed' : c.status) : toRate ? 'Rate' : 'Scheduled'));   // a rated case shows its number, no pill
     card.appendChild(R);
     list.appendChild(card);
   });
