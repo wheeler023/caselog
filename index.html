@@ -749,7 +749,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795574801639';
+var BUILD = '1795575236903';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -2241,7 +2241,7 @@ function closeRating() {
   rmode = false; cases = dayCases; $('rsheet').classList.remove('on'); stats = null; dayCache = {};
   if ($('vStats').style.display !== 'none') loadStats();
 }
-var stats = null, per = 'sel', inclUnrated = false, selY = 0, selM = 0, RNG = null, RKEY = 'year';   // RNG {f,t}: the dates shown on Metrics
+var stats = null, per = 'sel', inclUnrated = false, selY = 0, selM = 0, RNG = null, RKEY = 'month';   // RNG {f,t}: the dates shown on Metrics
 var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 brandRow('who2', '');
 brandRow('who3', '');
@@ -2271,7 +2271,7 @@ function setTab(t) {
   $('tCases').className = t === 'cases' ? 'on' : ''; $('tStats').className = t === 'stats' ? 'on' : ''; $('tFin').className = t === 'fin' ? 'on' : ''; $('tImp').className = t === 'imp' ? 'on' : '';
   window.scrollTo(0, 0);
   if (t !== 'fin' && !backToFin) hideMoney();   // a trip from Billing into a case and back keeps the amounts showing
-  if (t === 'stats') { if (!RNG) presetRange('year'); loadStats(); } else if (t === 'fin') { renderFin(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else if (t === 'ask') drawAsk(); else go(day);
+  if (t === 'stats') { if (!RNG) presetRange('month'); loadStats(); } else if (t === 'fin') { renderFin(); } else if (t === 'imp') renderImp(); else if (t === 'photos') loadGallery(); else if (t === 'ask') drawAsk(); else go(day);
 }
 // ---- Finance tab: amounts are not drawn until you tap Show amounts; leaving the tab hides them again ----
 var finShown = false, finPer = 'month', inPerFin = function () { return true; };
@@ -2512,7 +2512,7 @@ function loadStats() {
   if (stats) { drawPicker(); renderStats(); }   // fetched in the background when the app opened: draw now, refresh quietly
   else { b.innerHTML = ''; b.appendChild(skel('skx')); }
   google.script.run.withSuccessHandler(function (r) {
-    stats = r; if (!RNG) presetRange('year');
+    stats = r; if (!RNG) presetRange('month');
     loadStats.done = true; drawPicker(); renderStats();
   }).withFailureHandler(function (e) { b.innerHTML = ''; b.appendChild(el('div', 'empty', 'Could not load: ' + e.message)); }).wdStats();
 }
@@ -2553,7 +2553,7 @@ function stepMonth(d) {
 function drawPicker() {
   if (!stats) return;
   var box = $('rng'); box.innerHTML = '';
-  [['year', 'This year'], ['month', 'This month'], ['last', 'Last month'], ['3m', 'Last 3 months'], ['12m', 'Last 12 months'], ['lastyear', 'Last year']].forEach(function (p) {
+  [['month', 'This month'], ['year', 'This year'], ['last', 'Last month'], ['3m', 'Last 3 months'], ['12m', 'Last 12 months'], ['lastyear', 'Last year']].forEach(function (p) {
     var b = el('button', RKEY === p[0] ? 'chip on' : 'chip', p[1]); b.onclick = function () { $('rngC').style.display = 'none'; presetRange(p[0]); }; box.appendChild(b);
   });
   var cb = el('button', RKEY === 'custom' ? 'chip on cal' : 'chip cal');
