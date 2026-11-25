@@ -507,6 +507,45 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .effopt{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;width:100%;text-align:left;background:#121D33;border:1px solid #22314D;border-radius:12px;padding:14px;margin-top:10px;font-family:inherit;color:#E6ECF5;cursor:pointer}.effopt b{font-size:16px}.effopt span{grid-column:1;font-size:13px;color:#8C97AB;margin-top:4px;line-height:1.35}.effopt i{grid-row:1/3;grid-column:2;align-self:center;font-style:normal;font-size:22px;color:#3DB8D4;padding-left:10px}.effopt:active{transform:scale(.99)}
 .mbtn{background:none;border:0;padding:0;font-family:inherit;cursor:pointer}.eff .er.sc3{grid-template-columns:2fr 1fr 1fr}
 .fint .er{grid-template-columns:2fr .7fr 1.1fr 1.2fr}.fint .er>span:not(:first-child){text-align:right}.fint button.er{width:100%;background:none;border:0;border-top:1px solid #1F2328;color:inherit;font:inherit;text-align:left;cursor:pointer}.fint .er.ft{font-weight:700;border-top:1px solid #3A4658}
+.sico{display:inline-flex;align-items:center;gap:3px}.sico svg{width:15px;height:15px;vertical-align:-3px}
+.mi{display:inline-flex;color:#D3B98C}.mi svg{width:17px;height:17px;vertical-align:-3px}.mr{align-items:center}
+.mr.glow{animation:mglow 1.6s ease-out}@keyframes mglow{0%{background:rgba(211,185,140,.28)}100%{background:transparent}}
+.cele{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(6,10,20,.55);animation:cin .25s ease-out;overflow:hidden}
+.cele.out{opacity:0;transition:opacity .45s}
+.csw{position:absolute;inset:-50%;background:linear-gradient(115deg,transparent 42%,rgba(211,185,140,.0) 44%,rgba(211,185,140,.35) 50%,rgba(211,185,140,0) 56%,transparent 58%);animation:csw 1.1s ease-out forwards}
+.cele.still .csw{display:none}
+@keyframes csw{0%{transform:translateX(-60%)}100%{transform:translateX(60%)}}
+.cp{position:absolute;left:50%;top:50%;width:3px;height:11px;border-radius:2px;background:#D3B98C;opacity:0;animation:cpop 1.5s cubic-bezier(.15,.7,.3,1) forwards}
+.cp.b{background:#7FA9D6;height:8px}
+@keyframes cpop{0%{opacity:1;transform:translate(-50%,-50%) rotate(0)}70%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) rotate(var(--r))}}
+.ccard{position:relative;text-align:center;padding:22px 26px;border-radius:18px;background:#131E33;border:1px solid #4A3F2A;box-shadow:0 20px 60px rgba(0,0,0,.5);max-width:78%;animation:cpopin .5s cubic-bezier(.2,1.4,.4,1)}
+.ccard .mi svg{width:40px;height:40px}.ccard .ck{font-size:12px;letter-spacing:.08em;color:#D3B98C;margin-top:8px;font-weight:700}
+.ccard .ct2{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#F3F5FA;margin-top:6px;line-height:1.25}.ccard .cd2{font-size:13px;color:#8C97AB;margin-top:8px}
+@keyframes cin{from{opacity:0}to{opacity:1}}@keyframes cpopin{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+/* ---- Calendar refresh: ruled grid, weekends set back, today as a filled date ---- */
+.calc{padding:0;overflow:hidden}
+.cg{gap:1px;background:#22314C}
+.cw{background:#111B2E;padding:8px 0 7px;font-size:10.5px;letter-spacing:.08em;color:#7D889D}
+.cd{border-radius:0;background:#131E33;align-items:stretch;padding:5px 3px 5px;min-height:64px;gap:3px}
+.cd:nth-child(7n+8),.cd:nth-child(7n+14){background:#101A2D}
+.cg>.cw:nth-child(1),.cg>.cw:nth-child(7){background:#0E1729}
+.cd .cn{width:22px;height:22px;line-height:22px;font-size:12.5px;font-weight:600;text-align:center;margin:0 0 0 1px;border-radius:50%}
+.cd.past:not(.out) .cn{color:#8C97AB}
+.cd .cc{align-self:center;margin-top:4px}
+.cd.td,.cd.td:not(.on){background:#16253D;box-shadow:none}
+.cd.td .cn,.cd.td:not(.on) .cn{background:#7FA9D6;color:#0F1726;font-weight:800}
+.cd.on{background:#1B2E4C;box-shadow:inset 0 0 0 2px #7FA9D6}
+.cd.on .cn{font-weight:800;color:#FFFFFF}
+.cd.td.on .cn{color:#0F1726}
+.cd .tl{padding:0;gap:2px;margin-top:0}
+.cd .tl i{font-size:8.5px;line-height:13px;border-left-width:2px;padding-left:3px;border-radius:2px;background:rgba(94,107,130,.18)}
+.cd .tl i.ty-acdf{background:rgba(127,169,214,.18)}
+.cd .tl i.ty-micro,.cd .tl i.ty-lam,.cd .tl i.ty-clam,.cd .tl i.ty-cyst{background:rgba(201,168,106,.18)}
+.cd .tl i.ty-alif,.cd .tl i.ty-llif,.cd .tl i.ty-360,.cd .tl i.ty-360lat,.cd .tl i.ty-tlif,.cd .tl i.ty-plf,.cd .tl i.ty-tfusion,.cd .tl i.ty-pcf{background:rgba(180,142,240,.16)}
+.cd .tl i.ty-cdr,.cd .tl i.ty-hybrid{background:rgba(95,191,127,.16)}
+.cd .tl i.more{background:none}
+.cd .om{margin-top:auto;padding-left:2px}
+.cd.out{opacity:1}.cd.out>*{opacity:.35}
 </style></head><body>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -605,7 +644,7 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
   </div>
   <div class="notes" id="notesCard">
    <label for="notes">Notes</label>
-   <div class="hint">Tap in the box, then tap 🎤 on your keyboard to dictate. Saves to the Notes column of your case log.</div>
+   <div class="hint">Tap in the box, then tap the microphone on your keyboard to dictate. Saves to the Notes column of your case log.</div>
    <textarea id="notes" rows="3" oninput="dirty();growNotes()" placeholder="Dictate or type notes…"></textarea>
    <div class="acts"><button class="b2" onclick="stamp()">+ Time stamp</button><button class="b1" id="saveBtn" onclick="save(false)">Save</button></div>
    <div class="st" id="st"></div>
@@ -753,7 +792,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795575874418';
+var BUILD = '1795576166755';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -873,7 +912,7 @@ function drawWeek(isoDay) {   // month calendar (kept the old name so every call
   for (var i = 0; i < 42; i++) {
     var d = parse(st); d.setDate(d.getDate() + i); var k = iso(d), x = w ? w[k] : null;
     if (i === 35 && d.getMonth() + 1 !== mm) break;   // 5-week months: drop the empty 6th row
-    var cls = 'cd' + (d.getMonth() + 1 !== mm ? ' out' : '') + (k === isoDay ? ' on' : '') + (k === INIT.today ? ' td' : '');
+    var cls = 'cd' + (d.getMonth() + 1 !== mm ? ' out' : '') + (k === isoDay ? ' on' : '') + (k === INIT.today ? ' td' : '') + (k < INIT.today ? ' past' : '');
     var b = el('button', cls); b.appendChild(el('span', 'cn', String(d.getDate())));
     if (x && x.t && x.t.length) {   // what's on that day, one short line per case
       var tl = el('span', 'tl'), cap = x.t.length > 4 ? 3 : 4;
@@ -1083,6 +1122,54 @@ function factEl(isoDay) {   // a spine fact under the quote on days with no case
 function quoteEl(isoDay, hasCases) { var q = quoteFor(isoDay, hasCases); return q ? el('div', 'quote', q) : null; }
 // ---- Milestones: counted from the case log (performed cases, today and earlier) ----
 var MS = null;
+var SVGI = {
+  cam: '<path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  note: '<path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 12h8M8 16h6"/>',
+  doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  medal: '<path d="M8 3h8l-2 6h-4z"/><circle cx="12" cy="15" r="5"/><path d="M12 12.6l.8 1.6 1.7.2-1.3 1.2.3 1.7-1.5-.8-1.5.8.3-1.7-1.3-1.2 1.7-.2z"/>'
+};
+function svgIco(k, txt) {
+  var sp = el('span', 'ci sico'); sp.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + SVGI[k] + '</svg>';
+  if (txt) sp.appendChild(document.createTextNode(txt)); return sp;
+}
+function msIco() { var sp = svgIco('medal'); sp.className = 'mi'; return sp; }
+// ---- Milestone celebration: a brief full-screen moment, once per milestone on this phone ----
+function msSeen() { try { return JSON.parse(localStorage.getItem('ms_seen') || 'null'); } catch (e) { return null; } }
+function msSave(a) { try { localStorage.setItem('ms_seen', JSON.stringify(a.slice(-400))); } catch (e) {} }
+function msKey(m) { return m.d + '|' + m.t; }
+function msCheck() {
+  var all = MS || []; if (!all.length) return;
+  var seen = msSeen();
+  if (!seen) { msSave(all.map(msKey)); return; }   // first run on this phone: everything so far counts as seen
+  var fresh = all.filter(function (m) { return seen.indexOf(msKey(m)) < 0; });
+  if (!fresh.length) return;
+  msSave(seen.concat(fresh.map(msKey)));
+  celebrate(fresh[fresh.length - 1], fresh.length);
+}
+var celeLast = 0;
+function celebrate(m, more) {
+  if (Date.now() - celeLast < 3500) return; celeLast = Date.now();
+  var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var o = el('div', 'cele' + (still ? ' still' : '')), sw = el('div', 'csw'); o.appendChild(sw);
+  if (!still) for (var i = 0; i < 46; i++) {
+    var p = el('i', i % 3 ? 'cp' : 'cp b'), a = Math.random() * Math.PI * 2, r = 120 + Math.random() * 260;
+    p.style.setProperty('--x', Math.round(Math.cos(a) * r) + 'px'); p.style.setProperty('--y', Math.round(Math.sin(a) * r) + 'px');
+    p.style.setProperty('--r', Math.round(Math.random() * 360) + 'deg'); p.style.animationDelay = Math.round(Math.random() * 140) + 'ms';
+    o.appendChild(p);
+  }
+  var c = el('div', 'ccard'); c.appendChild(msIco()); c.appendChild(el('div', 'ck', 'Milestone'));
+  c.appendChild(el('div', 'ct2', m.t)); c.appendChild(el('div', 'cd2', shortD(m.d) + (more > 1 ? ' · and ' + (more - 1) + ' more' : '')));
+  o.appendChild(c); document.body.appendChild(o);
+  o.onclick = function () { o.remove(); };
+  setTimeout(function () { o.classList.add('out'); }, 2300); setTimeout(function () { o.remove(); }, 2800);
+}
+var msObs = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) {   // scroll a milestone into view: a short sweep
+  es.forEach(function (e) {
+    if (!e.isIntersecting || e.target.dataset.cel) return; e.target.dataset.cel = '1';
+    e.target.classList.add('glow'); if (e.target.msData) celebrate(e.target.msData, 1);
+  });
+}, { threshold: 0.9 }) : null;
+function msWatch(row, m) { row.msData = m; if (msObs) msObs.observe(row); }
 function ordinal(n) { var s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
 function milestones() {
   if (MS || !stats) return MS || [];
@@ -1101,13 +1188,14 @@ function milestones() {
     }
     if ((c.n || 0) >= 4 && !big[y]) { big[y] = 1; add(c.d, 'First ' + c.n + '-level case of ' + y, 1); }
   });
-  return (MS = out);
+  MS = out; setTimeout(msCheck, 600);
+  return MS;
 }
 function milestonesOn(isoDay) { return milestones().filter(function (m) { return m.d === isoDay; }); }
 function msEl(isoDay) {
   var ms = milestonesOn(isoDay); if (!ms.length) return null;
   var box = el('div', 'ms');
-  ms.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(el('span', 'mi', '🏆')); r.appendChild(el('span', null, m.t)); box.appendChild(r); });
+  ms.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(msIco()); r.appendChild(el('span', null, m.t)); box.appendChild(r); });
   return box;
 }
 // ---- Monthly recap ----
@@ -1143,7 +1231,7 @@ function openRecap(mk) {
   var withX = rated.filter(function (c) { return c.x; });
   if (rated.length) card('Complications', withX.length ? withX.length + ' of ' + rated.length + ' rated cases had one or more.' : 'None recorded in ' + rated.length + ' rated cases.');
   var ms = milestones().filter(function (m) { return m.d.slice(0, 7) === mk; });
-  if (ms.length) { var mc = card('Milestones'); ms.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(el('span', 'mi', '🏆')); r.appendChild(el('span', null, m.t + ', ' + MON[+m.d.slice(5, 7) - 1] + ' ' + (+m.d.slice(8)))); mc.appendChild(r); }); }
+  if (ms.length) { var mc = card('Milestones'); ms.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(msIco()); r.appendChild(el('span', null, m.t + ', ' + MON[+m.d.slice(5, 7) - 1] + ' ' + (+m.d.slice(8)))); mc.appendChild(r); }); }
 }
 function closeRecap() { $('recap').classList.remove('on'); }
 // ---- Photos tab ----
@@ -1604,7 +1692,7 @@ function teamEffDetail(sel, to) {
   if (!bt.length) c.appendChild(el('div', 'note', 'No team turnovers in this range yet.'));
   var tb = el('div', 'eff'), hd = el('div', 'er eh sc3'); ['Team', 'Turnovers', 'Median'].forEach(function (h) { hd.appendChild(el('span', null, h)); }); if (bt.length) { tb.appendChild(hd); c.appendChild(tb); }
   bt.forEach(function (p, i) {
-    var r = el('div', 'er sc3' + (p.ok ? '' : ' few')); r.appendChild(el('span', null, (p.ok && i === 0 ? '★ ' : '') + p.k)); r.appendChild(el('span', null, String(p.n))); r.appendChild(el('span', 'bk', Math.round(p.m) + 'm')); tb.appendChild(r);
+    var r = el('div', 'er sc3' + (p.ok ? '' : ' few')); r.appendChild(el('span', null, p.k)); r.appendChild(el('span', null, String(p.n))); r.appendChild(el('span', 'bk', Math.round(p.m) + 'm')); tb.appendChild(r);
   });
   var keep = cardTarget; cardTarget = 'dList';
   try { roleCard(sel, 'sc', 'By primary scrub', ROLE.scrub.names()); roleCard(sel, 'ci', 'By circulator', ROLE.circ.names()); } finally { cardTarget = keep; }
@@ -1956,9 +2044,9 @@ function render() {
     var who = [c.age, c.sex].filter(Boolean).join(' '); if (who) bits.appendChild(el('span', 'ci', who));
     if (c.levels) bits.appendChild(el('span', 'ci lv', c.levels));
     if (c.vendor) c.vendor.split(/\s*,\s*/).forEach(function (v) { bits.appendChild(el('span', 'tag vd' + (v === 'Medtronic' ? ' mdt' : v === 'NuVasive' ? ' nuv' : ''), v)); });
-    if (c.images) bits.appendChild(el('span', 'ci', '📷 ' + c.images));
-    if (c.notes) bits.appendChild(el('span', 'ci', '📝'));
-    if (c.opnoteUrl) bits.appendChild(el('span', 'ci', '📄'));
+    if (c.images) bits.appendChild(svgIco('cam', String(c.images)));
+    if (c.notes) bits.appendChild(svgIco('note'));
+    if (c.opnoteUrl) bits.appendChild(svgIco('doc'));
     if (c.cx) bits.appendChild(el('span', 'tag x', c.cx));
     if (bits.childNodes.length) m.appendChild(bits);
     card.appendChild(m);
@@ -2910,7 +2998,7 @@ function renderStats() {
   drillBars('By case type', '', sel, function (c) { return c.t; });
   if (sel.some(function (x) { return x.d >= APPR_FROM; })) apprCard(sel);   // ALIF vs lateral: only once December 2026 cases exist
   var msl = milestones().filter(function (m) { return inPer({ d: m.d }); }).slice(-10).reverse();
-  if (msl.length) { var mcd = card('Milestones'); msl.forEach(function (m) { var r = el('div', 'mr'); r.appendChild(el('span', 'mi', '🏆')); r.appendChild(el('span', null, m.t + ', ' + MON[+m.d.slice(5, 7) - 1] + ' ' + (+m.d.slice(8)) + (m.d.slice(0, 4) !== stats.today.slice(0, 4) ? ', ' + m.d.slice(0, 4) : ''))); mcd.appendChild(r); }); }
+  if (msl.length) { var mcd = card('Milestones'); msl.forEach(function (m) { var r = el('div', 'mr'); msWatch(r, m); r.appendChild(msIco()); r.appendChild(el('span', null, m.t + ', ' + MON[+m.d.slice(5, 7) - 1] + ' ' + (+m.d.slice(8)) + (m.d.slice(0, 4) !== stats.today.slice(0, 4) ? ', ' + m.d.slice(0, 4) : ''))); mcd.appendChild(r); }); }
   drillBars('By vendor', 'Cases with hardware, since Nov 9, 2026.', sel.filter(function (c) { return c.v; }), function (c) { return c.v.split(', '); }, 'No hardware cases since Nov 9, 2026 in this period.');
   var LV = ['1 level', '2 levels', '3 levels', '4+ levels', 'Not stated'];
   drillBars('Levels per case', '', sel, function (c) { return c.n ? (c.n >= 4 ? LV[3] : LV[c.n - 1]) : LV[4]; }, null, null, function (a, b) { return LV.indexOf(a.k) - LV.indexOf(b.k); });
