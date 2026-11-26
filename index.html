@@ -191,6 +191,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 .card2 .mr{color:#CAD1E6;font-weight:500}
 .recapb{display:block;width:calc(100% + 34px);margin:0 0 12px -34px;padding:12px 14px;border-radius:12px;border:1px solid #9EC5E0;background:#13213B;color:#B9D7EC;font:inherit;font-weight:700;text-align:left}
 #sBody > .recapb{width:100%;margin:0 0 12px}
+.pth .pk{position:absolute;top:6px;right:6px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:rgba(12,16,25,.78);color:#DCE4F2;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
 .pth{position:relative;aspect-ratio:1;border:0;padding:0;border-radius:10px;overflow:hidden;background:#0C1019}
 .pth img{width:100%;height:100%;object-fit:cover;display:block}.pth img:not([src]){visibility:hidden}.pth .ph{display:flex;align-items:center;justify-content:center;height:100%;color:#828A9A;font-size:12px}
@@ -554,7 +555,7 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .cg .cd .tl i.more{background:none}
 .cg .cd .om{margin-top:auto;padding-left:2px}
 .cg .cd.out{opacity:1}.cg .cd.out>*{opacity:.35}
-.hd .who .mv{margin-left:auto;padding:0 4px 1px;border-bottom:2px solid #9DD0F5;color:#9DD0F5;font-family:"Nanum Pen Script",cursive;font-size:30px;line-height:.85;white-space:nowrap;transform:rotate(-3deg);filter:url(#pencil);flex:none}
+.hd .who .mv{margin-left:auto;padding:0 4px 1px;border-bottom:2px solid #9DD0F5;color:#9DD0F5;font-family:"Nanum Pen Script",cursive;font-size:38px;line-height:.8;white-space:nowrap;transform:rotate(-3deg);filter:url(#pencil);flex:none}
 .pseg{display:flex;background:#17253F;border-radius:10px;padding:3px;gap:3px;margin-top:8px}.pseg button{flex:1;border:0;background:transparent;color:#B9C4D8;height:30px;border-radius:8px;font-size:13px;font-weight:600}.pseg button.on{background:#9EC5E0;color:#0C1019}
 .pstep{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 0;font-size:15px;font-weight:600;color:#EEF2F8}.pstep button{border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;width:36px;height:30px;border-radius:8px;font-size:18px;line-height:1}.pstep button:disabled{opacity:.35}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="pencil" x="-5%" y="-20%" width="110%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="g"/><feComposite in="SourceGraphic" in2="g" operator="in" result="t"/><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="1" seed="7" result="w"/><feDisplacementMap in="t" in2="w" scale="1.6"/></filter></defs></svg>
@@ -806,7 +807,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795705576859';
+var BUILD = '1795705836092';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -836,7 +837,7 @@ function brandRow(id, sub) {
   var w = $(id); w.innerHTML = '';
   if (INIT.icon) { var im = document.createElement('img'); im.src = INIT.icon; im.alt = ''; im.onerror = function () { im.remove(); }; w.appendChild(im); }
   var t = el('div', 'wh', 'Wheelhouse'); t.appendChild(el('small', null, sub || 'Michael R. Wheeler, MD')); w.appendChild(t);
-  if (INIT.role === 'team' && INIT.name) { penFont(); w.appendChild(el('div', 'mv', INIT.name + ' version')); }   // team phones only; yours stays as is
+  if (INIT.role === 'team' && INIT.name) { penFont(); w.appendChild(el('div', 'mv', INIT.name)); }   // team phones only; yours stays as is
   w.style.cursor = 'pointer'; w.onclick = function () { goHome(); };
 }
 /** Tap the logo anywhere: back to today's cases, with any open screen closed (unsaved notes are saved first). */
@@ -1276,7 +1277,10 @@ function drawGallery() {
   galLv = '';
   chip('All types', !galType, function () { galType = ''; drawGallery(); });
   Object.keys(types).sort().forEach(function (t) { chip(t, galType === t, function () { galType = galType === t ? '' : t; drawGallery(); }); });
-  var typed = gal.filter(function (g) { return !galType || g.t === galType; }).sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; });
+  var per = {}, typed = [];   // one tile per surgery: its first photo
+  gal.forEach(function (g) { if (galType && g.t !== galType) return; var p = per[g.c]; if (!p) { per[g.c] = { g: g, k: 1 }; } else { p.k++; if (g.n < p.g.n) p.g = g; } });
+  Object.keys(per).forEach(function (c) { var x = Object.assign({}, per[c].g); x.k = per[c].k; typed.push(x); });
+  typed.sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; });
   // Month / Year / All
   var mons = [], yrs = [];
   typed.forEach(function (g) { var m = g.d.slice(0, 7), y = g.d.slice(0, 4); if (mons.indexOf(m) < 0) mons.push(m); if (yrs.indexOf(y) < 0) yrs.push(y); });
@@ -1293,7 +1297,7 @@ function drawGallery() {
   var list = typed.filter(function (g) { return galMode === 'a' || (galMode === 'm' ? g.d.slice(0, 7) === galMon : g.d.slice(0, 4) === galYr); });
   if (!gal.length) { b.appendChild(el('div', 'empty', 'No case photos yet. Add them from a case’s screen.')); return; }
   if (!list.length) { b.appendChild(el('div', 'empty', 'No photos for this ' + (galType ? 'case type' : 'period') + '.')); return; }
-  b.appendChild(el('div', 'note', list.length + ' photo' + (list.length === 1 ? '' : 's') + '. Before posting, check for names, dates, faces or labels.'));
+  b.appendChild(el('div', 'note', list.length + (list.length === 1 ? ' surgery' : ' surgeries') + ' with photos. Tap one to open the surgery.'));
   var grid = null, need = [], mk = '', perMonth = {}, first = true;
   list.forEach(function (g) { var k = g.d.slice(0, 7); perMonth[k] = (perMonth[k] || 0) + 1; });
   if (!stats) google.script.run.withSuccessHandler(function (r) { if (!stats) { stats = r; MS = null; if ($('vPhotos').style.display !== 'none') drawGallery(); } }).wdStats();
@@ -1304,7 +1308,7 @@ function drawGallery() {
       first = false;
       var cv = monthCover(mk, perMonth[mk]), open = galOpen[key];
       if (galMode !== 'm') {
-        cv.appendChild(el('div', 'mtg', open ? 'Hide photos ▴' : 'Show ' + perMonth[mk] + ' photo' + (perMonth[mk] === 1 ? '' : 's') + ' ▾'));
+        cv.appendChild(el('div', 'mtg', open ? 'Hide ▴' : 'Show ' + perMonth[mk] + ' surger' + (perMonth[mk] === 1 ? 'y' : 'ies') + ' ▾'));
         (function (k) { cv.onclick = function () { galOpen[k] = !galOpen[k]; drawGallery(); }; })(key);
       } else cv.style.cursor = 'default';
       b.appendChild(cv); grid = el('div', 'pgrid'); if (!open) grid.style.display = 'none'; b.appendChild(grid);
@@ -1314,7 +1318,8 @@ function drawGallery() {
     img.alt = g.t; a.setAttribute('data-f', g.f);
     if (THUMB[g.f]) img.src = THUMB[g.f]; else if (THUMB[g.f] !== '') need.push(g.f);
     a.appendChild(img); a.appendChild(el('span', 'pc', MON[+g.d.slice(5, 7) - 1] + ' ' + (+g.d.slice(8)) + ' · ' + [g.t, g.lv].filter(Boolean).join(' ')));
-    a.onclick = function () { viewPhoto(g); }; grid.appendChild(a);
+    if (g.k > 1) a.appendChild(el('span', 'pk', String(g.k)));
+    a.onclick = function () { pendingOpen = g.c; setTab('cases'); go(g.d); }; grid.appendChild(a);
   });
   fetchThumbs(need);
 }
@@ -1416,7 +1421,7 @@ function monthCover(mk, photos) {
   hd.appendChild(el('div', 'mct', MONF[+mk.slice(5, 7) - 1] + ' ' + mk.slice(0, 4))); c.appendChild(hd);
   var row = el('div', 'mcs');
   function st(n, l) { var s = el('div'); s.appendChild(el('b', null, n)); s.appendChild(el('span', null, l)); row.appendChild(s); }
-  st(stats ? String(all.length) : '…', 'cases'); st(stats ? String(lv) : '…', 'levels'); st(String(photos), photos === 1 ? 'photo' : 'photos');
+  st(stats ? String(all.length) : '…', 'cases'); st(stats ? String(lv) : '…', 'levels'); st(String(photos), photos === 1 ? 'with photos' : 'with photos');
   c.appendChild(row);
   if (top) c.appendChild(el('div', 'mcf', 'Most done: ' + top.k + ' (' + top.v + ')'));
   return c;
