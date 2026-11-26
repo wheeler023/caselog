@@ -65,7 +65,8 @@ function loadSaved() {
     var o = JSON.parse(localStorage.getItem(SAVED) || 'null');
     if (!o || o.k !== apiKey() || !o.init) return null;
     var init = o.init, t = localDay();
-    if (init.today !== t) { if (init.today.slice(0, 7) !== t.slice(0, 7)) init.month = null; init.today = t; init.first = null; }
+    init.month = null;   // the calendar waits for today's numbers instead of showing yesterday's
+    if (init.today !== t) { init.today = t; init.first = null; }
     return init;
   } catch (e) { return null; }
 }

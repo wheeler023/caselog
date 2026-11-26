@@ -772,7 +772,8 @@ function loadSaved() {
     var o = JSON.parse(localStorage.getItem(SAVED) || 'null');
     if (!o || o.k !== apiKey() || !o.init) return null;
     var init = o.init, t = localDay();
-    if (init.today !== t) { if (init.today.slice(0, 7) !== t.slice(0, 7)) init.month = null; init.today = t; init.first = null; }
+    init.month = null;   // the calendar waits for today's numbers instead of showing yesterday's
+    if (init.today !== t) { init.today = t; init.first = null; }
     return init;
   } catch (e) { return null; }
 }
@@ -801,7 +802,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795704694865';
+var BUILD = '1795705002166';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -928,7 +929,7 @@ function drawWeek(isoDay) {   // month calendar (kept the old name so every call
       x.t.slice(0, cap).forEach(function (s) { var i = el('i', 'ty-' + s.toLowerCase().replace(/[^a-z0-9]/g, ''), s); tl.appendChild(i); });
       if (x.t.length > cap) tl.appendChild(el('i', 'more', '+' + (x.t.length - cap)));
       b.appendChild(tl);
-    } else { var c = el('span', 'cc' + (x && x.u ? ' red' : ''), x && x.n ? String(x.n) : ''); b.appendChild(c); }
+    }   // no bare count bubble: a day shows its case labels or nothing
     var wo = woBlock(k).length > 0, eo = edOff(k);
     if (wo || eo) { var om = el('span', 'om'); if (wo) om.appendChild(el('i')); if (eo) om.appendChild(el('i', 'eo')); b.appendChild(om); }
     b.setAttribute('aria-label', label(k) + (x && x.n ? ', ' + x.n + ' case' + (x.n === 1 ? '' : 's') : '') + (x && x.u ? ', ' + x.u + ' to rate' : '') + (wo ? ', you’re out' : '') + (eo ? ', Dr. Edwards off' : ''));
