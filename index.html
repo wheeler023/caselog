@@ -825,7 +825,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795706794026';
+var BUILD = '1795709675086';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -840,6 +840,17 @@ setTimeout(checkUpdate, 4000);
 var INIT = window.__INIT;
 var day = INIT.today, cases = [], cur = null, base = '', isDirty = false, saving = false;
 var $ = function (id) { return document.getElementById(id); };
+var ACR = { ACDF: 1, ACCF: 1, ALIF: 1, TLIF: 1, XLIF: 1, LLIF: 1, OLIF: 1, PLIF: 1, DLIF: 1, ATP: 1, MIS: 1, CDR: 1, TDA: 1, TDR: 1, PSF: 1, PCF: 1, PCDF: 1, SI: 1, SIJ: 1, LIF: 1, ORIF: 1, EMG: 1, BMP: 1, ICBG: 1, IONM: 1, CT: 1, MRI: 1, OR: 1 };
+/** "RIGHT L4-5 MICRODISCECTOMY" -> "Right L4-5 microdiscectomy": acronyms and levels stay in caps, words don't. */
+function pCase(t) {
+  t = String(t || ''); var first = true;
+  return t.replace(/[A-Za-z][A-Za-z0-9\/&'-]*/g, function (w) {
+    var u = w.toUpperCase(), out;
+    if (ACR[u] || ACR[u.replace(/S$/, '')] || /^[CTLS]\d/.test(u) || (w.length > 1 && w.length <= 4 && !/[AEIOUY]/.test(u))) out = u;
+    else { out = w.toLowerCase(); if (first) out = out.charAt(0).toUpperCase() + out.slice(1); }
+    first = false; return out;
+  });
+}
 function pName(p) {   // "DOE JR, JANE A" -> "Jane A Doe Jr"
   p = String(p || '').trim(); if (!p) return 'Patient';
   var b = p.split(','), n = b.length > 1 ? (b.slice(1).join(' ').trim() + ' ' + b[0].trim()) : p;
@@ -2151,7 +2162,7 @@ function render() {
     var du = E && E.len ? dur(E.len) : c.duration; if (du) L.appendChild(el('div', 'cd', du)); card.appendChild(L);
     var m = el('div', 'cm');
     m.appendChild(el('div', 'cn', pName(c.patient)));
-    var proc = [c.procedure, c.side && String(c.procedure || '').toLowerCase().indexOf(c.side.toLowerCase()) < 0 ? c.side.toLowerCase() : ''].filter(Boolean).join(', ');   // no "right" twice
+    var proc = [pCase(c.procedure), c.side && String(c.procedure || '').toLowerCase().indexOf(c.side.toLowerCase()) < 0 ? c.side.toLowerCase() : ''].filter(Boolean).join(', ');   // no "right" twice
     if (proc) m.appendChild(el('div', 'cp', proc));
     if (!rmode && !smode && E && E.ia != null && prevPb != null) { var tov = E.ia - prevPb; if (tov >= 0 && tov <= 120) m.appendChild(el('div', 'ca tov', 'Turnover ' + dur(tov))); }
     if (E && E.a) m.appendChild(el('div', 'ca', 'In OR ' + E.a + (E.b ? ', PACU ' + E.b + ' (' + dur(E.am) + ')' : ', in progress')));
@@ -2249,7 +2260,7 @@ function openCase(i) {
   $('cName').textContent = pName(cur.patient);
   $('cSub').textContent = [cur.start, cur.age, cur.sex].filter(Boolean).join(', ');
   var sb = $('cSum'); sb.innerHTML = '';   // what you look at most, at the top
-  addRow(sb, 'Procedure', cur.procedure); typeRow(sb); addRow(sb, 'Levels', cur.levels); addRow(sb, 'Side', cur.side);
+  addRow(sb, 'Procedure', pCase(cur.procedure)); typeRow(sb); addRow(sb, 'Levels', cur.levels); addRow(sb, 'Side', cur.side);
   vendorRow(sb);
   (cur.implants || []).forEach(function (m, i) { addRow(sb, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
   addRow(sb, 'Start', cur.start); addRow(sb, 'Duration', cur.duration);
