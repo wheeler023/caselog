@@ -585,6 +585,9 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .mline{width:100%;display:flex;align-items:center;justify-content:space-between;background:transparent;border:0;padding:2px 0;color:#DCE4F2;font-size:15px;text-align:left}
 .mline span{color:#8C97AB;font-weight:600}.mline b{color:#9EC5E0;font-weight:700}.mline.on{margin-bottom:10px}
 #moneyCard{padding-top:12px;padding-bottom:12px}
+.fstep{display:flex;align-items:center;gap:8px;margin-top:6px}.fstep .plbl{flex:1;text-align:center;margin:0}
+.fstep button{flex:none;width:36px;height:32px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:18px;line-height:1}
+#fCus{margin-top:8px}#fCus label{min-width:0}#fCus input{width:100%;min-width:0;font-size:13px;padding:0 6px}#fCus button{flex:none;padding:0 10px}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="pencil" x="-5%" y="-20%" width="110%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="g"/><feComposite in="SourceGraphic" in2="g" operator="in" result="t"/><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="1" seed="7" result="w"/><feDisplacementMap in="t" in2="w" scale="1.6"/></filter></defs></svg>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -619,8 +622,9 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 <div id="vFin" style="display:none">
  <div class="hd"><button class="gear" onclick="openSettings()" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><div class="who" id="who3"></div><div class="day">Finances</div>
   <div class="seg" id="fmode"><button class="on" data-m="exp" onclick="setFMode('exp')">Expected</button><button data-m="bill" onclick="setFMode('bill')">Billing</button><button data-m="susa" onclick="setFMode('susa')">SUSA</button></div>
-  <div class="chips" id="fchips"><button class="chip on" data-p="month" onclick="setFPer('month')">Month</button><button class="chip" data-p="ytd" onclick="setFPer('ytd')">YTD</button><button class="chip" data-p="12m" onclick="setFPer('12m')">12 mo</button><button class="chip" data-p="all" onclick="setFPer('all')">All time</button></div>
-  <div class="plbl" id="fLbl"></div></div>
+  <div class="chips" id="fchips"><button class="chip on" data-p="month" onclick="setFPer('month')">Month</button><button class="chip" data-p="ytd" onclick="setFPer('ytd')">YTD</button><button class="chip" data-p="12m" onclick="setFPer('12m')">12 mo</button><button class="chip" data-p="all" onclick="setFPer('all')">All time</button><button class="chip" data-p="custom" onclick="setFPer('custom')">Custom</button></div>
+  <div class="fstep"><button id="fPrev" onclick="stepFin(-1)" aria-label="Earlier">‹</button><div class="plbl" id="fLbl"></div><button id="fNext" onclick="stepFin(1)" aria-label="Later">›</button></div>
+  <div class="rngc" id="fCus" style="display:none"><label>From<input type="date" id="fF"></label><label>To<input type="date" id="fT"></label><button onclick="applyFinCustom()">Show</button></div></div>
  <div class="sp" id="fBody"></div>
 </div>
 <div id="vSet" style="display:none">
@@ -833,7 +837,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795711606525';
+var BUILD = '1795719563276';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -2647,18 +2651,33 @@ function setTab(t) {
 // ---- Finance tab: amounts are not drawn until you tap Show amounts; leaving the tab hides them again ----
 var finShown = false, finPer = 'month', inPerFin = function () { return true; };
 function hideMoney() { finShown = false; $('fBody').innerHTML = ''; }
+var finMon = '', finF = '', finT = '';   // the Finance dates: any month (past or ahead), YTD, 12 months, all time or your own From/To
+function finToday() { return (stats && stats.today) || INIT.today; }
+function finRange() {
+  var t = finToday(), y = +t.slice(0, 4), m = +t.slice(5, 7);
+  if (!finMon) finMon = t.slice(0, 7);
+  if (finPer === 'month') { var fy = +finMon.slice(0, 4), fm = +finMon.slice(5); return { f: finMon + '-01', t: lastDay(fy, fm) }; }
+  if (finPer === 'ytd') return { f: y + '-01-01', t: t };
+  if (finPer === '12m') return { f: monthKey(t, -11) + '-01', t: t };
+  if (finPer === 'custom' && finF && finT) return { f: finF, t: finT };
+  return { f: '2000-01-01', t: '2099-12-31' };
+}
 function setFPer(p) {
   finPer = p; var ch = $('fchips').children;
   for (var i = 0; i < ch.length; i++) ch[i].className = ch[i].getAttribute('data-p') === p ? 'chip on' : 'chip';
+  if (p === 'month') finMon = finToday().slice(0, 7);
+  if (p === 'custom') { var r = finRange(); if (!finF) { var t = finToday(); finF = t.slice(0, 7) + '-01'; finT = lastDay(+t.slice(0, 4), +t.slice(5, 7)); } $('fF').value = finF; $('fT').value = finT; }
   renderFin();
 }
+function stepFin(n) { finMon = monthKey(finMon + '-01', n); renderFin(); }
+function applyFinCustom() { var a = $('fF').value, b = $('fT').value; if (!a || !b) { toast('Pick both dates'); return; } if (a > b) { var x = a; a = b; b = x; } finF = a; finT = b; renderFin(); }
 function finLabel() {   // says exactly which dates the Finance numbers cover
-  var t = (stats && stats.today) || INIT.today, y = +t.slice(0, 4), m = +t.slice(5, 7);
+  var r = finRange(), t = finToday();
   var MN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  if (finPer === 'month') return MN[m - 1] + ' ' + y;
-  if (finPer === 'ytd') return 'January 1 to ' + MN[m - 1] + ' ' + (+t.slice(8)) + ', ' + y;
-  if (finPer === '12m') { var k = monthKey(t, -11); return MN[+k.slice(5) - 1] + ' ' + k.slice(0, 4) + ' to ' + MN[m - 1] + ' ' + y; }
-  return 'All time';
+  function d(x) { return MN[+x.slice(5, 7) - 1] + ' ' + (+x.slice(8)) + ', ' + x.slice(0, 4); }
+  if (finPer === 'month') return MN[+finMon.slice(5) - 1] + ' ' + finMon.slice(0, 4) + (finMon > t.slice(0, 7) ? ' (projected)' : finMon === t.slice(0, 7) ? ' (so far plus scheduled)' : '');
+  if (finPer === 'all') return 'All time';
+  return d(r.f) + ' to ' + d(r.t);
 }
 var finMode = 'exp', bilM = '';
 function setFMode(m) {
@@ -2834,6 +2853,9 @@ function renderBilling(b) {   // real money only: what has paid, what hasn't, sp
 }
 function renderFin() {
   if ($('fLbl')) $('fLbl').textContent = finLabel();
+  var exp = finMode === 'exp';
+  $('fPrev').style.visibility = $('fNext').style.visibility = exp && finPer === 'month' ? '' : 'hidden';
+  $('fCus').style.display = exp && finPer === 'custom' ? '' : 'none';
   var b = $('fBody'); b.innerHTML = '';
   b.classList.toggle('veiled', !finShown);   // the page always shows; amounts stay greyed and blurred until you tap
   if (!renderFin.tap) {   // hidden unlock: three quick taps anywhere on the page
@@ -2853,11 +2875,12 @@ function renderFin() {
   cardTarget = 'fBody';
   if (finMode === 'bill') { renderBilling(b); return; }
   if (finMode === 'susa') { renderSusa(b); return; }
-  var savedPer = per; per = finPer;
-  var sel = stats.cases.filter(function (c) { return counted(c) && inPer(c); });
-  var pay = (stats.pay || []).filter(function (p) { return inPer({ d: p.d }); });
-  inPerFin = function (d) { per = finPer; var r = inPer({ d: d }); per = savedPer; return r; };
-  per = savedPer;
+  var R = finRange(), td = finToday();
+  inPerFin = function (d) { return d >= R.f && d <= R.t; };
+  var done = stats.cases.filter(function (c) { return counted(c) && inPerFin(c.d); });
+  var ahead = stats.cases.filter(function (c) { return c.s === 'Scheduled' && c.d >= td && inPerFin(c.d); });   // still on the schedule: the projection
+  var sel = done.concat(ahead);
+  var pay = (stats.pay || []).filter(function (p) { return inPerFin(p.d); });
   var fee = sel.reduce(function (s, c) { return s + c.f; }, 0), feeN = sel.filter(function (c) { return c.f > 0; }).length;
   var pa = pay.reduce(function (s, p) { return s + p.a; }, 0), awards = pay.filter(function (p) { return /Award|Additional/.test(p.k); });
   var nv = (stats.neuro && stats.neuro.value) || 0, pv = (stats.neuro && stats.neuro.pa) || 0, ncm = sel.filter(function (c) { return c.cm; }).length;
@@ -2870,6 +2893,11 @@ function renderFin() {
   tile(tiles, money(paSum), 'Expected PA/IDR');
   tile(tiles, money(ncm * nv), 'Expected neuromonitoring');
   tile(tiles, String(ncm) + ' of ' + sel.length, 'Commercial cases');
+  if (ahead.length && done.length) {   // a month that's partly done: split it
+    var aT = ahead.reduce(function (s2, c) { return s2 + (c.f || 0) + (c.cm ? nv + (c.pv != null ? c.pv : pv) : 0); }, 0);
+    tile(tiles, money(total - aT), done.length + ' done', done.length ? function () { finBreakdown(done, nv, pv, null); } : null);
+    tile(tiles, money(aT), ahead.length + ' still scheduled', function () { finBreakdown(ahead, nv, pv, null); });
+  }
   finTable(sel, nv, pv, total);
 }
 function finRows(sel, nv, pv) {   // per case type: cases, and the average pro fee, PA/IDR and neuro per case behind the total
