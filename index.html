@@ -238,7 +238,7 @@ html,body{font-family:var(--sans);line-height:1.4}
 .lnk{background:none;border:0;color:#9EC5E0;font:inherit;font-size:13px;font-weight:600;padding:4px 0;cursor:pointer}
 .blk{margin:16px 0 0 -34px;text-align:center}.blk .card2{text-align:left}
 .blk select,.blk input{background:#121722;color:#E6E9F0;border:1px solid #1F2328;border-radius:10px;padding:8px;font:inherit;font-size:14px;min-width:0}
-.eapfin{margin:4px 0 0 -34px;padding:10px 12px;text-align:center;font-size:14px;font-weight:600;color:#D3B98C}.eappred{font-size:12.5px;font-weight:500;color:#8C97AB;margin-top:3px}.eappred.early{color:#2FD67B}.eappred.late{color:#F29A3F}
+.eapfin{margin:4px 0 0 -34px;padding:10px 12px;text-align:center;font-size:14px;font-weight:600;color:#D3B98C}.offtg{display:block;margin:6px auto 0;background:none;border:0;color:#7D889D;font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}.eappred{font-size:12.5px;font-weight:500;color:#8C97AB;margin-top:3px}.eappred.early{color:#2FD67B}.eappred.late{color:#F29A3F}
 .cd .om{display:flex;gap:3px;height:5px}.cd .om i{width:5px;height:5px;border-radius:50%;background:#D3B98C}.cd .om i.eo{background:#6B7280}
 .eff{font-size:13px;margin-top:6px}.eff .er{display:grid;grid-template-columns:2.1fr .7fr 1fr 1fr .8fr 1fr;gap:4px;padding:7px 0;border-top:1px solid #1F2328;align-items:center}
 .eff .er.sc4{grid-template-columns:1.3fr .7fr 1.1fr 1.1fr 1.2fr}
@@ -801,7 +801,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795640274944';
+var BUILD = '1795704214680';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1073,7 +1073,9 @@ function refreshAll(d) {   // once per open: the server syncs only if the 10-min
     if (r.first) show(r.first);
   }).wdRefresh(d);
 }
-function dayCount() { var n = (cases || []).filter(function (c) { return !/Cancelled|Postponed/.test(c.status); }).length; $('dayCnt').textContent = n ? n + ' case' + (n === 1 ? '' : 's') : ''; }
+function isOffCase(c) { return /Cancelled|Postponed|Removed/.test(c.status || '') || !!(c.eap && /cancel|postpon|remov/i.test(c.eap.s || '')); }   // ours or Dr. Edwards'
+var showOff = false;
+function dayCount() { var n = (cases || []).filter(function (c) { return !isOffCase(c); }).length; $('dayCnt').textContent = n ? n + ' case' + (n === 1 ? '' : 's') : ''; }
 function show(r) { dayCache[r.day] = r.cases; dayEap[r.day] = r.eap || null; if (r.team) dayTeam[r.day] = r.team; if (r.day !== day) return; if (rmode) { dayCases = r.cases; return; } cases = r.cases; if (!$('sheet').classList.contains('on')) render(); }
 function go(isoDay) {
   day = isoDay; $('pick').value = isoDay; $('dayLbl').textContent = label(isoDay); viewMon = firstOf(isoDay);
@@ -2075,10 +2077,11 @@ function render() {
     return; }
   if (!rmode && !smode) { var rb = recapBanner(); if (rb) list.appendChild(rb); var me = msEl(day); if (me) list.appendChild(me); }
   if (!rmode && !smode) { var fe0 = factEl(day); if (fe0) { fe0.className += ' top'; list.appendChild(fe0); } }   // surgery days: the fact sits above the cases
-  var lastDate = '', prevPb = null;
+  var lastDate = '', prevPb = null, nOff = (rmode || smode) ? 0 : cases.filter(isOffCase).length;
   cases.forEach(function (c, i) {
+    if (!rmode && !smode && !showOff && isOffCase(c)) return;   // cancelled cases stay out of the day unless asked for
     if (rmode && c.dateLabel !== lastDate) { lastDate = c.dateLabel; list.appendChild(el('div', 'dhd', c.dateLabel)); }
-    var off = /Cancelled|Postponed|Removed/.test(c.status), rated = !!c.difficulty, toRate = c.status === 'Needs confirmation' || (c.status === 'Performed' && !rated && c.canRate !== false && (c.date || day) <= INIT.today);
+    var off = isOffCase(c), rated = !!c.difficulty, toRate = c.status === 'Needs confirmation' || (c.status === 'Performed' && !rated && c.canRate !== false && (c.date || day) <= INIT.today);
     var st = off ? 'off' : rated ? 'done' : toRate ? 'rate' : 'sched';
     var E = c.eap || null;
     var card = el('div', 'card v2 k-' + st); card.onclick = c.eapOnly ? function () { toast('From Dr. Edwards’ schedule. Its order hasn’t come in yet.'); } : function () { openCase(i); };
@@ -2114,6 +2117,7 @@ function render() {
     card.appendChild(R);
     list.appendChild(card);
   });
+  if (nOff) { var ob = el('button', 'offtg', (showOff ? 'Hide ' : 'Show ') + nOff + ' cancelled'); ob.onclick = function () { showOff = !showOff; render(); }; list.appendChild(ob); }
   if (!rmode && !smode) { var fin = finEl(day); if (fin) list.appendChild(fin); var qe = quoteEl(day, true); if (qe) list.appendChild(qe); }
   tryPendingOpen();
 }
