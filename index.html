@@ -566,10 +566,11 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .card.v2 .cl .cd::before{content:"· "}
 .card.v2 .cm{width:auto!important}
 .card.v2 .cn{font-size:19px!important;margin-bottom:1px}
-.card.v2 .cp{color:#B7C2D6!important;font-size:15px!important}
+.card.v2 .cp{color:#B7C2D6!important;font-size:13.5px!important;line-height:1.35}
 .card.v2 .ca{color:#8FD0A8!important;font-size:13.5px!important;margin-top:8px!important}
 .card.v2 .cb{margin-top:10px!important;gap:6px!important;display:flex;flex-wrap:wrap;align-items:center}
-.card.v2 .cb>.ci,.card.v2 .cb>.tag.vd{font-size:12.5px!important;height:24px;display:inline-flex!important;align-items:center;padding:0 9px!important;border-radius:999px!important;border:1px solid #2B3A52!important;background:#162238!important;color:#C9D3E6!important}
+.card.v2 .cb>.ci{font-size:12.5px!important;height:24px;display:inline-flex!important;align-items:center;padding:0 9px!important;border-radius:999px!important;border:1px solid #2B3A52!important;background:#162238!important;color:#C9D3E6!important}
+.card.v2 .cb>.tag.vd{font-size:12.5px!important;height:24px;display:inline-flex!important;align-items:center;padding:0 9px!important;border-radius:999px!important}
 .card.v2 .cb>.sptag{font-size:12.5px!important;height:24px;display:inline-flex!important;align-items:center;padding:0 9px!important;border-radius:999px!important;font-style:normal}
 .card.v2 .cr{position:absolute;top:12px;right:14px}
 .card.v2 .cr .pill.p-sched{display:none}
@@ -824,7 +825,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795706330619';
+var BUILD = '1795706636027';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -2150,7 +2151,7 @@ function render() {
     var du = E && E.len ? dur(E.len) : c.duration; if (du) L.appendChild(el('div', 'cd', du)); card.appendChild(L);
     var m = el('div', 'cm');
     m.appendChild(el('div', 'cn', pName(c.patient)));
-    var proc = [c.procedure, c.side ? c.side.toLowerCase() : ''].filter(Boolean).join(', ');
+    var proc = [c.procedure, c.side && String(c.procedure || '').toLowerCase().indexOf(c.side.toLowerCase()) < 0 ? c.side.toLowerCase() : ''].filter(Boolean).join(', ');   // no "right" twice
     if (proc) m.appendChild(el('div', 'cp', proc));
     if (!rmode && !smode && E && E.ia != null && prevPb != null) { var tov = E.ia - prevPb; if (tov >= 0 && tov <= 120) m.appendChild(el('div', 'ca tov', 'Turnover ' + dur(tov))); }
     if (E && E.a) m.appendChild(el('div', 'ca', 'In OR ' + E.a + (E.b ? ', PACU ' + E.b + ' (' + dur(E.am) + ')' : ', in progress')));
