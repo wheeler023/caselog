@@ -582,6 +582,9 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .sh .pen{flex:none;width:40px;height:40px;padding:0;border-radius:12px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;display:flex;align-items:center;justify-content:center}
 .sh .pen svg{width:18px;height:18px}.sh .pen.on{background:#9EC5E0;color:#0C1019;border-color:#9EC5E0}
 #edTog{display:none}
+.mline{width:100%;display:flex;align-items:center;justify-content:space-between;background:transparent;border:0;padding:2px 0;color:#DCE4F2;font-size:15px;text-align:left}
+.mline span{color:#8C97AB;font-weight:600}.mline b{color:#9EC5E0;font-weight:700}.mline.on{margin-bottom:10px}
+#moneyCard{padding-top:12px;padding-bottom:12px}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="pencil" x="-5%" y="-20%" width="110%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="g"/><feComposite in="SourceGraphic" in2="g" operator="in" result="t"/><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="1" seed="7" result="w"/><feDisplacementMap in="t" in2="w" scale="1.6"/></filter></defs></svg>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -653,7 +656,7 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
  <div class="body"><div class="chlist" id="tdList"></div></div>
 </div>
 <div class="sheet" id="chsheet">
- <div class="sh"><button onclick="closeChanges()">‹ Back</button><div class="ttl"><b>Schedule changes</b><span id="chSub"></span></div></div>
+ <div class="sh"><button class="bk" onclick="closeChanges()" aria-label="Back">‹</button><div class="ttl"><b>Inbox</b><span id="chSub"></span></div></div>
  <div class="body"><div class="chlist" id="chList"></div></div>
 </div>
 <div class="sheet" id="sheet">
@@ -683,7 +686,7 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
    <label for="notes">Notes</label>
    <div class="hint">Tap in the box, then tap the microphone on your keyboard to dictate. Saves to the Notes column of your case log.</div>
    <textarea id="notes" rows="3" oninput="dirty();growNotes()" placeholder="Dictate or type notes…"></textarea>
-   <div class="acts"><button class="b2" onclick="stamp()">+ Time stamp</button><button class="b1" id="saveBtn" onclick="save(false)">Save</button></div>
+   <div class="acts"><button class="b2" onclick="stamp()">+ Time stamp</button><button class="b1" id="saveBtn" onclick="save(false)" style="display:none">Save</button></div>
    <div class="st" id="st"></div>
    <div class="conf" id="conf"><b>These notes were changed at a computer since you opened this case.</b> Here is what's in the case log now:<pre id="confTxt"></pre>
     <div class="acts"><button class="b2" onclick="useSheet()">Use case log version</button><button class="b1" onclick="save(true)">Save mine</button></div></div>
@@ -721,7 +724,6 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
    <div class="rate scrub" id="circ"></div>
   </div>
   <div class="out" id="moneyCard">
-   <label>Finances</label>
    <div id="money"></div>
   </div>
   <div class="out" id="detCard">
@@ -831,7 +833,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795710344492';
+var BUILD = '1795711606525';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -910,7 +912,7 @@ function drawTodo(t) {
     if (t.rate.length) parts.push(t.rate.length + ' to rate');
     if (t.note.length) parts.push(t.note.length + ' op note' + (t.note.length > 1 ? 's' : '') + ' missing');
     if (t.inbox) parts.push(t.inbox + ' op note' + (t.inbox > 1 ? 's' : '') + ' need a case');
-    if (!parts.length) { b.style.display = 'none'; return; }
+    b.style.display = 'none'; drawBell(CHG_N); return;   // the to-do list now lives in the bell's inbox
     b.innerHTML = ''; b.appendChild(el('b', null, 'Complete'));
     b.appendChild(el('span', 'tx', parts.join(', ') + ' from earlier days.' + (t.note.length || t.inbox ? ' For op notes, tell Claude which case.' : '')));
     if (t.rate.length) b.appendChild(el('span', 'go', 'Rate ›'));
@@ -918,15 +920,12 @@ function drawTodo(t) {
   }
 }
 /** The banner: straight to rating when that's all there is; otherwise a list of what's left. */
-function openTodo() {
+function openTodo() { openChanges(); }
+function todoInto(L) {   // the to-do part of the inbox: cases to rate, op notes missing
   var t = TODO || { rate: [], note: [], inbox: 0 };
-  if (t.rate.length && !t.note.length && !t.inbox) { openRating(); return; }
-  var L = $('tdList'); L.innerHTML = '';
-  var n = t.rate.length + t.note.length + (t.inbox || 0);
-  $('tdSub').textContent = n ? n + ' left' : 'All done';
   if (t.rate.length) {
     var rb = el('button', 'addimg chclr', 'Rate ' + t.rate.length + (t.rate.length === 1 ? ' case' : ' cases'));
-    rb.onclick = function () { closeTodo(); openRating(); }; L.appendChild(rb);
+    rb.onclick = function () { closeChanges(); openRating(); }; L.appendChild(rb);
   }
   if (t.note.length) {
     L.appendChild(el('div', 'chh', 'Op note missing'));
@@ -935,11 +934,11 @@ function openTodo() {
       var top = el('div', 'cht'); top.appendChild(el('span', 'chk k-pp', 'Op note')); top.appendChild(el('span', 'cha', x.when || '')); row.appendChild(top);
       row.appendChild(el('div', 'chw', (x.what || 'Surgery') + (x.name ? ', ' + x.name : '')));
       row.appendChild(el('div', 'chd', 'Tap to open the case.'));
-      row.onclick = function () { closeTodo(); pendingOpen = x.id; setTab('cases'); go(x.day); };
+      row.onclick = function () { closeChanges(); pendingOpen = x.id; setTab('cases'); go(x.day); };
       var dm = el('button', 'tdx', '×'); dm.setAttribute('aria-label', 'Dismiss this reminder');
       dm.onclick = function (ev) {
         ev.stopPropagation(); dm.disabled = true; row.style.opacity = '.4';
-        google.script.run.withSuccessHandler(function (nt) { drawTodo(nt); openTodo(); if (!nt.rate.length && !nt.note.length && !nt.inbox) closeTodo(); toast('Dismissed'); })
+        google.script.run.withSuccessHandler(function (nt) { drawTodo(nt); row.remove(); var k = todoN(); $('chSub').textContent = k ? k + ' to do' : 'Nothing to do'; toast('Dismissed'); })
           .withFailureHandler(function (e) { dm.disabled = false; row.style.opacity = ''; toast('Not dismissed: ' + e.message); }).wdTodoDismiss(x.id);
       };
       row.appendChild(dm); L.appendChild(row);
@@ -949,8 +948,6 @@ function openTodo() {
     L.appendChild(el('div', 'chh', 'Op notes waiting for a case'));
     L.appendChild(el('div', 'chr', t.inbox + (t.inbox === 1 ? ' note is' : ' notes are') + ' in the Op Notes Inbox without a match. Tell Claude which case each belongs to.'));
   }
-  if (!n) L.appendChild(el('div', 'empty', 'Nothing left from earlier days.'));
-  $('tdsheet').classList.add('on');
 }
 function closeTodo() { $('tdsheet').classList.remove('on'); }
 function storeMonth(r) { var m = {}; r.days.forEach(function (x) { m[x.d] = x; }); weekCache[r.start] = m; }
@@ -1499,10 +1496,12 @@ function showNewCases(list) {   // "New surgery scheduled" cards; X each one, or
   draw();
 }
 // ---- Schedule changes: the bell at the top. It glows when something was added, moved, cancelled or postponed since you last looked ----
+var CHG_N = 0;
+function todoN() { var t = TODO; return t ? t.rate.length + t.note.length + (t.inbox || 0) : 0; }
 function drawBell(n) {
   var b = $('bell'); if (!b) return; b.style.display = '';
-  n = +n || 0; $('bellN').textContent = n > 9 ? '9+' : n ? String(n) : '';
-  b.classList.toggle('hot', n > 0); b.setAttribute('aria-label', n ? n + ' schedule change' + (n === 1 ? '' : 's') : 'Schedule changes');
+  CHG_N = +n || 0; n = CHG_N + todoN(); $('bellN').textContent = n > 9 ? '9+' : n ? String(n) : '';
+  b.classList.toggle('hot', n > 0); b.setAttribute('aria-label', n ? n + ' in your inbox' : 'Inbox');
 }
 var CHK = { add: ['Added', 'k-add'], moved: ['Rescheduled', 'k-mov'], cancelled: ['Cancelled', 'k-cx'], postponed: ['Postponed', 'k-pp'], removed: ['Off the calendar', 'k-rm'] };
 function agoTxt(t) {
@@ -1517,7 +1516,8 @@ function openChanges() {
     L.innerHTML = '';
     var list = (r && r.list) || [], seen = (r && r.seen) || 0, fresh = list.filter(function (x) { return x.at > seen; });
     drawBell(fresh.length);
-    $('chSub').textContent = fresh.length ? fresh.length + ' new' : 'Nothing new';
+    var tn = todoN(); $('chSub').textContent = [tn ? tn + ' to do' : '', fresh.length ? fresh.length + ' new' : ''].filter(Boolean).join(', ') || 'Nothing new';
+    if (tn) { L.appendChild(el('div', 'chh', 'To do')); todoInto(L); L.appendChild(el('div', 'chh', 'Schedule changes')); }
     if (fresh.length) {
       var clr = el('button', 'addimg chclr', 'Clear alerts');
       clr.onclick = function () {
@@ -2271,10 +2271,11 @@ function openCase(i) {
   (cur.implants || []).forEach(function (m, i) { addRow(sb, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
 
   var b = $('cInfo'); b.innerHTML = '';
-  addRow(b, 'DOB', cur.dob); addRow(b, 'Age', cur.age); addRow(b, 'Sex', cur.sex); phoneRow(b, cur.phone);
+  addRow(b, 'DOB', cur.dob); phoneRow(b, cur.phone);   // age and sex are in the top bar
   addRow(b, 'Insurance', cur.insurance); addRow(b, 'CPT', cur.cpt); addRow(b, 'Diagnosis', cur.dx);
-  addRow(b, 'Assistant', cur.assistant); addRow(b, 'Anesthesia', cur.anesthesia); addRow(b, 'Stay', cur.stay);
-  addRow(b, 'Position', cur.position); addRow(b, 'Facility', cur.facility); addRow(b, 'Status', cur.status);
+  if (!/mcfarland/i.test(cur.assistant || '')) addRow(b, 'Assistant', cur.assistant);   // the usual team, room and anesthesia only show when different
+  if (!/^general/i.test(cur.anesthesia || '')) addRow(b, 'Anesthesia', cur.anesthesia); addRow(b, 'Stay', cur.stay);
+  addRow(b, 'Position', cur.position); if (!/texas institute/i.test(cur.facility || '')) addRow(b, 'Facility', cur.facility);
   renderOutcome(); loadImages(); renderMoney(null); renderScrub(); renderVid(); renderRoom(); editReset();
   if (cur.order) addRow(b, 'Order', 'Open surgery order', cur.order);
   var on = $('opnote'); on.innerHTML = '';
@@ -2292,17 +2293,18 @@ function openCase(i) {
 function renderMoney(m) {
   var box = $('money'); box.innerHTML = '';
   if (!m) {
-    var bt = el('button', 'addimg', 'Show finances'), c = cur;
+    var bt = el('button', 'mline', ''), c = cur; bt.appendChild(el('span', null, 'Finances')); bt.appendChild(el('b', null, 'Show ›'));
     bt.onclick = function () {
-      bt.disabled = true; bt.textContent = 'Loading…';
+      bt.disabled = true; bt.lastChild.textContent = 'Loading…';
       google.script.run.withSuccessHandler(function (r) { if (cur === c) renderMoney(r); })
-        .withFailureHandler(function (e) { bt.disabled = false; bt.textContent = 'Show finances'; box.appendChild(el('div', 'hint', 'Could not load: ' + e.message)); }).wdCaseMoney(c.id);
+        .withFailureHandler(function (e) { bt.disabled = false; bt.lastChild.textContent = 'Show ›'; box.appendChild(el('div', 'hint', 'Could not load: ' + e.message)); }).wdCaseMoney(c.id);
     };
     box.appendChild(bt); return;
   }
-  var b = el('div', 'box'); box.appendChild(b);
   var tot = (m.fee || 0) + (m.neuro || 0) + (m.pa || 0);
-  addRow(b, 'Expected case value', tot ? money(tot) : 'No estimate');
+  var hd = el('button', 'mline on', ''); hd.appendChild(el('span', null, 'Expected case value')); hd.appendChild(el('b', null, (tot ? money(tot) : 'No estimate') + ' ▴'));
+  hd.onclick = function () { renderMoney(null); }; box.appendChild(hd);
+  var b = el('div', 'box'); box.appendChild(b);
   addRow(b, 'Expected pro fee', m.fee ? money(m.fee) : 'No estimate' + (m.group ? ' (' + m.group + ')' : ''));
   addRow(b, 'Pro fee paid', m.pfPaid && m.pfPaid.paid > 0 ? money(m.pfPaid.paid) + (m.pfPaid.payers.length ? ' (' + m.pfPaid.payers.join(', ') + ')' : '') : m.pfPaid ? 'Billed, not paid yet' : 'Not in a report yet');
   if (m.group) addRow(b, 'Payer group', m.group);
@@ -2312,7 +2314,6 @@ function renderMoney(m) {
   var pa = m.payments.reduce(function (s, p) { return s + p.a; }, 0);
   addRow(b, 'PA collected (SUSA)', m.payments.length ? money(pa) : 'None yet');
   m.payments.forEach(function (p) { addRow(b, p.d || 'Payment', money(p.a) + (p.k ? ', ' + p.k : '')); });
-  var hd = el('button', 'addimg', 'Hide finances'); hd.onclick = function () { renderMoney(null); }; box.appendChild(hd);
 }
 var imgs = [];
 function loadImages() {
@@ -2541,21 +2542,23 @@ function openRowsStatus() {
   var rows = $('cInfo').querySelectorAll('.row');
   for (var i = 0; i < rows.length; i++) if (rows[i].firstChild.textContent === 'Status') rows[i].lastChild.textContent = cur.status;
 }
-function dirty() { isDirty = true; $('st').textContent = 'Not saved yet'; }
+var autoT = null;
+function dirty() { isDirty = true; $('st').textContent = 'Saving…'; clearTimeout(autoT); autoT = setTimeout(autoSave, 1500); }
+function autoSave() { if (!cur || !isDirty) return; if (saving) { autoT = setTimeout(autoSave, 1000); return; } save(false, null, true); }   // notes save themselves a moment after you stop typing
 function stamp() {
   var t = $('notes'), now = new Date();
   var s = (now.getMonth() + 1) + '/' + now.getDate() + ' ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' — ';
   var NL = String.fromCharCode(10), pre = t.value && t.value.slice(-1) !== NL ? NL : '';
   t.value += pre + s; t.focus(); t.setSelectionRange(t.value.length, t.value.length); dirty();
 }
-function save(force, after) {
-  if (!cur || saving) return;
+function save(force, after, quiet) {
+  if (!cur || saving) return; clearTimeout(autoT);
   var text = $('notes').value, c = cur; saving = true; $('saveBtn').disabled = true; $('st').textContent = 'Saving…';
   google.script.run.withSuccessHandler(function (r) {
     saving = false; $('saveBtn').disabled = false;
     if (r.conflict) { $('confTxt').textContent = r.current; $('conf').style.display = 'block'; $('st').textContent = 'Not saved — see below'; return; }
-    c.notes = text; base = text; if (cur === c) { isDirty = false; $('st').textContent = 'Saved ' + r.saved; $('conf').style.display = 'none'; }
-    toast('Notes saved'); render(); if (after) after();
+    c.notes = text; base = text; if (cur === c) { $('conf').style.display = 'none'; if ($('notes').value !== text) { isDirty = true; autoT = setTimeout(autoSave, 1000); } else { isDirty = false; $('st').textContent = 'Saved ' + r.saved; } }
+    if (!quiet) toast('Notes saved'); render(); if (after) after();
   }).withFailureHandler(function (e) { saving = false; $('saveBtn').disabled = false; $('st').textContent = 'Not saved: ' + e.message; })
     .wdSave(c.id, text, base, !!force);
 }
