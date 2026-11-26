@@ -589,6 +589,8 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .fstep button{flex:none;width:36px;height:32px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:18px;line-height:1}
 #fCus{margin-top:8px}#fCus label{min-width:0}#fCus input{width:100%;min-width:0;font-size:13px;padding:0 6px}#fCus button{flex:none;padding:0 10px}
 .tiles>:last-child:nth-child(odd){grid-column:1/-1}
+.tiles.t3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tiles.t3>:last-child{grid-column:auto}
+.tiles.t3 .tile{padding:12px 12px;min-height:0}.tiles.t3 .tile .n{font-size:26px}.tiles.t3 .tile .l{font-size:12.5px;white-space:nowrap}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="pencil" x="-5%" y="-20%" width="110%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="g"/><feComposite in="SourceGraphic" in2="g" operator="in" result="t"/><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="1" seed="7" result="w"/><feDisplacementMap in="t" in2="w" scale="1.6"/></filter></defs></svg>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -822,6 +824,7 @@ function freshen(f) {   // drop the fresh opening data into the screens already 
   if (f.role !== window.__INIT.role) return location.reload();
   try { if (f.name !== window.__INIT.name) { window.__INIT.name = f.name; INIT.name = f.name; ['who','who2','who3','who4','who5','who6'].forEach(function (k) { if (document.getElementById(k)) brandRow(k, ''); }); } } catch (e) {}
   try { if (f.notice) showNotice(f.notice); } catch (e) {}
+  try { if (f.labels) { window.__INIT.labels = f.labels; INIT.labels = f.labels; } if (f.cx) { window.__INIT.cx = f.cx; INIT.cx = f.cx; } } catch (e) {}   // rating words and complications stay current
   try { if (typeof drawBell === 'function') drawBell(f.chg); } catch (e) {}
   try { if (f.month) storeMonth(f.month); if (f.todo) drawTodo(f.todo); if (f.first) show(f.first); drawWeek(day); } catch (e) { console.warn(e); }
 }
@@ -838,7 +841,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795722572099';
+var BUILD = '1795722817410';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -3139,11 +3142,11 @@ function renderStats() {
   var rcm = selY && selM ? selY + '-' + ('0' + selM).slice(-2) : (RNG && RNG.t < t ? RNG.t.slice(0, 7) : t.slice(0, 7));   // recap: the month shown, else this month
   var rcb = el('button', 'recapb', MONF[+rcm.slice(5) - 1] + ' ' + rcm.slice(0, 4) + ' recap ›'); rcb.onclick = function () { openRecap(rcm); }; b.appendChild(rcb);
   var schL = all.filter(function (c) { return c.s === 'Scheduled' && c.d >= t && inPer(c); });
-  var tiles = el('div', 'tiles'); b.appendChild(tiles);
+  var tiles = el('div', 'tiles t3'); b.appendChild(tiles);   // one row: done, on the books, how hard
   tile(tiles, String(sel.length), 'Completed', sel.length ? function () { drillCases('Completed', sel); } : null);
   var totL = all.filter(function (c) { return inPer(c) && !/Cancelled|Postponed|Removed/.test(c.s); });
-  tile(tiles, String(totL.length), 'Scheduled (total)', totL.length ? function () { drillCases('Scheduled (total)', totL); } : null);
-  tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Avg difficulty (1–5)');
+  tile(tiles, String(totL.length), 'Scheduled', totL.length ? function () { drillCases('Scheduled (total)', totL); } : null);
+  tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Difficulty');
   if (!sel.length) b.appendChild(el('div', 'note', 'No completed cases in this period yet.'));
 
   var cy = selY || +t.slice(0, 4), py = cy - 1;
@@ -3198,7 +3201,7 @@ function renderStats() {
   withX.forEach(function (c) { c.x.split(/\s*,\s*/).forEach(function (k) { if (k) xs[k] = (xs[k] || 0) + 1; }); });
   hbars(card('Complications', rated.length ? withX.length + ' of ' + rated.length + ' rated cases (' + Math.round(100 * withX.length / rated.length) + '%) had one or more.' : 'Rated cases only.'),
     (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0 }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
-  hbars(card('Difficulty', 'Rated cases only.'), [1, 2, 3, 4, 5].map(function (n) { return { k: n + ' · ' + (L[n] || ''), v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
+  hbars(card('Difficulty', 'Rated cases only.'), [1, 2, 3, 4, 5].map(function (n) { return { k: n + ' · ' + String(L[n] || '').split(/,| and /)[0], v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
   effCard(sel);
 }
 go(day);

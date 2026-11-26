@@ -80,6 +80,7 @@ function freshen(f) {   // drop the fresh opening data into the screens already 
   if (f.role !== window.__INIT.role) return location.reload();
   try { if (f.name !== window.__INIT.name) { window.__INIT.name = f.name; INIT.name = f.name; ['who','who2','who3','who4','who5','who6'].forEach(function (k) { if (document.getElementById(k)) brandRow(k, ''); }); } } catch (e) {}
   try { if (f.notice) showNotice(f.notice); } catch (e) {}
+  try { if (f.labels) { window.__INIT.labels = f.labels; INIT.labels = f.labels; } if (f.cx) { window.__INIT.cx = f.cx; INIT.cx = f.cx; } } catch (e) {}   // rating words and complications stay current
   try { if (typeof drawBell === 'function') drawBell(f.chg); } catch (e) {}
   try { if (f.month) storeMonth(f.month); if (f.todo) drawTodo(f.todo); if (f.first) show(f.first); drawWeek(day); } catch (e) { console.warn(e); }
 }
