@@ -588,6 +588,7 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .fstep{display:flex;align-items:center;gap:8px;margin-top:6px}.fstep .plbl{flex:1;text-align:center;margin:0}
 .fstep button{flex:none;width:36px;height:32px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;font-size:18px;line-height:1}
 #fCus{margin-top:8px}#fCus label{min-width:0}#fCus input{width:100%;min-width:0;font-size:13px;padding:0 6px}#fCus button{flex:none;padding:0 10px}
+.tiles>:last-child:nth-child(odd){grid-column:1/-1}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="pencil" x="-5%" y="-20%" width="110%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="g"/><feComposite in="SourceGraphic" in2="g" operator="in" result="t"/><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="1" seed="7" result="w"/><feDisplacementMap in="t" in2="w" scale="1.6"/></filter></defs></svg>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -837,7 +838,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795719563276';
+var BUILD = '1795722572099';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -3143,8 +3144,6 @@ function renderStats() {
   var totL = all.filter(function (c) { return inPer(c) && !/Cancelled|Postponed|Removed/.test(c.s); });
   tile(tiles, String(totL.length), 'Scheduled (total)', totL.length ? function () { drillCases('Scheduled (total)', totL); } : null);
   tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Avg difficulty (1–5)');
-  var nc = all.filter(function (c) { return c.s === 'Needs confirmation'; }).length;
-  tile(tiles, String(nc), 'Awaiting your rating', nc ? openRating : null);
   if (!sel.length) b.appendChild(el('div', 'note', 'No completed cases in this period yet.'));
 
   var cy = selY || +t.slice(0, 4), py = cy - 1;
