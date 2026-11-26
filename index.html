@@ -494,7 +494,7 @@ body.shrunk .hd .gear{width:32px;height:32px}
 #sheet.locked #clrBtn,#sheet.locked #cxBtn,#sheet.locked #outCard .hint,#sheet.locked #cxCard .hint,#sheet.locked #notesCard .hint,#sheet.locked #notesCard .acts,#sheet.locked #imgCard .hint,#sheet.locked #imgCard .addrow,#sheet.locked #vidCard .addimg,#sheet.locked #vidCard .pnh{display:none !important}
 #sheet.locked textarea{border-color:transparent !important;background:transparent !important;resize:none;padding-left:0;padding-right:0}
 #sheet.locked .cxnone{color:#8C97AB;font-size:14px}
-#sheet.locked #imgCard.empty{display:none}#sheet.locked textarea{min-height:0 !important}
+#sheet.locked #imgCard.noimg{display:none}#sheet.locked textarea{min-height:0 !important}
 #rng{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#rng::-webkit-scrollbar{display:none}#rng .chip{white-space:nowrap;flex:none}
 #rng .chip.cal .ic{width:15px;height:15px;margin-right:6px;vertical-align:-2px}
 .rngc{display:flex;gap:8px;align-items:flex-end;margin:8px 0 4px}.rngc label{flex:1;display:flex;flex-direction:column;gap:4px;font-size:12px;color:#8C97AB;font-family:-apple-system,system-ui,'Segoe UI',Roboto,sans-serif}
@@ -576,6 +576,12 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .card.v2 .cr .pill.p-sched{display:none}
 .fact.top{background:transparent!important;border-style:dashed!important}
 .calc{border-color:#1E2B42!important}
+.sh{display:flex;align-items:center;gap:12px}
+.sh button.bk{width:40px;height:40px;padding:0;border-radius:50%;font-size:22px;line-height:1;flex:none}
+.sh .ttl{flex:1;min-width:0}
+.sh .pen{flex:none;width:40px;height:40px;padding:0;border-radius:12px;border:1px solid #2D3D5A;background:#17253F;color:#DCE4F2;display:flex;align-items:center;justify-content:center}
+.sh .pen svg{width:18px;height:18px}.sh .pen.on{background:#9EC5E0;color:#0C1019;border-color:#9EC5E0}
+#edTog{display:none}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="pencil" x="-5%" y="-20%" width="110%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="g"/><feComposite in="SourceGraphic" in2="g" operator="in" result="t"/><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="1" seed="7" result="w"/><feDisplacementMap in="t" in2="w" scale="1.6"/></filter></defs></svg>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -651,7 +657,7 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
  <div class="body"><div class="chlist" id="chList"></div></div>
 </div>
 <div class="sheet" id="sheet">
- <div class="sh"><button onclick="closeCase()">‹ Back</button><div class="ttl"><b id="cName"></b><span id="cSub"></span></div></div>
+ <div class="sh"><button class="bk" onclick="closeCase()" aria-label="Back">‹</button><div class="ttl"><b id="cName"></b><span id="cSub"></span></div><button class="pen" id="penBtn" onclick="editToggle()" aria-label="Edit case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>
  <div class="body">
   <div class="lockbar" id="lockBar"><span id="lockTx">This case is closed.</span><button onclick="unlockCase()">Edit</button></div>
   <div class="out" id="outCard">
@@ -825,7 +831,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795709675086';
+var BUILD = '1795710344492';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -2197,7 +2203,7 @@ var VEND = ['NuVasive', 'Medtronic', 'Globus', 'Stryker', 'NEXXT', 'ProDisc', 'O
 var APPR = [['ALIF', 'ALIF'], ['360 lumbar fusion', 'ALIF + posterior'], ['Lateral (LLIF/XLIF)', 'Lateral'], ['360 lumbar fusion (lateral)', 'Lateral + posterior']];
 function typeRow(box) {   // ALIF and lateral cases: tap to switch; every change asks first
   var c = cur, isA = APPR.some(function (a) { return a[0] === (c && c.caseType); });
-  if (!c || !isA || c.eapOnly || (INIT.role && INIT.role !== 'owner')) { addRow(box, 'Case type', c ? c.caseType : ''); return; }
+  if (!c || !isA || c.eapOnly || (INIT.role && INIT.role !== 'owner')) { if (c && String(c.procedure || '').toLowerCase().indexOf(String(c.caseType || '').toLowerCase()) < 0) addRow(box, 'Case type', c.caseType); return; }
   var r = el('div', 'row'); r.appendChild(el('div', 'k', 'Case type'));
   var v = el('div', 'v'), b = el('button', 'lnk', c.caseType + ' ✎'); v.appendChild(b); r.appendChild(v); box.appendChild(r);
   b.onclick = function () {
@@ -2258,12 +2264,12 @@ function phoneRow(box, txt) {
 function openCase(i) {
   cur = cases[i]; base = cur.notes || ''; isDirty = false;
   $('cName').textContent = pName(cur.patient);
-  $('cSub').textContent = [cur.start, cur.age, cur.sex].filter(Boolean).join(', ');
+  $('cSub').textContent = [[cur.start, cur.duration].filter(Boolean).join(' · '), [cur.age, cur.sex].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   var sb = $('cSum'); sb.innerHTML = '';   // what you look at most, at the top
-  addRow(sb, 'Procedure', pCase(cur.procedure)); typeRow(sb); addRow(sb, 'Levels', cur.levels); addRow(sb, 'Side', cur.side);
+  var pr = pCase(cur.procedure); addRow(sb, 'Procedure', pr); typeRow(sb); if (!/\b[CTL]\d|\bS1\b/i.test(pr)) addRow(sb, 'Levels', cur.levels); if (cur.side && pr.toLowerCase().indexOf(cur.side.toLowerCase()) < 0) addRow(sb, 'Side', cur.side);   // nothing the procedure line already says
   vendorRow(sb);
   (cur.implants || []).forEach(function (m, i) { addRow(sb, i ? '' : 'Implants', impLabel(m) + (m.s ? ', ' + m.s : '') + (m.l ? ' (' + m.l + ')' : '')); });
-  addRow(sb, 'Start', cur.start); addRow(sb, 'Duration', cur.duration);
+
   var b = $('cInfo'); b.innerHTML = '';
   addRow(b, 'DOB', cur.dob); addRow(b, 'Age', cur.age); addRow(b, 'Sex', cur.sex); phoneRow(b, cur.phone);
   addRow(b, 'Insurance', cur.insurance); addRow(b, 'CPT', cur.cpt); addRow(b, 'Diagnosis', cur.dx);
@@ -2315,7 +2321,7 @@ function loadImages() {
     .withFailureHandler(function () {}).wdImages(c.id);
 }
 function renderThumbs() {
-  var box = $('thumbs'); box.innerHTML = ''; $('imgCard').classList.toggle('empty', !imgs.length);
+  var box = $('thumbs'); box.innerHTML = ''; $('imgCard').classList.toggle('noimg', !imgs.length);
   imgs.forEach(function (im, i) {
     var a = el('a', 'th');
     if (im.id) { a.href = 'https://drive.google.com/file/d/' + im.id + '/view'; a.target = '_blank'; a.rel = 'noopener'; }
@@ -2466,7 +2472,7 @@ var cxTimer = null;
 // ---- Edit case (you only) ----
 var edTimer = null;
 function editReset() {
-  var c = cur; $('editCard').style.display = TEAM || !c ? 'none' : ''; $('edBox').classList.remove('on'); $('edTog').textContent = 'Edit case';
+  var c = cur; $('editCard').style.display = 'none'; $('penBtn').style.display = TEAM || !c ? 'none' : ''; $('penBtn').classList.remove('on'); $('edBox').classList.remove('on'); $('edTog').textContent = 'Edit case';
   $('edMsg').textContent = ''; $('edDel').className = 'eddel'; $('edDel').textContent = 'Delete this case'; clearTimeout(edTimer);
   if (!c) return;
   $('edDate').value = c.date || day || '';
@@ -2474,7 +2480,7 @@ function editReset() {
   if (m && m[3]) { if (/p/i.test(m[3]) && h < 12) h += 12; if (/a/i.test(m[3]) && h === 12) h = 0; }
   $('edTime').value = m ? (h < 10 ? '0' : '') + h + ':' + m[2] : '';
 }
-function editToggle() { var on = !$('edBox').classList.contains('on'); $('edBox').classList.toggle('on', on); $('edTog').textContent = on ? 'Close edit' : 'Edit case'; }
+function editToggle() { var on = !$('edBox').classList.contains('on'); $('edBox').classList.toggle('on', on); $('editCard').style.display = on ? '' : 'none'; $('penBtn').classList.toggle('on', on); if (on) $('editCard').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('edTog').textContent = on ? 'Close edit' : 'Edit case'; }
 function editDone(msg, d) {
   dayCache = {}; weekCache = {}; nearAsked = {};
   toast(msg); closeCase(); goDay(d || day);
