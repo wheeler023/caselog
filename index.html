@@ -844,7 +844,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795723486205';
+var BUILD = '1795723582329';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -1289,12 +1289,12 @@ function openRecap(mk) {
   var bd = Object.keys(byDay).sort(function (a, b) { return byDay[b] - byDay[a] || (a < b ? -1 : 1); })[0];
   var tiles = el('div', 'tiles'); b.appendChild(tiles);
   var diff = prev.length ? Math.round(100 * (sel.length - prev.length) / prev.length) : null;
-  tile(tiles, String(sel.length), 'Cases' + (prev.length ? ' (' + (diff >= 0 ? '+' : '') + diff + '% vs ' + pk.slice(0, 4) + ')' : ''));
+  tile(tiles, String(sel.length), 'Cases' + (prev.length ? ' (' + (diff >= 0 ? '+' : '') + diff + '% vs ' + pk.slice(0, 4) + ')' : ''), sel.length ? function () { drillCases('Cases', sel); } : null);
   tile(tiles, String(lv), 'Levels');
   tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Avg difficulty');
   tile(tiles, bd ? String(byDay[bd]) : '–', bd ? 'Busiest day, ' + MON[+bd.slice(5, 7) - 1] + ' ' + (+bd.slice(8)) : 'Busiest day');
   if (!sel.length) b.appendChild(el('div', 'note', 'No completed cases in this month.'));
-  hbars(card('Case mix'), tally(sel, function (c) { return c.t; }));
+  hbars(card('Case mix'), withLists(tally(sel, function (c) { return c.t; }), sel, function (c) { return c.t; }));
   var withX = rated.filter(function (c) { return c.x; });
   if (rated.length) card('Complications', withX.length ? withX.length + ' of ' + rated.length + ' rated cases had one or more.' : 'None recorded in ' + rated.length + ' rated cases.');
   var ms = milestones().filter(function (m) { return m.d.slice(0, 7) === mk; });
@@ -3061,7 +3061,15 @@ function hbars(box, rows, emptyMsg, fmt) {
     var row = el('div', 'hb'), kk = el('div', 'k', r.k); if (r.sub) kk.appendChild(el('div', 'sub', r.sub)); row.appendChild(kk);
     var tr = el('div', 'track'), f = el('div', 'fill'); f.style.width = (r.v ? Math.max(2, r.v / max * 100) : 0) + '%';
     tr.appendChild(f); row.appendChild(tr); row.appendChild(el('div', 'c', fmt ? fmt(r.v) : String(r.v))); box.appendChild(row);
+    if (r.list && r.list.length) {   // every bar opens the cases behind it
+      row.classList.add('tap'); var h = box.querySelector('h3');
+      row.onclick = function () { drillCases(r.k, r.list, h ? h.textContent : ''); };
+    }
   });
+}
+function withLists(rows, list, keyFn) {   // attach the cases behind each tallied bar
+  rows.forEach(function (r) { r.list = list.filter(function (c) { var k = keyFn(c); return Array.isArray(k) ? k.indexOf(r.k) >= 0 : k === r.k; }); });
+  return rows;
 }
 function tile(box, n, l, onTap) {
   var t = el(onTap ? 'button' : 'div', onTap ? 'tile tap' : 'tile'); t.appendChild(el('div', 'n', n)); t.appendChild(el('div', 'l', l + (onTap ? ' ›' : '')));
@@ -3090,14 +3098,15 @@ function renderImp() {
   });
   var hw = sel.filter(function (c) { return c.v || (c.im && c.im.length); }), read = sel.filter(function (c) { return c.im && c.im.length; });
   var tiles = el('div', 'tiles'); b.appendChild(tiles);
-  tile(tiles, String(hw.length), 'Cases with hardware');
-  tile(tiles, String(read.length), 'Implants read from op notes');
-  tile(tiles, String(hw.filter(function (c) { return !c.on; }).length), 'Waiting on an op note');
-  hbars(card('Cases by vendor', 'Your op note’s vendor when one is filed, otherwise the scheduling order; a vendor you change in the app wins.'), tally(hw.filter(function (c) { return c.v; }), function (c) { return c.v.split(/\s*,\s*/); }), 'No hardware cases in this period yet.');
+  var wait = hw.filter(function (c) { return !c.on; });
+  tile(tiles, String(hw.length), 'Cases with hardware', hw.length ? function () { drillCases('Cases with hardware', hw); } : null);
+  tile(tiles, String(read.length), 'Implants read from op notes', read.length ? function () { drillCases('Implants read from op notes', read); } : null);
+  tile(tiles, String(wait.length), 'Waiting on an op note', wait.length ? function () { drillCases('Waiting on an op note', wait); } : null);
+  hbars(card('Cases by vendor', 'Your op note’s vendor when one is filed, otherwise the scheduling order; a vendor you change in the app wins.'), withLists(tally(hw.filter(function (c) { return c.v; }), function (c) { return c.v.split(/\s*,\s*/); }), hw.filter(function (c) { return c.v; }), function (c) { return c.v.split(/\s*,\s*/); }), 'No hardware cases in this period yet.');
   hbars(card('Vendors in op notes', 'Cases that used each vendor, read from the op note.'),
-    tally(read, function (c) { var o = {}; c.im.forEach(function (m) { if (m.v) o[m.v] = 1; }); return Object.keys(o); }), 'No op notes read in this period yet.');
+    withLists(tally(read, function (c) { var o = {}; c.im.forEach(function (m) { if (m.v) o[m.v] = 1; }); return Object.keys(o); }), read, function (c) { var o = {}; c.im.forEach(function (m) { if (m.v) o[m.v] = 1; }); return Object.keys(o); }), 'No op notes read in this period yet.');
   hbars(card('What was used', 'Number of cases using each implant.'),
-    tally(read, function (c) { var o = {}; c.im.forEach(function (m) { o[impLabel(m)] = 1; }); return Object.keys(o); }), 'No op notes read in this period yet.');
+    withLists(tally(read, function (c) { var o = {}; c.im.forEach(function (m) { o[impLabel(m)] = 1; }); return Object.keys(o); }), read, function (c) { var o = {}; c.im.forEach(function (m) { o[impLabel(m)] = 1; }); return Object.keys(o); }), 'No op notes read in this period yet.');
   var sizes = {}; read.forEach(function (c) { c.im.forEach(function (m) { if (/Cage|Disc/.test(m.k) && m.s) { var k = (m.p || m.v || m.k) + ' ' + m.s; sizes[k] = (sizes[k] || 0) + 1; } }); });
   hbars(card('Cage and disc sizes', 'Each level counted once.'), Object.keys(sizes).map(function (k) { return { k: k, v: sizes[k] }; }).sort(function (a, b) { return b.v - a.v; }), 'No sizes read in this period yet.');
   var lc = card('Cases', 'Newest first. Tap one to open that day.');
@@ -3150,7 +3159,7 @@ function renderStats() {
   tile(tiles, String(sel.length), 'Completed', sel.length ? function () { drillCases('Completed', sel); } : null);
   var totL = all.filter(function (c) { return inPer(c) && !/Cancelled|Postponed|Removed/.test(c.s); });
   tile(tiles, String(totL.length), 'Scheduled', totL.length ? function () { drillCases('Scheduled (total)', totL); } : null);
-  tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Difficulty');
+  tile(tiles, rated.length ? (rated.reduce(function (s, c) { return s + c.df; }, 0) / rated.length).toFixed(1) : '–', 'Difficulty', rated.length ? function () { drillCases('Rated cases', rated); } : null);
   if (!sel.length) b.appendChild(el('div', 'note', 'No completed cases in this period yet.'));
 
   var cy = selY || +t.slice(0, 4), py = cy - 1;
@@ -3204,13 +3213,13 @@ function renderStats() {
   var withX = rated.filter(function (c) { return c.x; }), xs = {};
   withX.forEach(function (c) { c.x.split(/\s*,\s*/).forEach(function (k) { if (k) xs[k] = (xs[k] || 0) + 1; }); });
   hbars(card('Complications', rated.length ? withX.length + ' of ' + rated.length + ' rated cases (' + Math.round(100 * withX.length / rated.length) + '%) had one or more.' : 'Rated cases only.'),
-    (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0 }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
+    (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0, list: withX.filter(function (c) { return c.x.split(/\s*,\s*/).indexOf(k) >= 0; }) }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
   var dfc = card('Difficulty', 'Rated cases only.'); dfc.classList.add('dfc'); if (dfFull) dfc.classList.add('full');
   var eye = el('button', 'eyeb'); eye.setAttribute('aria-label', 'What each rating means'); eye.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>';
   dfc.appendChild(eye);
   function dfRows() {   // short words, or each rating's full wording when the eye is on
     Array.prototype.slice.call(dfc.querySelectorAll('.hb, .note + .note')).forEach(function (x) { x.remove(); });
-    hbars(dfc, [1, 2, 3, 4, 5].map(function (n) { var w = String(L[n] || ''); return { k: n + ' · ' + (dfFull ? w : w.split(/,| and /)[0]), v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
+    hbars(dfc, [1, 2, 3, 4, 5].map(function (n) { var w = String(L[n] || ''); var ls = rated.filter(function (c) { return c.df === n; }); return { k: n + ' · ' + (dfFull ? w : w.split(/,| and /)[0]), v: ls.length, list: ls }; }), 'No rated cases in this period yet.');
   }
   eye.onclick = function () { dfFull = !dfFull; dfc.classList.toggle('full', dfFull); dfRows(); };
   dfRows();
