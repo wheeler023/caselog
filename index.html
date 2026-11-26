@@ -591,6 +591,9 @@ button.effc{display:block;width:100%;text-align:left;font-family:inherit;color:i
 .tiles>:last-child:nth-child(odd){grid-column:1/-1}
 .tiles.t3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tiles.t3>:last-child{grid-column:auto}
 .tiles.t3 .tile{padding:12px 12px;min-height:0}.tiles.t3 .tile .n{font-size:26px}.tiles.t3 .tile .l{font-size:12.5px;white-space:nowrap}
+.card2.dfc{position:relative}.dfc .eyeb{position:absolute;top:14px;right:14px;width:38px;height:34px;border-radius:10px;border:1px solid #2D3D5A;background:#17253F;color:#B9C4D8;display:flex;align-items:center;justify-content:center;padding:0}
+.dfc .eyeb svg{width:18px;height:18px}.dfc.full .eyeb{background:#9EC5E0;color:#0C1019;border-color:#9EC5E0}
+.dfc.full .hb{grid-template-columns:minmax(0,55%) 1fr 40px}.dfc.full .hb .k{white-space:normal;line-height:1.3}
 </style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="pencil" x="-5%" y="-20%" width="110%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="3" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.25" result="g"/><feComposite in="SourceGraphic" in2="g" operator="in" result="t"/><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="1" seed="7" result="w"/><feDisplacementMap in="t" in2="w" scale="1.6"/></filter></defs></svg>
 <div id="vCases"><div class="hd"><button class="gear bell" id="bell" onclick="openChanges()" aria-label="Schedule changes" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-1.5 2h15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg><span class="bdg" id="bellN"></span></button><div class="who" id="who"></div>
 <div class="mhd"><div class="day" id="monLbl">Loading…</div>
@@ -841,7 +844,7 @@ function boot() {
 }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () {});
 // Picks up a new version on its own: checks when the app opens or comes back to the front, and reloads unless a case is open.
-var BUILD = '1795722817410';
+var BUILD = '1795723046375';
 function checkUpdate() {
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (v) {
     v = (v || '').trim(); if (!v || v === BUILD) return;
@@ -3050,6 +3053,7 @@ function card(title, note) {
   c.appendChild(el('div', 'note', note || '')); $(cardTarget).appendChild(c); return c;
 }
 function money(v) { return '$' + Math.round(v).toLocaleString('en-US'); }
+var dfFull = false;
 function hbars(box, rows, emptyMsg, fmt) {
   var max = Math.max.apply(null, [0].concat(rows.map(function (r) { return r.v; })));
   if (!rows.length || !max) { box.appendChild(el('div', 'note', emptyMsg || 'Nothing in this period yet.')); return; }
@@ -3201,7 +3205,15 @@ function renderStats() {
   withX.forEach(function (c) { c.x.split(/\s*,\s*/).forEach(function (k) { if (k) xs[k] = (xs[k] || 0) + 1; }); });
   hbars(card('Complications', rated.length ? withX.length + ' of ' + rated.length + ' rated cases (' + Math.round(100 * withX.length / rated.length) + '%) had one or more.' : 'Rated cases only.'),
     (INIT.cx || []).map(function (k) { return { k: k, v: xs[k] || 0 }; }).filter(function (r) { return r.v; }), 'None recorded in this period.');
-  hbars(card('Difficulty', 'Rated cases only.'), [1, 2, 3, 4, 5].map(function (n) { return { k: n + ' · ' + String(L[n] || '').split(/,| and /)[0], v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
+  var dfc = card('Difficulty', 'Rated cases only.'); dfc.classList.add('dfc'); if (dfFull) dfc.classList.add('full');
+  var eye = el('button', 'eyeb'); eye.setAttribute('aria-label', 'Show the full descriptions'); eye.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  dfc.appendChild(eye);
+  function dfRows() {   // short words, or each rating's full wording when the eye is on
+    Array.prototype.slice.call(dfc.querySelectorAll('.hb, .note + .note')).forEach(function (x) { x.remove(); });
+    hbars(dfc, [1, 2, 3, 4, 5].map(function (n) { var w = String(L[n] || ''); return { k: n + ' · ' + (dfFull ? w : w.split(/,| and /)[0]), v: rated.filter(function (c) { return c.df === n; }).length }; }), 'No rated cases in this period yet.');
+  }
+  eye.onclick = function () { dfFull = !dfFull; dfc.classList.toggle('full', dfFull); dfRows(); };
+  dfRows();
   effCard(sel);
 }
 go(day);
